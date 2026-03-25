@@ -22,27 +22,33 @@ import {
   Clock,
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
+import { useLang } from '@/contexts/LanguageContext';
+import { t } from '@/lib/translations';
+import type { Language } from '@/lib/translations';
 
 // ─── Request type config with emoji icons ──────────────────────────────────
 
-const REQUEST_TYPE_CONFIG: Record<GuestRequestType, { label: string; emoji: string }> = {
-  towels: { label: 'Towels', emoji: '🛁' },
-  pillows: { label: 'Pillows', emoji: '🛏' },
-  blanket: { label: 'Blanket', emoji: '🧣' },
-  iron: { label: 'Iron', emoji: '👔' },
-  crib: { label: 'Crib', emoji: '🍼' },
-  toothbrush: { label: 'Toothbrush', emoji: '🪥' },
-  amenities: { label: 'Amenities', emoji: '🧴' },
-  maintenance: { label: 'Maintenance', emoji: '🔧' },
-  other: { label: 'Other', emoji: '📋' },
-};
+function getRequestTypeConfig(lang: Language): Record<GuestRequestType, { label: string; emoji: string }> {
+  const isEs = lang === 'es';
+  return {
+    towels:      { label: isEs ? 'Toallas'       : 'Towels',      emoji: '🛁' },
+    pillows:     { label: isEs ? 'Almohadas'     : 'Pillows',     emoji: '🛏' },
+    blanket:     { label: isEs ? 'Cobija'        : 'Blanket',     emoji: '🧣' },
+    iron:        { label: isEs ? 'Plancha'       : 'Iron',        emoji: '👔' },
+    crib:        { label: isEs ? 'Cuna'          : 'Crib',        emoji: '🍼' },
+    toothbrush:  { label: isEs ? 'Cepillo'       : 'Toothbrush',  emoji: '🪥' },
+    amenities:   { label: isEs ? 'Amenidades'    : 'Amenities',   emoji: '🧴' },
+    maintenance: { label: isEs ? 'Mantenimiento' : 'Maintenance', emoji: '🔧' },
+    other:       { label: isEs ? 'Otro'          : 'Other',       emoji: '📋' },
+  };
+}
 
 // ─── Status badge colors ────────────────────────────────────────────────────
 
 const STATUS_COLOR: Record<GuestRequestStatus, { bg: string; text: string; border: string }> = {
-  pending: { bg: 'rgba(239,68,68,0.08)', text: 'var(--red)', border: 'var(--red-border)' },
+  pending:     { bg: 'rgba(239,68,68,0.08)',  text: 'var(--red)',   border: 'var(--red-border)'   },
   in_progress: { bg: 'rgba(251,191,36,0.08)', text: 'var(--amber)', border: 'var(--amber-border)' },
-  done: { bg: 'rgba(34,197,94,0.08)', text: 'var(--green)', border: 'var(--green-border)' },
+  done:        { bg: 'rgba(34,197,94,0.08)',  text: 'var(--green)', border: 'var(--green-border)' },
 };
 
 // ─── Helper: Format time ago ────────────────────────────────────────────────
@@ -70,6 +76,9 @@ function toDate(v: unknown): Date | null {
 export default function GuestRequestsPage() {
   const { user } = useAuth();
   const { activePropertyId, staff } = useProperty();
+  const { lang } = useLang();
+
+  const REQUEST_TYPE_CONFIG = getRequestTypeConfig(lang);
 
   // State
   const [requests, setRequests] = useState<GuestRequest[]>([]);
@@ -141,7 +150,7 @@ export default function GuestRequestsPage() {
 
   const handleAddRequest = async () => {
     if (!user || !activePropertyId || !newForm.roomNumber.trim()) {
-      setToast('Room number required');
+      setToast(lang === 'es' ? 'Número de habitación requerido' : 'Room number required');
       return;
     }
 
@@ -161,9 +170,9 @@ export default function GuestRequestsPage() {
       });
       setShowNewModal(false);
       setNewForm({ roomNumber: '', type: 'towels', notes: '', assignedTo: '', assignedName: '' });
-      setToast('Request created');
+      setToast(lang === 'es' ? 'Solicitud creada' : 'Request created');
     } catch (err) {
-      setToast('Error creating request');
+      setToast(lang === 'es' ? 'Error al crear solicitud' : 'Error creating request');
       console.error(err);
     } finally {
       setLoading(false);
@@ -181,7 +190,7 @@ export default function GuestRequestsPage() {
       await updateGuestRequest(user.uid, activePropertyId, req.id, update);
       setToast(`Marked as ${newStatus}`);
     } catch (err) {
-      setToast('Error updating request');
+      setToast(lang === 'es' ? 'Error al actualizar' : 'Error updating request');
       console.error(err);
     }
   };
@@ -198,7 +207,7 @@ export default function GuestRequestsPage() {
       setAssignDropdown(null);
       setToast(`Assigned to ${staffMember?.name || 'staff'}`);
     } catch (err) {
-      setToast('Error assigning request');
+      setToast(lang === 'es' ? 'Error al asignar' : 'Error assigning request');
       console.error(err);
     }
   };
@@ -208,11 +217,20 @@ export default function GuestRequestsPage() {
 
     try {
       await deleteGuestRequest(user.uid, activePropertyId, req.id);
-      setToast('Request deleted');
+      setToast(lang === 'es' ? 'Solicitud eliminada' : 'Request deleted');
     } catch (err) {
-      setToast('Error deleting request');
+      setToast(lang === 'es' ? 'Error al eliminar' : 'Error deleting request');
       console.error(err);
     }
+  };
+
+  // ── Filter label helper ─────────────────────────────────────────────────
+
+  const filterLabel = (f: 'all' | 'pending' | 'in_progress' | 'done') => {
+    if (f === 'all') return t('all', lang);
+    if (f === 'pending') return t('pending', lang);
+    if (f === 'in_progress') return t('inProgress', lang);
+    return t('done', lang);
   };
 
   // ── Render ───────────────────────────────────────────────────────────────
@@ -232,7 +250,7 @@ export default function GuestRequestsPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <Bell size={28} color="var(--amber)" />
             <h1 style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-              Guest Requests
+              {t('guestRequests', lang)}
             </h1>
           </div>
           <button
@@ -255,7 +273,7 @@ export default function GuestRequestsPage() {
             onMouseLeave={(e) => ((e.currentTarget as any).style.opacity = '1')}
           >
             <Plus size={18} />
-            New
+            {t('new', lang)}
           </button>
         </div>
 
@@ -281,7 +299,7 @@ export default function GuestRequestsPage() {
               {pendingCount}
             </div>
             <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-              Pending
+              {t('pending', lang)}
             </div>
           </div>
           <div
@@ -297,7 +315,7 @@ export default function GuestRequestsPage() {
               {inProgressCount}
             </div>
             <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-              In Progress
+              {t('inProgress', lang)}
             </div>
           </div>
           <div
@@ -313,7 +331,7 @@ export default function GuestRequestsPage() {
               {doneToday}
             </div>
             <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-              Done Today
+              {t('doneToday', lang)}
             </div>
           </div>
         </div>
@@ -343,10 +361,7 @@ export default function GuestRequestsPage() {
                 transition: 'all 200ms',
               }}
             >
-              {f === 'all' && 'All'}
-              {f === 'pending' && 'Pending'}
-              {f === 'in_progress' && 'In Progress'}
-              {f === 'done' && 'Done'}
+              {filterLabel(f)}
             </button>
           ))}
         </div>
@@ -361,9 +376,11 @@ export default function GuestRequestsPage() {
             }}
           >
             <p style={{ fontSize: '14px', margin: 0 }}>
-              {filter === 'all'
-                ? 'No requests yet'
-                : `No ${filter.replace('_', ' ')} requests`}
+              {lang === 'es'
+                ? 'Sin solicitudes'
+                : filter === 'all'
+                  ? 'No requests yet'
+                  : `No ${filter.replace('_', ' ')} requests`}
             </p>
           </div>
         ) : (
@@ -405,7 +422,7 @@ export default function GuestRequestsPage() {
                           marginBottom: '6px',
                         }}
                       >
-                        Room {req.roomNumber}
+                        {lang === 'es' ? 'Hab.' : 'Room'} {req.roomNumber}
                       </div>
 
                       {/* Type + time */}
@@ -450,9 +467,9 @@ export default function GuestRequestsPage() {
                         {req.status === 'in_progress' && <Loader2 size={12} className="animate-spin" />}
                         {req.status === 'done' && <Check size={12} />}
                         {req.status === 'pending' && <Clock size={12} />}
-                        {req.status === 'pending' && 'Pending'}
-                        {req.status === 'in_progress' && 'In Progress'}
-                        {req.status === 'done' && 'Done'}
+                        {req.status === 'pending' && t('pending', lang)}
+                        {req.status === 'in_progress' && t('inProgress', lang)}
+                        {req.status === 'done' && t('done', lang)}
                       </div>
                     </div>
 
@@ -494,7 +511,7 @@ export default function GuestRequestsPage() {
                         {req.assignedName ? (
                           req.assignedName
                         ) : (
-                          <span style={{ color: 'var(--text-muted)' }}>Unassigned</span>
+                          <span style={{ color: 'var(--text-muted)' }}>{t('unassigned', lang)}</span>
                         )}
                       </div>
                     </div>
@@ -548,7 +565,7 @@ export default function GuestRequestsPage() {
                           onMouseEnter={(e) => ((e.currentTarget as any).style.opacity = '0.9')}
                           onMouseLeave={(e) => ((e.currentTarget as any).style.opacity = '1')}
                         >
-                          Start
+                          {t('start', lang)}
                         </button>
                         <button
                           onClick={() => handleStatusChange(req, 'done')}
@@ -568,7 +585,7 @@ export default function GuestRequestsPage() {
                           onMouseEnter={(e) => ((e.currentTarget as any).style.opacity = '0.9')}
                           onMouseLeave={(e) => ((e.currentTarget as any).style.opacity = '1')}
                         >
-                          Done
+                          {t('done', lang)}
                         </button>
                       </>
                     )}
@@ -592,7 +609,7 @@ export default function GuestRequestsPage() {
                         onMouseEnter={(e) => ((e.currentTarget as any).style.opacity = '0.9')}
                         onMouseLeave={(e) => ((e.currentTarget as any).style.opacity = '1')}
                       >
-                        Done
+                        {t('done', lang)}
                       </button>
                     )}
 
@@ -637,7 +654,7 @@ export default function GuestRequestsPage() {
                           (e.currentTarget as any).style.borderColor = 'var(--border)';
                         }}
                       >
-                        Assign
+                        {t('assign', lang)}
                         <ChevronDown size={12} />
                       </button>
 
@@ -665,7 +682,7 @@ export default function GuestRequestsPage() {
                                 color: 'var(--text-muted)',
                               }}
                             >
-                              No staff
+                              {t('noStaff', lang)}
                             </div>
                           ) : (
                             staff.map((s) => (
@@ -718,7 +735,7 @@ export default function GuestRequestsPage() {
       >
         <div style={{ maxWidth: '400px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>
-            New Guest Request
+            {t('newGuestRequest', lang)}
           </h2>
 
           {/* Room number input */}
@@ -732,7 +749,7 @@ export default function GuestRequestsPage() {
                 marginBottom: '6px',
               }}
             >
-              Room Number
+              {t('roomNumber', lang)}
             </label>
             <input
               type="text"
@@ -765,7 +782,7 @@ export default function GuestRequestsPage() {
                 marginBottom: '8px',
               }}
             >
-              Request Type
+              {t('requestType', lang)}
             </label>
             <div
               style={{
@@ -821,12 +838,12 @@ export default function GuestRequestsPage() {
                 marginBottom: '6px',
               }}
             >
-              Notes (optional)
+              {t('notesOptional', lang)}
             </label>
             <textarea
               value={newForm.notes}
               onChange={(e) => setNewForm({ ...newForm, notes: e.target.value })}
-              placeholder="Any additional details..."
+              placeholder={lang === 'es' ? 'Detalles adicionales...' : 'Any additional details...'}
               rows={3}
               style={{
                 width: '100%',
@@ -854,7 +871,7 @@ export default function GuestRequestsPage() {
                 marginBottom: '6px',
               }}
             >
-              Assign To (optional)
+              {lang === 'es' ? 'Asignar A (opcional)' : 'Assign To (optional)'}
             </label>
             <select
               value={newForm.assignedTo}
@@ -878,7 +895,7 @@ export default function GuestRequestsPage() {
                 boxSizing: 'border-box',
               }}
             >
-              <option value="">-- Select staff --</option>
+              <option value="">{t('selectStaff', lang)}</option>
               {staff.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
@@ -936,7 +953,7 @@ export default function GuestRequestsPage() {
                 (e.currentTarget as any).style.borderColor = 'var(--border)';
               }}
             >
-              Cancel
+              {t('cancel', lang)}
             </button>
             <button
               onClick={handleAddRequest}
@@ -965,7 +982,9 @@ export default function GuestRequestsPage() {
               }}
             >
               {loading && <Loader2 size={14} className="animate-spin" />}
-              {loading ? 'Creating...' : 'Create'}
+              {loading
+                ? (lang === 'es' ? 'Creando...' : 'Creating...')
+                : t('create', lang)}
             </button>
           </div>
         </div>

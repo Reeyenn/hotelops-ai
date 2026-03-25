@@ -912,7 +912,7 @@ function RoomCard({
                 </div>
               )}
             </div>
-            {room.isDnd && <span style={{ fontSize:'10px', fontWeight:700, padding:'2px 7px', borderRadius:'6px', background:'rgba(249,115,22,0.12)', color:'#F97316', border:'1px solid rgba(249,115,22,0.3)' }}>DND</span>}
+            {room.isDnd && <span style={{ fontSize:'10px', fontWeight:700, padding:'2px 7px', borderRadius:'6px', background:'rgba(249,115,22,0.12)', color:'#F97316', border:'1px solid rgba(249,115,22,0.3)' }}>{t('dnd', lang)}</span>}
             {/* Priority badge — color-coded, clickable to change */}
             {room.type !== 'vacant' && pb && (
               <div style={{ position:'relative' }}>

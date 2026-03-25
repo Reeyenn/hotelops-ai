@@ -15,6 +15,9 @@ import { todayStr } from '@/lib/utils';
 import type { Room, RoomStatus } from '@/types';
 import { format } from 'date-fns';
 import { CheckCircle, AlertTriangle, Square, CheckSquare, Camera } from 'lucide-react';
+import { useLang } from '@/contexts/LanguageContext';
+import { t } from '@/lib/translations';
+import type { Language } from '@/lib/translations';
 
 type RoomWithRef = Room & { _ref: DocumentReference };
 
@@ -40,6 +43,7 @@ function sortRooms(rooms: RoomWithRef[]): RoomWithRef[] {
 export default function HousekeeperRoomPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: housekeeperId } = React.use(params);
   const today = todayStr();
+  const { lang } = useLang();
 
   const [rooms, setRooms] = useState<RoomWithRef[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,7 +115,9 @@ export default function HousekeeperRoomPage({ params }: { params: Promise<{ id: 
         minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center',
         background: '#F0FDF4', fontFamily: 'system-ui, -apple-system, sans-serif',
       }}>
-        <p style={{ color: '#6B7280', fontSize: '15px' }}>Loading your rooms…</p>
+        <p style={{ color: '#6B7280', fontSize: '15px' }}>
+          {lang === 'es' ? 'Cargando habitaciones…' : 'Loading your rooms…'}
+        </p>
       </div>
     );
   }
@@ -130,7 +136,9 @@ export default function HousekeeperRoomPage({ params }: { params: Promise<{ id: 
           HotelOps AI
         </p>
         <h1 style={{ fontSize: '26px', fontWeight: 700, letterSpacing: '-0.02em', marginBottom: '2px' }}>
-          {housekeeperName.split(' ')[0]}&apos;s Rooms
+          {lang === 'es'
+            ? `Habitaciones de ${housekeeperName.split(' ')[0]}`
+            : `${housekeeperName.split(' ')[0]}\u2019s Rooms`}
         </h1>
         <p style={{ fontSize: '13px', opacity: 0.75, fontWeight: 500 }}>
           {format(new Date(), 'EEEE, MMMM d')}
@@ -141,7 +149,9 @@ export default function HousekeeperRoomPage({ params }: { params: Promise<{ id: 
           <div style={{ marginTop: '18px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
               <span style={{ fontSize: '13px', fontWeight: 600 }}>
-                {done} of {total} rooms done
+                {lang === 'es'
+                  ? `${done} de ${total} habitaciones listas`
+                  : `${done} of ${total} rooms done`}
               </span>
               <span style={{ fontSize: '13px', fontWeight: 700, opacity: 0.9 }}>
                 {progressPct}%
@@ -178,10 +188,12 @@ export default function HousekeeperRoomPage({ params }: { params: Promise<{ id: 
               <CheckCircle size={40} color="#16A34A" />
             </div>
             <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#111827', marginBottom: '10px' }}>
-              You&apos;re all done!
+              {lang === 'es' ? '¡Todo listo!' : "You\u2019re all done!"}
             </h2>
             <p style={{ fontSize: '16px', color: '#4B5563', lineHeight: 1.5 }}>
-              Great work today, {housekeeperName.split(' ')[0]}! 🎉
+              {lang === 'es'
+                ? `¡Buen trabajo hoy, ${housekeeperName.split(' ')[0]}! 🎉`
+                : `Great work today, ${housekeeperName.split(' ')[0]}! 🎉`}
             </p>
           </div>
         ) : total === 0 ? (
@@ -191,7 +203,9 @@ export default function HousekeeperRoomPage({ params }: { params: Promise<{ id: 
             borderRadius: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
           }}>
             <p style={{ fontSize: '15px', color: '#6B7280', lineHeight: 1.6 }}>
-              No rooms assigned yet.<br />Check back soon!
+              {lang === 'es'
+                ? <>Sin habitaciones asignadas.<br />¡Revisa pronto!</>
+                : <>No rooms assigned yet.<br />Check back soon!</>}
             </p>
           </div>
         ) : (
@@ -199,6 +213,7 @@ export default function HousekeeperRoomPage({ params }: { params: Promise<{ id: 
             <RoomCard
               key={room.id}
               room={room}
+              lang={lang}
               isExpanded={expandedRoomId === room.id}
               onToggleExpand={() => setExpandedRoomId(expandedRoomId === room.id ? null : room.id)}
               onStatusChange={handleStatusChange}
@@ -231,15 +246,17 @@ export default function HousekeeperRoomPage({ params }: { params: Promise<{ id: 
             padding: '24px 16px calc(env(safe-area-inset-bottom, 0px) + 24px)',
           }}>
             <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#111827', marginBottom: '4px' }}>
-              Report Issue
+              {t('reportIssue', lang)}
             </h3>
             <p style={{ fontSize: '13px', color: '#6B7280', marginBottom: '16px' }}>
-              Room {rooms.find(r => r.id === issueRoomId)?.number}
+              {lang === 'es' ? 'Hab.' : 'Room'} {rooms.find(r => r.id === issueRoomId)?.number}
             </p>
             <textarea
               // eslint-disable-next-line jsx-a11y/no-autofocus
               autoFocus
-              placeholder="Describe the issue (e.g. broken shower, missing towels, maintenance needed)"
+              placeholder={lang === 'es'
+                ? 'Describe el problema (ej. ducha rota, toallas faltantes, mantenimiento)'
+                : 'Describe the issue (e.g. broken shower, missing towels, maintenance needed)'}
               value={issueNote}
               onChange={e => setIssueNote(e.target.value)}
               rows={4}
@@ -280,7 +297,7 @@ export default function HousekeeperRoomPage({ params }: { params: Promise<{ id: 
                         fontSize: '14px', fontWeight: 600, cursor: 'pointer',
                       }}
                     >
-                      Change Photo
+                      {lang === 'es' ? 'Cambiar Foto' : 'Change Photo'}
                     </button>
                     <button
                       onClick={() => setPhotoPreview(null)}
@@ -290,7 +307,7 @@ export default function HousekeeperRoomPage({ params }: { params: Promise<{ id: 
                         fontSize: '14px', fontWeight: 600, cursor: 'pointer',
                       }}
                     >
-                      Remove
+                      {lang === 'es' ? 'Eliminar' : 'Remove'}
                     </button>
                   </div>
                 </div>
@@ -317,7 +334,7 @@ export default function HousekeeperRoomPage({ params }: { params: Promise<{ id: 
                   }}
                 >
                   <Camera size={16} />
-                  Add Photo
+                  {lang === 'es' ? 'Agregar Foto' : 'Add Photo'}
                 </button>
               )}
               <input
@@ -348,7 +365,7 @@ export default function HousekeeperRoomPage({ params }: { params: Promise<{ id: 
                   color: '#374151', cursor: 'pointer',
                 }}
               >
-                Cancel
+                {t('cancel', lang)}
               </button>
               <button
                 onClick={handleSubmitIssue}
@@ -361,7 +378,9 @@ export default function HousekeeperRoomPage({ params }: { params: Promise<{ id: 
                   transition: 'background 150ms ease',
                 }}
               >
-                {savingIssue ? 'Saving…' : 'Submit'}
+                {savingIssue
+                  ? (lang === 'es' ? 'Guardando…' : 'Saving…')
+                  : (lang === 'es' ? 'Enviar' : 'Submit')}
               </button>
             </div>
           </div>
@@ -374,12 +393,14 @@ export default function HousekeeperRoomPage({ params }: { params: Promise<{ id: 
 /* ── Room Card ── */
 function RoomCard({
   room,
+  lang,
   isExpanded,
   onToggleExpand,
   onStatusChange,
   onReportIssue,
 }: {
   room: RoomWithRef;
+  lang: Language;
   isExpanded: boolean;
   onToggleExpand: () => void;
   onStatusChange: (r: RoomWithRef, s: RoomStatus) => void;
@@ -397,13 +418,13 @@ function RoomCard({
   };
 
   const checklistItems = [
-    { key: 'beds', label: 'Beds Made' },
-    { key: 'bathroom', label: 'Bathroom Cleaned' },
-    { key: 'towels', label: 'Towels Replaced' },
-    { key: 'trash', label: 'Trash Emptied' },
-    { key: 'amenities', label: 'Amenities Restocked' },
-    { key: 'floors', label: 'Floors Swept/Vacuumed' },
-    { key: 'mirrors', label: 'Mirrors & Windows Cleaned' },
+    { key: 'beds',      label: lang === 'es' ? 'Camas Tendidas'          : 'Beds Made' },
+    { key: 'bathroom',  label: lang === 'es' ? 'Baño Limpiado'           : 'Bathroom Cleaned' },
+    { key: 'towels',    label: lang === 'es' ? 'Toallas Reemplazadas'    : 'Towels Replaced' },
+    { key: 'trash',     label: lang === 'es' ? 'Basura Vaciada'          : 'Trash Emptied' },
+    { key: 'amenities', label: lang === 'es' ? 'Amenidades Reabastecidas': 'Amenities Restocked' },
+    { key: 'floors',    label: lang === 'es' ? 'Pisos Barridos/Aspirados': 'Floors Swept/Vacuumed' },
+    { key: 'mirrors',   label: lang === 'es' ? 'Espejos y Ventanas'      : 'Mirrors & Windows Cleaned' },
   ];
 
   const handleChecklistToggle = async (key: string) => {
@@ -416,15 +437,15 @@ function RoomCard({
   const checklistTotal = checklistItems.length;
 
   const statusConfig = ({
-    dirty:       { bg: '#FFF7ED', border: '#FED7AA', badge: '#EA580C', badgeText: '#FFF7ED', label: 'Needs Cleaning' },
-    in_progress: { bg: '#FFFBEB', border: '#FDE68A', badge: '#D97706', badgeText: '#FFFBEB', label: 'In Progress' },
-    clean:       { bg: '#F0FDF4', border: '#BBF7D0', badge: '#16A34A', badgeText: '#F0FDF4', label: 'Done' },
-    inspected:   { bg: '#F5F3FF', border: '#DDD6FE', badge: '#7C3AED', badgeText: '#F5F3FF', label: 'Inspected' },
+    dirty:       { bg: '#FFF7ED', border: '#FED7AA', badge: '#EA580C', badgeText: '#FFF7ED', label: t('needsCleaning', lang) },
+    in_progress: { bg: '#FFFBEB', border: '#FDE68A', badge: '#D97706', badgeText: '#FFFBEB', label: t('inProgress', lang)   },
+    clean:       { bg: '#F0FDF4', border: '#BBF7D0', badge: '#16A34A', badgeText: '#F0FDF4', label: t('done', lang)         },
+    inspected:   { bg: '#F5F3FF', border: '#DDD6FE', badge: '#7C3AED', badgeText: '#F5F3FF', label: t('inspected', lang)    },
   } as Record<string, { bg: string; border: string; badge: string; badgeText: string; label: string }>)[room.status] ?? {
     bg: '#F9FAFB', border: '#E5E7EB', badge: '#6B7280', badgeText: '#F9FAFB', label: room.status,
   };
 
-  const typeLabel = room.type === 'checkout' ? 'Checkout' : 'Stayover';
+  const typeLabel = t(room.type === 'checkout' ? 'checkout' : 'stayover', lang);
   const priorityLabel = room.priority === 'vip' ? '★ VIP' : room.priority === 'early' ? '⚡ Early' : null;
   const priorityColor = room.priority === 'vip'
     ? (room.type === 'checkout' ? '#DC2626' : '#7C3AED')
@@ -450,7 +471,7 @@ function RoomCard({
           fontSize: '13px', fontWeight: 600, marginBottom: '12px',
           display: 'flex', alignItems: 'center', gap: '6px',
         }}>
-          🚫 Do Not Disturb
+          🚫 {t('doNotDisturb', lang)}
         </div>
       )}
 
@@ -513,7 +534,7 @@ function RoomCard({
       {/* Completed time */}
       {room.status === 'clean' && room.completedAt && (
         <p style={{ fontSize: '12px', color: '#16A34A', fontWeight: 600, marginBottom: '10px' }}>
-          ✓ Done at{' '}
+          {lang === 'es' ? '✓ Listo a las ' : '✓ Done at '}
           {format(firestoreToDate(room.completedAt), 'h:mm a')}
         </p>
       )}
@@ -582,7 +603,7 @@ function RoomCard({
             </span>
             {(room as Room & { hasPhoto?: boolean }).hasPhoto && (
               <p style={{ fontSize: '11px', color: '#92400E', marginTop: '4px', fontStyle: 'italic' }}>
-                📷 Photo attached
+                📷 {lang === 'es' ? 'Foto adjunta' : 'Photo attached'}
               </p>
             )}
           </div>
@@ -602,7 +623,9 @@ function RoomCard({
               opacity: loading ? 0.7 : 1, transition: 'opacity 150ms ease',
             }}
           >
-            {loading ? 'Starting…' : 'Start Cleaning'}
+            {loading
+              ? (lang === 'es' ? 'Iniciando…' : 'Starting…')
+              : t('startCleaning', lang)}
           </button>
         )}
 
@@ -617,7 +640,9 @@ function RoomCard({
               opacity: loading ? 0.7 : 1, transition: 'opacity 150ms ease',
             }}
           >
-            {loading ? 'Saving…' : 'Mark Done ✓'}
+            {loading
+              ? (lang === 'es' ? 'Guardando…' : 'Saving…')
+              : `${t('markDone', lang)} ✓`}
           </button>
         )}
 
@@ -627,7 +652,9 @@ function RoomCard({
             background: '#DCFCE7', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
           }}>
             <CheckCircle size={18} color="#16A34A" />
-            <span style={{ fontSize: '15px', fontWeight: 700, color: '#16A34A' }}>Done</span>
+            <span style={{ fontSize: '15px', fontWeight: 700, color: '#16A34A' }}>
+              {t('done', lang)}
+            </span>
           </div>
         )}
 
@@ -639,8 +666,8 @@ function RoomCard({
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexShrink: 0,
           }}
-          title="Report Issue"
-          aria-label="Report issue for this room"
+          title={t('reportIssue', lang)}
+          aria-label={t('reportIssue', lang)}
         >
           <AlertTriangle size={18} color="#6B7280" />
         </button>

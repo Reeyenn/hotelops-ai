@@ -97,7 +97,15 @@ type TranslationKey =
   | 'hourlyWageOptional' | 'maxWeeklyHoursLabel' | 'seniorStaff'
   | 'hoursLeftLabel'
   // Priority queue
-  | 'priorityOrder' | 'vipCheckout' | 'earlyCheckout' | 'standardCheckout' | 'vipStayover' | 'standardStayover';
+  | 'priorityOrder' | 'vipCheckout' | 'earlyCheckout' | 'standardCheckout' | 'vipStayover' | 'standardStayover'
+  // Housekeeper room view & ops-wall
+  | 'doNotDisturb' | 'dnd' | 'needsCleaning' | 'startCleaning' | 'markDone'
+  // Guest requests
+  | 'pending' | 'doneToday' | 'assign' | 'unassigned'
+  // Ops-wall
+  | 'liveOpsWall' | 'requests' | 'activeRequests' | 'active' | 'requestsCompleted' | 'noRoomsForToday'
+  // Requests page
+  | 'new' | 'all' | 'newGuestRequest' | 'requestType' | 'notesOptional' | 'selectStaff' | 'create' | 'noStaff';
 
 const translations: Record<Language, Record<TranslationKey, string>> = {
   en: {
@@ -351,6 +359,33 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     standardCheckout: 'Standard Checkout',
     vipStayover: 'VIP Stayover',
     standardStayover: 'Standard Stayover',
+    // Housekeeper room view & ops-wall
+    doNotDisturb: 'Do Not Disturb',
+    dnd: 'DND',
+    needsCleaning: 'Needs Cleaning',
+    startCleaning: 'Start Cleaning',
+    markDone: 'Mark Done',
+    // Guest requests
+    pending: 'Pending',
+    doneToday: 'Done Today',
+    assign: 'Assign',
+    unassigned: 'Unassigned',
+    // Ops-wall
+    liveOpsWall: 'Live Operations Wall',
+    requests: 'Requests',
+    activeRequests: 'Active Requests',
+    active: 'Active',
+    requestsCompleted: 'requests completed today',
+    noRoomsForToday: 'No rooms for today.',
+    // Requests page
+    new: 'New',
+    all: 'All',
+    newGuestRequest: 'New Guest Request',
+    requestType: 'Request Type',
+    notesOptional: 'Notes (optional)',
+    selectStaff: '-- Select staff --',
+    create: 'Create',
+    noStaff: 'No staff',
   },
 
   es: {
@@ -604,6 +639,33 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     standardCheckout: 'Salida Estándar',
     vipStayover: 'Permanencia VIP',
     standardStayover: 'Permanencia Estándar',
+    // Housekeeper room view & ops-wall
+    doNotDisturb: 'No Molestar',
+    dnd: 'NM',
+    needsCleaning: 'Necesita Limpieza',
+    startCleaning: 'Iniciar Limpieza',
+    markDone: 'Marcar Listo',
+    // Guest requests
+    pending: 'Pendiente',
+    doneToday: 'Listo Hoy',
+    assign: 'Asignar',
+    unassigned: 'Sin Asignar',
+    // Ops-wall
+    liveOpsWall: 'Muro de Operaciones',
+    requests: 'Solicitudes',
+    activeRequests: 'Solicitudes Activas',
+    active: 'Activo',
+    requestsCompleted: 'solicitudes completadas hoy',
+    noRoomsForToday: 'No hay habitaciones hoy.',
+    // Requests page
+    new: 'Nueva',
+    all: 'Todas',
+    newGuestRequest: 'Nueva Solicitud de Huésped',
+    requestType: 'Tipo de Solicitud',
+    notesOptional: 'Notas (opcional)',
+    selectStaff: '-- Seleccionar personal --',
+    create: 'Crear',
+    noStaff: 'Sin personal',
   },
 };
 

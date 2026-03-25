@@ -10,13 +10,19 @@ import type { Room, GuestRequest } from '@/types';
 import { format } from 'date-fns';
 import { BedDouble, Bell, Maximize2, Minimize2 } from 'lucide-react';
 import Link from 'next/link';
+import { useLang } from '@/contexts/LanguageContext';
+import { t } from '@/lib/translations';
 
 // ── Status config ────────────────────────────────────────────────────────────
-const STATUS_STYLES: Record<string, { bg: string; border: string; color: string; label: string }> = {
-  dirty:       { bg: 'rgba(239,68,68,0.14)',   border: 'rgba(239,68,68,0.38)',   color: '#EF4444', label: 'DIRTY'    },
-  in_progress: { bg: 'rgba(251,191,36,0.14)',  border: 'rgba(251,191,36,0.38)',  color: '#FBBF24', label: 'CLEANING' },
-  clean:       { bg: 'rgba(34,197,94,0.14)',   border: 'rgba(34,197,94,0.38)',   color: '#22C55E', label: 'READY'    },
-  inspected:   { bg: 'rgba(139,92,246,0.14)',  border: 'rgba(139,92,246,0.38)',  color: '#8B5CF6', label: 'APPROVED' },
+const STATUS_STYLES: Record<string, { bg: string; border: string; color: string }> = {
+  dirty:       { bg: 'rgba(239,68,68,0.14)',   border: 'rgba(239,68,68,0.38)',   color: '#EF4444' },
+  in_progress: { bg: 'rgba(251,191,36,0.14)',  border: 'rgba(251,191,36,0.38)',  color: '#FBBF24' },
+  clean:       { bg: 'rgba(34,197,94,0.14)',   border: 'rgba(34,197,94,0.38)',   color: '#22C55E' },
+  inspected:   { bg: 'rgba(139,92,246,0.14)',  border: 'rgba(139,92,246,0.38)',  color: '#8B5CF6' },
+};
+
+const STATUS_KEY_MAP: Record<string, 'dirty' | 'inProgress' | 'clean' | 'inspected'> = {
+  dirty: 'dirty', in_progress: 'inProgress', clean: 'clean', inspected: 'inspected',
 };
 
 const STATUS_ORDER: Record<string, number> = { dirty: 0, in_progress: 1, clean: 2, inspected: 3 };
@@ -50,6 +56,7 @@ export default function OpsWallPage() {
   const { user, loading: authLoading } = useAuth();
   const { activeProperty, activePropertyId, loading: propLoading } = useProperty();
   const router = useRouter();
+  const { lang } = useLang();
 
   const [rooms,    setRooms]    = useState<Room[]>([]);
   const [requests, setRequests] = useState<GuestRequest[]>([]);
@@ -105,7 +112,7 @@ export default function OpsWallPage() {
   if (authLoading || propLoading) {
     return (
       <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', color: 'var(--text-muted)', fontFamily: 'var(--font-sans)' }}>
-        Loading…
+        {t('loading', lang)}
       </div>
     );
   }
@@ -146,7 +153,7 @@ export default function OpsWallPage() {
               {activeProperty?.name ?? 'HotelOps AI'}
             </div>
             <div style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              Live Operations Wall
+              {t('liveOpsWall', lang)}
             </div>
           </div>
         </div>
@@ -154,19 +161,21 @@ export default function OpsWallPage() {
         {/* Center: status pills */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
           {([
-            { label: 'DIRTY',    value: dirty,      color: '#EF4444', dim: 'rgba(239,68,68,0.12)'   },
-            { label: 'CLEANING', value: inProgress, color: '#FBBF24', dim: 'rgba(251,191,36,0.12)'  },
-            { label: 'READY',    value: clean,      color: '#22C55E', dim: 'rgba(34,197,94,0.12)'   },
-            { label: 'APPROVED', value: inspected,  color: '#8B5CF6', dim: 'rgba(139,92,246,0.12)'  },
-          ] as const).map(({ label, value, color, dim }) => (
-            <div key={label} style={{
+            { statusKey: 'dirty'      as const, value: dirty,      color: '#EF4444', dim: 'rgba(239,68,68,0.12)'   },
+            { statusKey: 'inProgress' as const, value: inProgress, color: '#FBBF24', dim: 'rgba(251,191,36,0.12)'  },
+            { statusKey: 'clean'      as const, value: clean,      color: '#22C55E', dim: 'rgba(34,197,94,0.12)'   },
+            { statusKey: 'inspected'  as const, value: inspected,  color: '#8B5CF6', dim: 'rgba(139,92,246,0.12)'  },
+          ]).map(({ statusKey, value, color, dim }) => (
+            <div key={statusKey} style={{
               padding: '5px 10px', borderRadius: 6,
               background: value > 0 ? dim : 'var(--bg-card)',
               border: `1px solid ${value > 0 ? color + '44' : 'var(--border)'}`,
               display: 'flex', alignItems: 'center', gap: '6px',
             }}>
               <div style={{ width: 6, height: 6, borderRadius: '50%', background: value > 0 ? color : 'var(--text-muted)', flexShrink: 0 }} />
-              <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.08em' }}>{label}</span>
+              <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.08em' }}>
+                {t(statusKey, lang).toUpperCase()}
+              </span>
               <span style={{ fontSize: 16, fontWeight: 800, color: value > 0 ? color : 'var(--text-muted)', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{value}</span>
             </div>
           ))}
@@ -181,7 +190,9 @@ export default function OpsWallPage() {
               animation: 'pulse 2s infinite',
             }}>
               <Bell size={11} color="#EF4444" />
-              <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.08em' }}>REQUESTS</span>
+              <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.08em' }}>
+                {t('requests', lang).toUpperCase()}
+              </span>
               <span style={{ fontSize: 16, fontWeight: 800, color: '#EF4444', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{pendingReqs.length}</span>
             </div>
           )}
@@ -200,7 +211,7 @@ export default function OpsWallPage() {
               {pct}%
             </span>
             <span style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
-              {done}/{total} DONE
+              {done}/{total} {t('done', lang).toUpperCase()}
             </span>
           </div>
 
@@ -260,12 +271,17 @@ export default function OpsWallPage() {
               gridColumn: '1 / -1', textAlign: 'center', paddingTop: '80px',
               color: 'var(--text-muted)', fontSize: '14px', lineHeight: 1.6,
             }}>
-              No rooms for today.
+              {t('noRoomsForToday', lang)}
               <br />
-              <span style={{ fontSize: 12 }}>Add rooms from the <Link href="/rooms" style={{ color: 'var(--amber)' }}>Rooms page</Link>.</span>
+              <span style={{ fontSize: 12 }}>
+                {lang === 'es'
+                  ? <>Agrega habitaciones desde la <Link href="/rooms" style={{ color: 'var(--amber)' }}>página de Habitaciones</Link>.</>
+                  : <>Add rooms from the <Link href="/rooms" style={{ color: 'var(--amber)' }}>Rooms page</Link>.</>}
+              </span>
             </div>
           ) : sorted.map(room => {
             const s = STATUS_STYLES[room.status] ?? STATUS_STYLES.dirty;
+            const statusLabel = t(STATUS_KEY_MAP[room.status] ?? 'dirty', lang).toUpperCase();
             return (
               <div key={room.id} style={{
                 background: s.bg,
@@ -288,7 +304,7 @@ export default function OpsWallPage() {
                     color: '#F97316', background: 'rgba(249,115,22,0.15)',
                     border: '1px solid rgba(249,115,22,0.3)',
                     borderRadius: 3, padding: '1px 4px',
-                  }}>DND</div>
+                  }}>{t('dnd', lang)}</div>
                 )}
 
                 {/* VIP badge */}
@@ -313,7 +329,7 @@ export default function OpsWallPage() {
                   fontSize: 9, fontWeight: 800, letterSpacing: '0.1em',
                   color: s.color, textTransform: 'uppercase',
                 }}>
-                  {s.label}
+                  {statusLabel}
                 </div>
 
                 {/* Type */}
@@ -366,7 +382,7 @@ export default function OpsWallPage() {
                   fontSize: 10, fontWeight: 800, letterSpacing: '0.12em',
                   color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 2,
                 }}>
-                  Active Requests
+                  {t('activeRequests', lang)}
                 </div>
                 {activeReqs.map(req => (
                   <div key={req.id} style={{
@@ -389,7 +405,9 @@ export default function OpsWallPage() {
                         border: `1px solid ${req.status === 'pending' ? 'rgba(239,68,68,0.25)' : 'rgba(251,191,36,0.25)'}`,
                         borderRadius: 4, padding: '2px 6px', textTransform: 'uppercase',
                       }}>
-                        {req.status === 'pending' ? 'PENDING' : 'ACTIVE'}
+                        {req.status === 'pending'
+                          ? t('pending', lang).toUpperCase()
+                          : t('active', lang).toUpperCase()}
                       </span>
                     </div>
                     <div style={{ fontSize: 13, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -401,7 +419,7 @@ export default function OpsWallPage() {
                     )}
                     {req.notes && (
                       <div style={{ fontSize: 11, color: 'var(--text-secondary)', fontStyle: 'italic', marginTop: 2 }}>
-                        "{req.notes}"
+                        &ldquo;{req.notes}&rdquo;
                       </div>
                     )}
                     {req.createdAt && (
@@ -422,7 +440,7 @@ export default function OpsWallPage() {
                 border: '1px solid rgba(34,197,94,0.2)',
               }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: '#22C55E' }}>
-                  ✓ {doneToday} request{doneToday !== 1 ? 's' : ''} completed today
+                  ✓ {doneToday} {t('requestsCompleted', lang)}
                 </div>
               </div>
             )}
