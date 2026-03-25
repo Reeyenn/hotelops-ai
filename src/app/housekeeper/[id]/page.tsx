@@ -10,7 +10,8 @@ import {
   Timestamp,
   DocumentReference,
 } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { db, auth } from '@/lib/firebase';
 import { todayStr } from '@/lib/utils';
 import type { Room, RoomStatus } from '@/types';
 import { format } from 'date-fns';
@@ -54,29 +55,47 @@ export default function HousekeeperRoomPage({ params }: { params: Promise<{ id: 
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   useEffect(() => {
-    // Single where clause avoids the composite index requirement on the
-    // collection group. Date is filtered client-side instead.
-    const q = query(
-      collectionGroup(db, 'rooms'),
-      where('assignedTo', '==', housekeeperId),
-    );
+    let unsub: (() => void) | undefined;
 
-    const unsub = onSnapshot(
-      q,
-      snap => {
-        const data = snap.docs
-          .map(d => ({ id: d.id, _ref: d.ref, ...d.data() } as RoomWithRef))
-          .filter(r => r.date === today);
-        setRooms(sortRooms(data));
-        setLoading(false);
-      },
-      error => {
-        console.error('[housekeeper] Firestore error:', error);
-        setLoading(false);
-      },
-    );
+    const subscribeToRooms = () => {
+      // Single where clause avoids the composite index requirement on the
+      // collection group. Date is filtered client-side instead.
+      const q = query(
+        collectionGroup(db, 'rooms'),
+        where('assignedTo', '==', housekeeperId),
+      );
 
-    return unsub;
+      unsub = onSnapshot(
+        q,
+        snap => {
+          const data = snap.docs
+            .map(d => ({ id: d.id, _ref: d.ref, ...d.data() } as RoomWithRef))
+            .filter(r => r.date === today);
+          setRooms(sortRooms(data));
+          setLoading(false);
+        },
+        error => {
+          console.error('[housekeeper] Firestore error:', error);
+          setLoading(false);
+        },
+      );
+    };
+
+    // Ensure the user is signed in (anonymously if needed) before subscribing.
+    // The Firestore rules require request.auth != null for rooms reads.
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+      subscribeToRooms();
+    } else {
+      signInAnonymously(auth)
+        .then(subscribeToRooms)
+        .catch(err => {
+          console.error('[housekeeper] Anonymous auth failed:', err);
+          setLoading(false);
+        });
+    }
+
+    return () => unsub?.();
   }, [housekeeperId, today]);
 
   const handleStatusChange = async (room: RoomWithRef, newStatus: RoomStatus) => {

@@ -6,15 +6,15 @@ import { useProperty } from '@/contexts/PropertyContext';
 import { useLang } from '@/contexts/LanguageContext';
 import { t } from '@/lib/translations';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { calcSchedule, predictTodayFromHistory, formatCurrency, formatMinutes } from '@/lib/calculations';
-import { saveDailyLog, getRecentDailyLogs } from '@/lib/firestore';
+import { calcSchedule, formatCurrency, formatMinutes } from '@/lib/calculations';
+import { saveDailyLog, subscribeToRooms } from '@/lib/firestore';
 import { todayStr, getFloorLabel } from '@/lib/utils';
-import type { MorningSetupForm, ScheduleResult, DailyLog } from '@/types';
+import type { MorningSetupForm, ScheduleResult, DailyLog, Room } from '@/types';
 import { format } from 'date-fns';
 import {
   Sun, Calculator, Save, ChevronDown, ChevronUp,
-  BedDouble, MapPin, RefreshCw, Zap, DollarSign, Clock,
-  CheckCircle, Info,
+  BedDouble, MapPin, RefreshCw, DollarSign, Clock,
+  CheckCircle, Info, Wifi,
 } from 'lucide-react';
 
 /* ── Number input ── */
@@ -84,10 +84,12 @@ export default function MorningSetupPage() {
   const [result,            setResult]            = useState<ScheduleResult | null>(null);
   const [showAreas,         setShowAreas]         = useState(false);
   const [showLaundry,       setShowLaundry]       = useState(false);
-  const [prediction,        setPrediction]        = useState<{ occupied: number; checkouts: number; label: string } | null>(null);
   const [saved,             setSaved]             = useState(false);
   const [saving,            setSaving]            = useState(false);
   const [meetingRoomRented, setMeetingRoomRented] = useState(false);
+  const [scrapeLoading,     setScrapeLoading]     = useState(true);
+  const [lastSynced,        setLastSynced]        = useState<Date | null>(null);
+  const [hasLiveData,       setHasLiveData]       = useState(false);
 
   useEffect(() => {
     if (!activeProperty) return;
@@ -98,22 +100,24 @@ export default function MorningSetupPage() {
     }));
   }, [activeProperty]);
 
-  useEffect(() => {
-    setForm(f => ({ ...f, stayovers: Math.max(0, f.occupied - f.checkouts) }));
-  }, [form.occupied, form.checkouts]);
-
+  // Live room counts from scraper
   useEffect(() => {
     if (!user || !activePropertyId) return;
-    (async () => {
-      const logs = await getRecentDailyLogs(user.uid, activePropertyId, 30);
-      if (logs.length >= 7) {
-        const pred = predictTodayFromHistory(
-          logs.map(l => ({ date: l.date, occupied: l.occupied, checkouts: l.checkouts })),
-          new Date()
-        );
-        if (pred) setPrediction(pred);
-      }
-    })();
+    const unsub = subscribeToRooms(user.uid, activePropertyId, todayStr(), (rooms) => {
+      setScrapeLoading(false);
+      if (rooms.length === 0) return;
+      const checkouts      = rooms.filter(r => r.type === 'checkout').length;
+      const stayovers      = rooms.filter(r => r.type === 'stayover').length;
+      const occupied       = checkouts + stayovers;
+      const twoBedCheckouts = rooms.filter(r =>
+        r.type === 'checkout' &&
+        ((r as Room & { _caRoomType?: string })._caRoomType ?? '').includes('QQ')
+      ).length;
+      setForm(f => ({ ...f, occupied, checkouts, stayovers, twoBedCheckouts }));
+      setHasLiveData(true);
+      setLastSynced(new Date());
+    });
+    return unsub;
   }, [user, activePropertyId]);
 
   const upd = (k: keyof MorningSetupForm, v: number | string) => {
@@ -162,17 +166,6 @@ export default function MorningSetupPage() {
     finally { setSaving(false); }
   };
 
-  const applyPrediction = () => {
-    if (!prediction) return;
-    setForm(f => ({
-      ...f,
-      occupied:  prediction.occupied,
-      checkouts: prediction.checkouts,
-      stayovers: Math.max(0, prediction.occupied - prediction.checkouts),
-    }));
-    setResult(null);
-  };
-
   return (
     <AppLayout>
       <div style={{ padding: '16px 16px 0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -190,52 +183,74 @@ export default function MorningSetupPage() {
           </div>
         </div>
 
-        {/* ── Prediction banner ── */}
-        {prediction && (
-          <div className="animate-in stagger-1" style={{
-            background: 'var(--amber-dim)', border: '1px solid var(--amber-border)',
-            borderRadius: 'var(--radius-md)', padding: '12px 14px',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Zap size={14} color="var(--amber)" />
-              <div>
-                <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--amber)', marginBottom: '1px' }}>{t('smartPrediction', lang)}</p>
-                <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                  ~{prediction.occupied} occupied, ~{prediction.checkouts} checkouts — {prediction.label}
-                </p>
-              </div>
+        {/* ── Live room counts from scraper ── */}
+        <div className="animate-in stagger-1">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <p className="section-title" style={{ margin: 0 }}>Today&apos;s Rooms</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              {scrapeLoading ? (
+                <div className="spinner" style={{ width: '10px', height: '10px' }} />
+              ) : (
+                <Wifi size={11} color={hasLiveData ? 'var(--green)' : 'var(--text-muted)'} />
+              )}
+              <span style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.04em' }}>
+                {scrapeLoading ? 'Loading…' : hasLiveData && lastSynced
+                  ? `Synced ${Math.round((Date.now() - lastSynced.getTime()) / 60000) || '<1'} min ago`
+                  : 'No data yet'}
+              </span>
             </div>
-            <button onClick={applyPrediction} style={{
-              background: 'var(--amber)', color: '#0A0A0A',
-              border: 'none', borderRadius: 'var(--radius-sm)',
-              padding: '6px 12px', fontSize: '12px', fontWeight: 600,
-              cursor: 'pointer', fontFamily: 'var(--font-sans)', flexShrink: 0,
-            }}>
-              {t('apply', lang)}
-            </button>
           </div>
-        )}
+
+          {scrapeLoading ? (
+            <div style={{
+              background: 'var(--bg-card)', border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-md)', padding: '24px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+            }}>
+              <div className="spinner" style={{ width: '14px', height: '14px' }} />
+              <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Loading room data…</span>
+            </div>
+          ) : !hasLiveData ? (
+            <div style={{
+              background: 'var(--bg-card)', border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-md)', padding: '16px 14px',
+              textAlign: 'center',
+            }}>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                No rooms synced today yet. Scraper runs every 15 min.
+              </p>
+            </div>
+          ) : (
+            <div style={{
+              background: 'var(--bg-card)', border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-md)', overflow: 'hidden',
+            }}>
+              {[
+                { label: 'Checkouts',      value: form.checkouts,      accent: true  },
+                { label: 'Stayovers',      value: form.stayovers,      accent: false },
+                { label: 'Occupied',       value: form.occupied,       accent: false },
+                { label: '2-Bed Checkouts', value: form.twoBedCheckouts, accent: false },
+              ].map(({ label, value, accent }, i, arr) => (
+                <div key={label} style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '11px 14px',
+                  borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none',
+                }}>
+                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{label}</span>
+                  <span style={{
+                    fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '18px',
+                    color: accent ? 'var(--amber)' : 'var(--text-primary)',
+                  }}>
+                    {value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* ── Input form ── */}
         <div className="animate-in stagger-1">
-          <p className="section-title">{t('roomNumbersSection', lang)}</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
-            <NumInput label={t('occupied', lang)}  field="occupied"  form={form} upd={upd} />
-            <NumInput label={t('checkouts', lang)} field="checkouts" form={form} upd={upd} />
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
-            <NumInput label={t('twoBedCheckouts', lang)} field="twoBedCheckouts" form={form} upd={upd} />
-            <div>
-              <label className="label">{t('stayovers', lang)}</label>
-              <div className="input-mono" style={{
-                color: 'var(--text-muted)', display: 'flex', alignItems: 'center',
-                userSelect: 'none', cursor: 'default',
-              }}>
-                {form.stayovers}
-              </div>
-            </div>
-          </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
             <NumInput label={t('vipRooms', lang)}             field="vips"          form={form} upd={upd} />
             <NumInput label={t('earlyCheckinRequests', lang)} field="earlyCheckins" form={form} upd={upd} />

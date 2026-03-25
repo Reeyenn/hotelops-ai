@@ -4,6 +4,8 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useLang } from '@/contexts/LanguageContext';
 import { t } from '@/lib/translations';
+import { signInAnonymously } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import { registerForPushNotifications } from '@/lib/notifications';
 import { BedDouble, Bell, CheckCircle, AlertCircle, Globe } from 'lucide-react';
 
@@ -36,6 +38,14 @@ function HousekeeperInner() {
 
   useEffect(() => {
     if (!uid || !pid) { setStep('bad-link'); return; }
+
+    // Sign in anonymously so Firestore security rules allow room reads/updates.
+    // Housekeepers don't have Google accounts — anonymous auth gives them a
+    // real Firebase auth token without requiring any login UI.
+    signInAnonymously(auth).catch(() => {
+      // Non-fatal — staff-list API route uses firebase-admin (bypasses rules)
+      // and the [id] page will retry on its own useEffect.
+    });
 
     fetch(`/api/staff-list?uid=${uid}&pid=${pid}`)
       .then(r => r.json())

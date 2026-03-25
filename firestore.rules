@@ -2,19 +2,43 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ── Authenticated users: full access to their own data ──────────────────
+    // ── Owner: full access to their own data ────────────────────────────────
     // Covers all subcollections: properties, staff, rooms, dailyLogs, etc.
     match /users/{uid}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
 
-    // ── Housekeeper mobile page: public read + update on rooms ──────────────
+    // ── Housekeeper mobile page: authenticated read + restricted update ──────
     // Rooms live at: users/{uid}/properties/{pid}/rooms/{rid}
-    // The housekeeper page uses collectionGroup('rooms') with no auth token.
-    // Only read and update are allowed — public creation/deletion is blocked.
+    // The housekeeper page signs in with Firebase Anonymous Auth before
+    // reading or updating. This prevents public access while still allowing
+    // the QR-code-based mobile flow (no Google account required).
+    //
+    // READ: any authenticated session (anon or Google) can read rooms via
+    //   collectionGroup — they must know the housekeeperId to query usefully.
+    //
+    // UPDATE: authenticated sessions can only change operational status fields.
+    //   Core fields (number, type, date, propertyId, _caRoomType, etc.) are
+    //   immutable from the client — only the scraper (service account) may set them.
+    //
+    // CREATE / DELETE: blocked for all client sessions.
     match /{path=**}/rooms/{rid} {
-      allow read: if true;
-      allow update: if true;
+      allow read: if request.auth != null;
+
+      allow update: if request.auth != null
+        && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly([
+              'status',
+              'assignedTo',
+              'assignedName',
+              'startedAt',
+              'completedAt',
+              'inspectedBy',
+              'inspectedAt',
+              'issueNote',
+              'isDnd',
+              'priority'
+            ]);
     }
   }
 }
