@@ -8,12 +8,12 @@ import { t } from '@/lib/translations';
 import Link from 'next/link';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { subscribeToRooms, addRoom, updateRoom, deleteRoom, bulkAddRooms, getRoomsForDate, carryOverRooms } from '@/lib/firestore';
-import { autoAssignRooms } from '@/lib/calculations';
+import { autoAssignRooms, buildHousekeeperAssignments, getRoomMinutes, formatMinutes, type HousekeeperAssignment } from '@/lib/calculations';
 import { sendAssignmentNotifications, sendSmsNotifications } from '@/lib/notifications';
 import { todayStr, yesterdayStr } from '@/lib/utils';
-import type { Room, RoomStatus, RoomType, RoomPriority } from '@/types';
+import type { Room, RoomStatus, RoomType, RoomPriority, StaffMember } from '@/types';
 import { Modal } from '@/components/ui/Modal';
-import { BedDouble, Plus, Zap, CheckCircle, Clock, Trash2, Upload, ClipboardCheck, ShieldCheck, X, Users } from 'lucide-react';
+import { BedDouble, Plus, Zap, CheckCircle, Clock, Trash2, Upload, ClipboardCheck, ShieldCheck, X, Users, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface FloorRow {
@@ -55,8 +55,8 @@ const STATUS = {
 };
 
 export default function RoomsPage() {
-  const { user }                    = useAuth();
-  const { activePropertyId, staff } = useProperty();
+  const { user }                                   = useAuth();
+  const { activePropertyId, staff, activeProperty } = useProperty();
   const { lang }                    = useLang();
 
   const [rooms,         setRooms]         = useState<Room[]>([]);
@@ -73,6 +73,11 @@ export default function RoomsPage() {
   // Inspection modal state
   const [inspectingRoom,  setInspectingRoom]  = useState<Room | null>(null);
   const [inspectorName,   setInspectorName]   = useState('');
+
+  // Smart Assign modal state
+  const [showAssignModal,    setShowAssignModal]    = useState(false);
+  const [pendingAssignments, setPendingAssignments] = useState<Record<string, string>>({});
+  const [isPublishing,       setIsPublishing]       = useState(false);
 
   const [newRoom, setNewRoom] = useState({
     number:'', type:'checkout' as RoomType, priority:'standard' as RoomPriority,
@@ -136,6 +141,7 @@ export default function RoomsPage() {
     setShowBulkModal(false);
   };
 
+<<<<<<< HEAD
   const handleFloorAdd = async () => {
     if (!user || !activePropertyId) return;
     const roomsToAdd: Omit<Room, 'id'>[] = [];
@@ -159,42 +165,62 @@ export default function RoomsPage() {
   };
 
   const handleSmartAssign = async () => {
+=======
+  // Open Smart Assign modal — compute AI assignments and show preview
+  const handleSmartAssign = () => {
+>>>>>>> fb5b700 (feat: Smart Room Assignment — AI preview, manual tweaking, and publish flow)
     if (!user || !activePropertyId || rooms.length === 0 || staff.length === 0) return;
+    const assignable = rooms.filter(r => r.status !== 'clean' && r.status !== 'inspected');
+    if (assignable.length === 0) { showToast('All rooms are already clean or inspected!'); return; }
+    const scheduledStaff = staff.filter(s => s.scheduledToday);
+    if (scheduledStaff.length === 0) { showToast('No housekeepers are scheduled today.'); return; }
     const assignments = autoAssignRooms(
-      rooms.filter(r => r.status !== 'clean' && r.status !== 'inspected')
-           .map(r => ({ id:r.id, number:r.number, type:r.type, priority:r.priority })),
+      assignable.map(r => ({ id: r.id, number: r.number, type: r.type, priority: r.priority })),
       staff
     );
-    await Promise.all(Object.entries(assignments).map(([rid, staffId]) => {
-      const m = staff.find(s => s.id === staffId);
-      return updateRoom(user.uid, activePropertyId, rid, { assignedTo: staffId, assignedName: m?.name });
-    }));
+    setPendingAssignments(assignments);
+    setShowAssignModal(true);
+  };
 
-    const staffRooms: Record<string, string[]> = {};
-    Object.entries(assignments).forEach(([rid, staffId]) => {
-      const room = rooms.find(r => r.id === rid);
-      if (!room) return;
-      if (!staffRooms[staffId]) staffRooms[staffId] = [];
-      staffRooms[staffId].push(room.number);
-    });
+  // Publish: save to Firestore + send notifications
+  const handlePublishAssignments = async () => {
+    if (!user || !activePropertyId) return;
+    setIsPublishing(true);
+    try {
+      await Promise.all(Object.entries(pendingAssignments).map(([rid, staffId]) => {
+        const m = staff.find(s => s.id === staffId);
+        return updateRoom(user.uid, activePropertyId, rid, { assignedTo: staffId, assignedName: m?.name });
+      }));
 
-    const staffNames:  Record<string, string> = {};
-    const staffTokens: Record<string, string> = {};
-    const staffPhones: Record<string, string> = {};
-    staff.forEach(s => {
-      staffNames[s.id]  = s.name;
-      if (s.fcmToken) staffTokens[s.id] = s.fcmToken;
-      if (s.phone)    staffPhones[s.id] = s.phone;
-    });
+      const staffRooms: Record<string, string[]> = {};
+      Object.entries(pendingAssignments).forEach(([rid, staffId]) => {
+        const room = rooms.find(r => r.id === rid);
+        if (!room) return;
+        if (!staffRooms[staffId]) staffRooms[staffId] = [];
+        staffRooms[staffId].push(room.number);
+      });
 
-    sendAssignmentNotifications(staffRooms, staffNames, staffTokens).catch(console.error);
-    sendSmsNotifications(staffRooms, staffNames, staffPhones)
-      .then(({ sent, failed }) => console.log(`SMS notifications: ${sent} sent, ${failed} failed`))
-      .catch(console.error);
+      const staffNames:  Record<string, string> = {};
+      const staffTokens: Record<string, string> = {};
+      const staffPhones: Record<string, string> = {};
+      staff.forEach(s => {
+        staffNames[s.id]  = s.name;
+        if (s.fcmToken) staffTokens[s.id] = s.fcmToken;
+        if (s.phone)    staffPhones[s.id] = s.phone;
+      });
 
-    const count = Object.keys(assignments).length;
-    setToast(`Assignments sent! ${count} room${count !== 1 ? 's' : ''} assigned.`);
-    setTimeout(() => setToast(null), 3000);
+      sendAssignmentNotifications(staffRooms, staffNames, staffTokens).catch(console.error);
+      sendSmsNotifications(staffRooms, staffNames, staffPhones)
+        .then(({ sent, failed }) => console.log(`SMS: ${sent} sent, ${failed} failed`))
+        .catch(console.error);
+
+      const count = Object.keys(pendingAssignments).length;
+      setShowAssignModal(false);
+      setPendingAssignments({});
+      showToast(`Assignments published! ${count} room${count !== 1 ? 's' : ''} assigned.`);
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   const handleStatusChange = async (room: Room, newStatus: RoomStatus) => {
@@ -707,6 +733,23 @@ export default function RoomsPage() {
 
       </div>
 
+      {/* ── Smart Assign Modal ── */}
+      {showAssignModal && (
+        <SmartAssignModal
+          rooms={rooms.filter(r => r.status !== 'clean' && r.status !== 'inspected')}
+          staff={staff}
+          pendingAssignments={pendingAssignments}
+          startTime={activeProperty?.morningBriefingTime ?? '08:00'}
+          onClose={() => { setShowAssignModal(false); setPendingAssignments({}); }}
+          onReassign={(roomId, newStaffId) =>
+            setPendingAssignments(prev => ({ ...prev, [roomId]: newStaffId }))
+          }
+          onPublish={handlePublishAssignments}
+          isPublishing={isPublishing}
+          lang={lang}
+        />
+      )}
+
       {/* ── Toast ── */}
       {toast && (
         <div style={{
@@ -919,6 +962,299 @@ function RoomCard({
           </button>
         </div>
 
+      </div>
+    </div>
+  );
+}
+
+/* ── Smart Assign Modal ──────────────────────────────────────────────────── */
+
+const PRIORITY_LABELS: Record<string, string> = {
+  vip_checkout: '⭐ VIP Checkout',
+  early_checkout: '⚡ Early Checkout',
+  standard_checkout: 'Checkout',
+  vip_stayover: '⭐ VIP Stayover',
+  standard_stayover: 'Stayover',
+  early_stayover: 'Stayover',
+};
+
+function getPriorityLabel(type: string, priority: string) {
+  return PRIORITY_LABELS[`${priority}_${type}`] ?? type;
+}
+
+function getPriorityColor(type: string, priority: string): { bg: string; color: string; border: string } {
+  if (priority === 'vip')   return { bg: 'rgba(139,92,246,0.1)', color: '#8B5CF6', border: 'rgba(139,92,246,0.3)' };
+  if (priority === 'early') return { bg: 'rgba(251,191,36,0.1)', color: '#D97706', border: 'rgba(251,191,36,0.3)' };
+  if (type === 'checkout')  return { bg: 'rgba(239,68,68,0.08)', color: '#EF4444', border: 'rgba(239,68,68,0.25)' };
+  return { bg: 'rgba(99,102,241,0.08)', color: '#6366F1', border: 'rgba(99,102,241,0.25)' };
+}
+
+function SmartAssignModal({
+  rooms, staff, pendingAssignments, startTime,
+  onClose, onReassign, onPublish, isPublishing, lang,
+}: {
+  rooms: Room[];
+  staff: StaffMember[];
+  pendingAssignments: Record<string, string>;
+  startTime: string;
+  onClose: () => void;
+  onReassign: (roomId: string, newStaffId: string) => void;
+  onPublish: () => void;
+  isPublishing: boolean;
+  lang: 'en' | 'es';
+}) {
+  const scheduledStaff = staff.filter(s => s.scheduledToday);
+  const roomSlots = rooms.map(r => ({ id: r.id, number: r.number, type: r.type, priority: r.priority }));
+
+  const hkAssignments = buildHousekeeperAssignments(roomSlots, staff, pendingAssignments, startTime);
+
+  // Rooms not assigned to anyone (shouldn't happen but handle gracefully)
+  const unassignedRooms = rooms.filter(r => !pendingAssignments[r.id]);
+
+  const totalRooms = Object.keys(pendingAssignments).length;
+
+  return (
+    <div
+      style={{
+        position: 'fixed', inset: 0,
+        background: 'rgba(0,0,0,0.55)',
+        zIndex: 300,
+        display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+      }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div style={{
+        background: 'var(--bg)',
+        borderRadius: '20px 20px 0 0',
+        maxHeight: '92dvh',
+        display: 'flex', flexDirection: 'column',
+        boxShadow: '0 -4px 32px rgba(0,0,0,0.25)',
+      }}>
+
+        {/* Header */}
+        <div style={{
+          padding: '20px 20px 0',
+          borderBottom: '1px solid var(--border)',
+          paddingBottom: '16px',
+          flexShrink: 0,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                <Zap size={18} color="var(--amber)" />
+                <h2 style={{
+                  fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: '20px',
+                  color: 'var(--text-primary)', letterSpacing: '-0.02em',
+                }}>
+                  {lang === 'es' ? 'Asignaciones IA' : 'Smart Assignments'}
+                </h2>
+              </div>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>
+                {totalRooms} {lang === 'es' ? 'habitaciones' : 'rooms'} · {hkAssignments.length} {lang === 'es' ? 'mucamas' : 'housekeepers'} · {lang === 'es' ? 'Optimizado por IA' : 'AI-optimized'} · {lang === 'es' ? 'Ajusta si es necesario' : 'Adjust if needed'}
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              style={{
+                width: '36px', height: '36px', borderRadius: '9px', flexShrink: 0,
+                background: 'var(--bg-card)', border: '1px solid var(--border)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer',
+              }}
+            >
+              <X size={16} color="var(--text-secondary)" />
+            </button>
+          </div>
+        </div>
+
+        {/* Scrollable body */}
+        <div style={{ overflowY: 'auto', flex: 1, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+
+          {hkAssignments.map(hk => (
+            <HkCard
+              key={hk.staffId}
+              hk={hk}
+              allStaff={scheduledStaff}
+              onReassign={onReassign}
+              lang={lang}
+            />
+          ))}
+
+          {unassignedRooms.length > 0 && (
+            <div style={{
+              padding: '14px', borderRadius: 'var(--radius-md)',
+              background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)',
+            }}>
+              <p style={{ fontSize: '13px', fontWeight: 700, color: '#EF4444', marginBottom: '6px' }}>
+                ⚠ {unassignedRooms.length} {lang === 'es' ? 'habitaciones sin asignar' : 'rooms unassigned'} — {lang === 'es' ? 'asigna mucamas al turno de hoy' : 'schedule housekeepers for today'}
+              </p>
+              {unassignedRooms.map(r => (
+                <span key={r.id} style={{
+                  display: 'inline-block', margin: '2px 4px 2px 0',
+                  padding: '2px 8px', borderRadius: '6px',
+                  background: 'rgba(239,68,68,0.1)', color: '#EF4444',
+                  fontSize: '12px', fontWeight: 600,
+                }}>
+                  {r.number}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div style={{
+          padding: '14px 16px calc(env(safe-area-inset-bottom, 0px) + 14px)',
+          borderTop: '1px solid var(--border)',
+          display: 'flex', gap: '10px',
+          flexShrink: 0,
+          background: 'var(--bg)',
+        }}>
+          <button onClick={onClose} className="btn btn-secondary" style={{ flex: 1 }}>
+            {lang === 'es' ? 'Cancelar' : 'Cancel'}
+          </button>
+          <button
+            onClick={onPublish}
+            disabled={isPublishing || totalRooms === 0}
+            className="btn btn-primary"
+            style={{ flex: 2, gap: '6px', opacity: isPublishing ? 0.7 : 1 }}
+          >
+            {isPublishing ? (
+              lang === 'es' ? 'Publicando…' : 'Publishing…'
+            ) : (
+              <>
+                <Users size={15} />
+                {lang === 'es' ? `Publicar ${totalRooms} asignaciones` : `Publish ${totalRooms} Assignments`}
+                <ChevronRight size={14} />
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Housekeeper assignment card ─────────────────────────────────────────── */
+
+function HkCard({
+  hk, allStaff, onReassign, lang,
+}: {
+  hk: HousekeeperAssignment;
+  allStaff: StaffMember[];
+  onReassign: (roomId: string, newStaffId: string) => void;
+  lang: 'en' | 'es';
+}) {
+  const hoursAndMins = formatMinutes(hk.totalMinutes);
+
+  return (
+    <div style={{
+      background: 'var(--bg-card)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--radius-md)',
+      overflow: 'hidden',
+    }}>
+      {/* HK header */}
+      <div style={{
+        padding: '12px 14px',
+        borderBottom: '1px solid var(--border)',
+        background: 'rgba(255,255,255,0.03)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+            {/* Avatar */}
+            <div style={{
+              width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
+              background: 'var(--amber)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <span style={{ fontWeight: 700, fontSize: '14px', color: '#0A0A0A' }}>
+                {hk.name.charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <span style={{
+                  fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>
+                  {hk.name}
+                </span>
+                {hk.isSenior && (
+                  <span style={{
+                    fontSize: '10px', padding: '1px 6px', borderRadius: '4px',
+                    background: 'rgba(251,191,36,0.15)', color: '#D97706',
+                    fontWeight: 700, letterSpacing: '0.04em', flexShrink: 0,
+                  }}>
+                    ⭐ SR
+                  </span>
+                )}
+              </div>
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500, marginTop: '1px' }}>
+                {hk.rooms.length} {lang === 'es' ? 'habitaciones' : 'rooms'} · {hoursAndMins} · {lang === 'es' ? 'Listo a las' : 'Done by'} <strong style={{ color: 'var(--text-secondary)' }}>{hk.estimatedDoneBy}</strong>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Room rows */}
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {hk.rooms.map((room, idx) => {
+          const colors = getPriorityColor(room.type, room.priority);
+          const label  = getPriorityLabel(room.type, room.priority);
+          const mins   = getRoomMinutes(room);
+
+          return (
+            <div key={room.id} style={{
+              display: 'flex', alignItems: 'center', gap: '10px',
+              padding: '10px 14px',
+              borderBottom: idx < hk.rooms.length - 1 ? '1px solid var(--border)' : 'none',
+            }}>
+              {/* Room number */}
+              <span style={{
+                fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '16px',
+                color: 'var(--text-primary)', minWidth: '40px',
+              }}>
+                {room.number}
+              </span>
+
+              {/* Priority/type chip */}
+              <span style={{
+                fontSize: '10px', fontWeight: 700, padding: '2px 7px', borderRadius: '5px',
+                background: colors.bg, color: colors.color, border: `1px solid ${colors.border}`,
+                flexShrink: 0, letterSpacing: '0.03em',
+              }}>
+                {label}
+              </span>
+
+              {/* Minutes */}
+              <span style={{
+                fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600,
+                marginLeft: 'auto', flexShrink: 0,
+              }}>
+                {mins}m
+              </span>
+
+              {/* Reassign select */}
+              <select
+                value={hk.staffId}
+                onChange={e => onReassign(room.id, e.target.value)}
+                style={{
+                  fontSize: '11px', fontWeight: 600, padding: '4px 6px',
+                  border: '1px solid var(--border)', borderRadius: '6px',
+                  background: 'var(--bg)', color: 'var(--text-secondary)',
+                  cursor: 'pointer', flexShrink: 0, maxWidth: '100px',
+                }}
+              >
+                {allStaff.map(s => (
+                  <option key={s.id} value={s.id}>
+                    {s.name.split(' ')[0]}{s.isSenior ? ' ⭐' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

@@ -180,6 +180,17 @@ export function predictTodayFromHistory(
   };
 }
 
+// ─── Room time estimates ───────────────────────────────────────────────────
+
+const CHECKOUT_MINS = 30;
+const STAYOVER_MINS = 15;
+const VIP_BONUS_MINS = 10; // suites / VIP rooms take longer
+
+export function getRoomMinutes(room: { type: string; priority: string }): number {
+  const base = room.type === 'checkout' ? CHECKOUT_MINS : STAYOVER_MINS;
+  return base + (room.priority === 'vip' ? VIP_BONUS_MINS : 0);
+}
+
 // ─── Auto-assign rooms to staff ────────────────────────────────────────────
 
 export function autoAssignRooms(
@@ -196,14 +207,13 @@ export function autoAssignRooms(
 
   // Sort VIP rooms to senior staff
   const seniorStaff = available.filter(s => s.isSenior);
-  const regularStaff = available.filter(s => !s.isSenior);
 
   const sortedRooms = [...rooms].sort((a, b) => getRoomSortKey(a.type, a.priority) - getRoomSortKey(b.type, b.priority));
 
   for (const room of sortedRooms) {
     const floor = room.number.length >= 3 ? room.number[0] : '1';
     const isVIP = room.priority === 'vip';
-    const minutes = room.type === 'checkout' ? 30 : 20;
+    const minutes = getRoomMinutes(room);
 
     // Prefer same-floor assignment, then least-loaded staff
     const pool = isVIP && seniorStaff.length > 0 ? seniorStaff : available;
@@ -220,6 +230,49 @@ export function autoAssignRooms(
   }
 
   return assignments;
+}
+
+// ─── Build per-housekeeper assignment view ─────────────────────────────────
+
+export interface HousekeeperAssignment {
+  staffId: string;
+  name: string;
+  isSenior: boolean;
+  rooms: Array<{ id: string; number: string; type: string; priority: string }>;
+  totalMinutes: number;
+  estimatedDoneBy: string;
+}
+
+export function buildHousekeeperAssignments(
+  rooms: Array<{ id: string; number: string; type: string; priority: string }>,
+  staff: StaffMember[],
+  assignments: Record<string, string>, // roomId → staffId
+  startTime: string = '08:00',
+): HousekeeperAssignment[] {
+  const available = staff.filter(s => s.scheduledToday);
+  const [startHour, startMin] = startTime.split(':').map(Number);
+
+  const result: HousekeeperAssignment[] = [];
+
+  for (const s of available) {
+    const assignedRooms = rooms
+      .filter(r => assignments[r.id] === s.id)
+      .sort((a, b) => getRoomSortKey(a.type, a.priority) - getRoomSortKey(b.type, b.priority));
+
+    if (assignedRooms.length === 0) continue;
+
+    const totalMinutes = assignedRooms.reduce((sum, r) => sum + getRoomMinutes(r), 0);
+
+    const startDate = new Date();
+    startDate.setHours(startHour, startMin, 0, 0);
+    const doneDate = addMinutes(startDate, totalMinutes);
+    const estimatedDoneBy = format(doneDate, 'h:mm a');
+
+    result.push({ staffId: s.id, name: s.name, isSenior: s.isSenior, rooms: assignedRooms, totalMinutes, estimatedDoneBy });
+  }
+
+  // Sort by least loaded first so most-available HK is on top
+  return result.sort((a, b) => a.totalMinutes - b.totalMinutes);
 }
 
 // ─── Format helpers ────────────────────────────────────────────────────────
