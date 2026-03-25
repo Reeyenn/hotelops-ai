@@ -12,7 +12,11 @@ import { formatCurrency, todayStr } from '@/lib/utils';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import type { Room, DailyLog } from '@/types';
 import { format } from 'date-fns';
-import { BedDouble, Clock, DollarSign, TrendingUp, Sun, ChevronRight, ArrowRight, Bell, Users, Package, BookOpen, Monitor } from 'lucide-react';
+import {
+  BedDouble, Clock, DollarSign, TrendingUp, Sun, ChevronRight, ArrowRight,
+  Bell, Users, Package, BookOpen, Monitor, AlertTriangle, CheckCircle, Zap,
+  Sparkles,
+} from 'lucide-react';
 import Link from 'next/link';
 
 export default function DashboardPage() {
@@ -24,6 +28,11 @@ export default function DashboardPage() {
   const [rooms,      setRooms]      = useState<Room[]>([]);
   const [todayLog,   setTodayLog]   = useState<DailyLog | null>(null);
   const [recentLogs, setRecentLogs] = useState<DailyLog[]>([]);
+
+  // AI staffing — scheduled staff input
+  const [scheduledStaff,       setScheduledStaff]       = useState<number | null>(null);
+  const [editingScheduled,     setEditingScheduled]     = useState(false);
+  const [editingScheduledVal,  setEditingScheduledVal]  = useState(0);
 
   useEffect(() => {
     if (!authLoading && !propLoading && !user) router.replace('/signin');
@@ -47,12 +56,21 @@ export default function DashboardPage() {
     })();
   }, [user, activePropertyId]);
 
+  // Seed scheduled staff from todayLog.actualStaff on first load
+  useEffect(() => {
+    if (todayLog?.actualStaff && todayLog.actualStaff > 0 && scheduledStaff === null) {
+      setScheduledStaff(todayLog.actualStaff);
+    }
+  }, [todayLog, scheduledStaff]);
+
+  // ── Room stats ──────────────────────────────────────────────────────────────
   const clean      = rooms.filter(r => r.status === 'clean' || r.status === 'inspected').length;
   const inProgress = rooms.filter(r => r.status === 'in_progress').length;
   const dirty      = rooms.filter(r => r.status === 'dirty').length;
   const total      = rooms.length;
   const progress   = total > 0 ? Math.round((clean / total) * 100) : 0;
 
+  // ── Historical savings ──────────────────────────────────────────────────────
   const weekLogs   = recentLogs.slice(0, 7);
   const weekSaved  = weekLogs.reduce((s, l) => s + (l.laborSaved ?? 0), 0);
   const monthLogs  = recentLogs.slice(0, 30);
@@ -67,6 +85,53 @@ export default function DashboardPage() {
   const weekBudget = activeProperty?.weeklyBudget ?? 0;
   const budgetPct  = weekBudget > 0 ? Math.min((weekCost / weekBudget) * 100, 100) : 0;
 
+  // ── AI Staffing calculation ─────────────────────────────────────────────────
+  const checkoutCount  = rooms.filter(r => r.type === 'checkout').length;
+  const stayoverCount  = rooms.filter(r => r.type === 'stayover').length;
+  const hasRoomData    = checkoutCount + stayoverCount > 0;
+
+  const shiftMins  = activeProperty?.shiftMinutes  ?? 480;
+  const wageRate   = activeProperty?.hourlyWage    ?? 15;
+  const coMins     = activeProperty?.checkoutMinutes  ?? 30;
+  const soMins     = activeProperty?.stayoverMinutes  ?? 20;
+
+  // Total work minutes — prefer todayLog (includes laundry + public areas)
+  const totalWorkMins: number | null =
+    todayLog?.totalMinutes != null
+      ? todayLog.totalMinutes
+      : hasRoomData
+        ? checkoutCount * coMins + stayoverCount * soMins
+        : null;
+
+  // Recommended staff count
+  const aiRecommended: number | null =
+    todayLog?.recommendedStaff != null
+      ? todayLog.recommendedStaff
+      : totalWorkMins != null
+        ? Math.max(1, Math.ceil(totalWorkMins / shiftMins))
+        : null;
+
+  // Delta: positive = overstaffed, negative = understaffed
+  const staffDelta: number | null =
+    scheduledStaff != null && aiRecommended != null && scheduledStaff > 0
+      ? scheduledStaff - aiRecommended
+      : null;
+
+  const dollarDelta =
+    staffDelta != null ? Math.abs(staffDelta) * wageRate * (shiftMins / 60) : 0;
+
+  const isOverstaffed  = staffDelta != null && staffDelta > 0;
+  const isUnderstaffed = staffDelta != null && staffDelta < 0;
+  const isPerfect      = staffDelta === 0;
+
+  // Cost if using the recommended count (full shift)
+  const recommendedLaborCost =
+    aiRecommended != null ? aiRecommended * wageRate * (shiftMins / 60) : null;
+
+  // Room breakdown labels
+  const coLabel  = todayLog ? todayLog.checkouts  : checkoutCount;
+  const soLabel  = todayLog ? todayLog.stayovers  : stayoverCount;
+
   if (authLoading || propLoading) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
@@ -74,6 +139,9 @@ export default function DashboardPage() {
       </div>
     );
   }
+
+  // Border color for the AI card
+  const aiBorderColor = isOverstaffed ? 'var(--red)' : isUnderstaffed ? 'var(--yellow)' : isPerfect ? 'var(--green)' : 'var(--amber-border)';
 
   return (
     <AppLayout>
@@ -92,6 +160,296 @@ export default function DashboardPage() {
               <span style={{ color: 'var(--amber)', fontSize: '12px', fontWeight: 500 }}>
                 {activeProperty.name}
               </span>
+            )}
+          </div>
+        </div>
+
+        {/* ══════════════════════════════════════════════════════════════════════ */}
+        {/* ── AI STAFFING RECOMMENDATION  (core value prop) ── */}
+        {/* ══════════════════════════════════════════════════════════════════════ */}
+        <div className="animate-in stagger-1" style={{ marginBottom: '8px' }}>
+          <div style={{
+            background: 'var(--bg-card)',
+            border: `2px solid ${aiBorderColor}`,
+            borderRadius: 'var(--radius-lg)',
+            overflow: 'hidden',
+          }}>
+
+            {/* Card label row */}
+            <div style={{
+              padding: '10px 14px',
+              borderBottom: '1px solid var(--border)',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              background: 'rgba(212,144,64,0.06)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Sparkles size={13} color="var(--amber)" />
+                <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--amber)' }}>
+                  AI Staffing Recommendation
+                </span>
+              </div>
+              <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 500 }}>
+                {format(new Date(), 'MMM d')}
+              </span>
+            </div>
+
+            {/* ── Status banner (only when scheduled entered) ── */}
+            {staffDelta !== null && (
+              <div style={{
+                padding: '13px 14px',
+                background: isOverstaffed ? 'rgba(239,68,68,0.1)' : isUnderstaffed ? 'rgba(234,179,8,0.1)' : 'rgba(34,197,94,0.1)',
+                borderBottom: '1px solid var(--border)',
+              }}>
+                {isOverstaffed && (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '3px' }}>
+                      <AlertTriangle size={17} color="var(--red)" />
+                      <span style={{ fontWeight: 700, fontSize: '17px', color: 'var(--red)', lineHeight: 1.2 }}>
+                        Overstaffed by {staffDelta} {staffDelta === 1 ? 'person' : 'people'} today
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', paddingLeft: '24px' }}>
+                      <strong style={{ color: 'var(--red)', fontFamily: 'var(--font-mono)' }}>{formatCurrency(dollarDelta)}</strong> in avoidable labor costs
+                    </p>
+                  </>
+                )}
+                {isUnderstaffed && (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '3px' }}>
+                      <Zap size={17} color="var(--yellow)" />
+                      <span style={{ fontWeight: 700, fontSize: '17px', color: 'var(--yellow)', lineHeight: 1.2 }}>
+                        Understaffed by {Math.abs(staffDelta!)} {Math.abs(staffDelta!) === 1 ? 'person' : 'people'}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', paddingLeft: '24px' }}>
+                      Rooms may not finish on time — consider adding staff
+                    </p>
+                  </>
+                )}
+                {isPerfect && (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '3px' }}>
+                      <CheckCircle size={17} color="var(--green)" />
+                      <span style={{ fontWeight: 700, fontSize: '17px', color: 'var(--green)', lineHeight: 1.2 }}>
+                        Perfectly staffed today
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', paddingLeft: '24px' }}>
+                      Scheduled staff matches the AI recommendation
+                    </p>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* ── Recommended vs Scheduled comparison ── */}
+            <div style={{
+              padding: '18px 14px',
+              display: 'grid',
+              gridTemplateColumns: '1fr 28px 1fr',
+              gap: '8px',
+              alignItems: 'center',
+            }}>
+
+              {/* Recommended */}
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '6px' }}>
+                  Recommended
+                </p>
+                <div style={{
+                  fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '56px', lineHeight: 1,
+                  letterSpacing: '-0.04em',
+                  color: aiRecommended != null ? 'var(--amber)' : 'var(--text-muted)',
+                }}>
+                  {aiRecommended ?? '—'}
+                </div>
+                <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '5px' }}>housekeepers</p>
+              </div>
+
+              {/* VS divider */}
+              <div style={{ textAlign: 'center', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.05em' }}>
+                vs
+              </div>
+
+              {/* Scheduled — tap to edit */}
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '6px' }}>
+                  Scheduled
+                </p>
+
+                {editingScheduled ? (
+                  <input
+                    type="number"
+                    min={0}
+                    max={99}
+                    value={editingScheduledVal}
+                    onChange={e => setEditingScheduledVal(Math.max(0, parseInt(e.target.value) || 0))}
+                    onBlur={() => {
+                      if (editingScheduledVal > 0) setScheduledStaff(editingScheduledVal);
+                      setEditingScheduled(false);
+                    }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        if (editingScheduledVal > 0) setScheduledStaff(editingScheduledVal);
+                        setEditingScheduled(false);
+                      }
+                      if (e.key === 'Escape') setEditingScheduled(false);
+                    }}
+                    autoFocus
+                    style={{
+                      fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '56px', lineHeight: 1,
+                      letterSpacing: '-0.04em',
+                      color: 'var(--text-primary)',
+                      background: 'transparent', border: 'none',
+                      borderBottom: '2px solid var(--amber)',
+                      width: '80px', textAlign: 'center', outline: 'none',
+                    }}
+                  />
+                ) : (
+                  <button
+                    onClick={() => { setEditingScheduledVal(scheduledStaff ?? 0); setEditingScheduled(true); }}
+                    style={{
+                      fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '56px', lineHeight: 1,
+                      letterSpacing: '-0.04em',
+                      color: scheduledStaff != null
+                        ? (isOverstaffed ? 'var(--red)' : isUnderstaffed ? 'var(--yellow)' : 'var(--green)')
+                        : 'var(--text-muted)',
+                      background: 'transparent', border: 'none', cursor: 'pointer',
+                      display: 'block', width: '100%',
+                    }}
+                  >
+                    {scheduledStaff ?? '—'}
+                  </button>
+                )}
+
+                <button
+                  onClick={() => { setEditingScheduledVal(scheduledStaff ?? 0); setEditingScheduled(true); }}
+                  style={{
+                    fontSize: '11px', color: 'var(--amber)', marginTop: '5px',
+                    background: 'transparent', border: 'none', cursor: 'pointer',
+                    fontWeight: 500,
+                  }}
+                >
+                  tap to {scheduledStaff ? 'edit' : 'enter'}
+                </button>
+              </div>
+            </div>
+
+            {/* ── Detail stats row ── */}
+            {aiRecommended !== null && (
+              <div style={{
+                padding: '12px 14px',
+                borderTop: '1px solid var(--border)',
+                display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px',
+              }}>
+                {[
+                  {
+                    icon: BedDouble,
+                    label: 'Rooms',
+                    value: (coLabel + soLabel) > 0
+                      ? `${coLabel}co + ${soLabel}so`
+                      : `${aiRecommended} staff`,
+                  },
+                  {
+                    icon: Clock,
+                    label: 'Total work',
+                    value: totalWorkMins ? `${(totalWorkMins / 60).toFixed(1)}h` : '—',
+                  },
+                  {
+                    icon: DollarSign,
+                    label: 'Labor cost',
+                    value: recommendedLaborCost != null ? formatCurrency(recommendedLaborCost) : '—',
+                  },
+                ].map(({ icon: Icon, label, value }) => (
+                  <div key={label} style={{ textAlign: 'center' }}>
+                    <Icon size={13} color="var(--text-muted)" />
+                    <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '3px', marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</p>
+                    <p style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{value}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Finish time (from todayLog) */}
+            {todayLog?.completionTime && (
+              <div style={{
+                padding: '9px 14px',
+                borderTop: '1px solid var(--border)',
+                display: 'flex', alignItems: 'center', gap: '7px',
+                background: 'rgba(212,144,64,0.04)',
+              }}>
+                <Clock size={13} color="var(--amber)" />
+                <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                  Estimated finish: <strong style={{ color: 'var(--text-primary)' }}>{todayLog.completionTime}</strong>
+                </span>
+              </div>
+            )}
+
+            {/* ── Cumulative savings footer ── */}
+            {monthSaved > 0 && (
+              <div style={{
+                padding: '10px 14px',
+                borderTop: '1px solid var(--border)',
+                background: 'rgba(34,197,94,0.06)',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <TrendingUp size={13} color="var(--green)" />
+                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Saved in past 30 days</span>
+                </div>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '15px', fontWeight: 700, color: 'var(--green)' }}>
+                  {formatCurrency(monthSaved)}
+                </span>
+              </div>
+            )}
+
+            {/* ── No data state ── */}
+            {aiRecommended === null && (
+              <div style={{ padding: '20px 14px', textAlign: 'center' }}>
+                <Sun size={24} color="var(--amber)" style={{ marginBottom: '10px' }} />
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '14px', lineHeight: 1.6 }}>
+                  Add today&apos;s rooms or complete morning setup<br />to see your AI staffing recommendation
+                </p>
+                <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <Link href="/rooms" style={{ textDecoration: 'none' }}>
+                    <span style={{
+                      display: 'inline-block', padding: '8px 16px',
+                      background: 'rgba(212,144,64,0.12)', border: '1px solid var(--amber-border)',
+                      color: 'var(--amber)', borderRadius: 'var(--radius-md)',
+                      fontSize: '12px', fontWeight: 600,
+                    }}>
+                      Add Rooms
+                    </span>
+                  </Link>
+                  <Link href="/morning-setup" style={{ textDecoration: 'none' }}>
+                    <span style={{
+                      display: 'inline-block', padding: '8px 16px',
+                      background: 'var(--amber)', color: '#0A0A0A',
+                      borderRadius: 'var(--radius-md)',
+                      fontSize: '12px', fontWeight: 600,
+                    }}>
+                      Morning Setup →
+                    </span>
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* Morning setup nudge when we have rooms but no todayLog */}
+            {aiRecommended !== null && !todayLog && (
+              <Link href="/morning-setup" style={{ textDecoration: 'none', display: 'block' }}>
+                <div style={{
+                  padding: '9px 14px',
+                  borderTop: '1px solid var(--border)',
+                  display: 'flex', alignItems: 'center', gap: '7px',
+                  cursor: 'pointer',
+                }}>
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)', flex: 1 }}>
+                    Run morning setup for a more accurate estimate
+                  </span>
+                  <ArrowRight size={13} color="var(--amber)" />
+                </div>
+              </Link>
             )}
           </div>
         </div>
@@ -130,59 +488,6 @@ export default function DashboardPage() {
               <div className="progress-fill" style={{ width: `${progress}%`, background: progress === 100 ? 'var(--green)' : 'var(--amber)' }} />
             </div>
           </div>
-        )}
-
-        {/* ── Morning setup CTA or today log ── */}
-        {todayLog ? (
-          <div className="card-amber animate-in stagger-2" style={{ marginBottom: '8px' }}>
-            <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--amber)', marginBottom: '12px' }}>
-              Today&apos;s Schedule
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              {[
-                { icon: BedDouble,  label: t('housekeepers', lang),    value: String(todayLog.recommendedStaff),        color: 'var(--amber)' },
-                { icon: Clock,      label: t('estimatedFinish', lang),  value: todayLog.completionTime || '—',            color: 'var(--text-primary)' },
-                { icon: DollarSign, label: t('laborCost', lang),        value: formatCurrency(todayLog.laborCost ?? 0),  color: 'var(--text-primary)' },
-                { icon: TrendingUp, label: t('laborSaved', lang),       value: formatCurrency(todayLog.laborSaved ?? 0), color: 'var(--green)' },
-              ].map(({ icon: Icon, label, value, color }) => (
-                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <Icon size={14} color="var(--text-muted)" />
-                  <div>
-                    <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: '2px' }}>{label}</div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, fontSize: '16px', color, letterSpacing: '-0.01em' }}>{value}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <Link href="/morning-setup" style={{ textDecoration: 'none', display: 'block', marginBottom: '8px' }} className="animate-in stagger-2">
-            <div style={{
-              background: 'var(--amber-dim)',
-              border: '1px solid var(--amber-border)',
-              borderRadius: 'var(--radius-lg)',
-              padding: '16px',
-              display: 'flex', alignItems: 'center', gap: '14px',
-              cursor: 'pointer',
-            }}>
-              <div style={{
-                width: '40px', height: '40px', borderRadius: 'var(--radius-md)', flexShrink: 0,
-                background: 'var(--amber)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Sun size={20} color="#0A0A0A" strokeWidth={2} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <p style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)', marginBottom: '2px' }}>
-                  Start morning setup
-                </p>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                  Calculate today&apos;s schedule
-                </p>
-              </div>
-              <ArrowRight size={16} color="var(--amber)" />
-            </div>
-          </Link>
         )}
 
         {/* ── Savings row ── */}
