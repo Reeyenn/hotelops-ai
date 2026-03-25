@@ -1,0 +1,186 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useProperty } from '@/contexts/PropertyContext';
+import { useLang } from '@/contexts/LanguageContext';
+import { AppLayout } from '@/components/layout/AppLayout';
+import { updateProperty, createProperty } from '@/lib/firestore';
+import { Building2, Plus, Check } from 'lucide-react';
+import Link from 'next/link';
+
+export default function PropertySettingsPage() {
+  const { user } = useAuth();
+  const { activeProperty, activePropertyId, properties, setActivePropertyId, refreshProperty } = useProperty();
+  const { lang } = useLang();
+
+  const [form, setForm] = useState({
+    name: '',
+    totalRooms: 74,
+    avgOccupancy: 65,
+    totalStaffOnRoster: 8,
+    hourlyWage: 12,
+    checkoutMinutes: 30,
+    stayoverMinutes: 20,
+    shiftMinutes: 480,
+    weeklyBudget: 2500,
+  });
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [showAddProperty, setShowAddProperty] = useState(false);
+  const [newPropertyName, setNewPropertyName] = useState('');
+
+  useEffect(() => {
+    if (activeProperty) {
+      setForm({
+        name: activeProperty.name ?? '',
+        totalRooms: activeProperty.totalRooms ?? 74,
+        avgOccupancy: activeProperty.avgOccupancy ?? 65,
+        totalStaffOnRoster: activeProperty.totalStaffOnRoster ?? 8,
+        hourlyWage: activeProperty.hourlyWage ?? 12,
+        checkoutMinutes: activeProperty.checkoutMinutes ?? 30,
+        stayoverMinutes: activeProperty.stayoverMinutes ?? 20,
+        shiftMinutes: activeProperty.shiftMinutes ?? 480,
+        weeklyBudget: activeProperty.weeklyBudget ?? 2500,
+      });
+    }
+  }, [activeProperty]);
+
+  const handleSave = async () => {
+    if (!user || !activePropertyId) return;
+    setSaving(true);
+    try {
+      await updateProperty(user.uid, activePropertyId, form);
+      await refreshProperty();
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAddProperty = async () => {
+    if (!user || !newPropertyName.trim()) return;
+    const pid = await createProperty(user.uid, {
+      name: newPropertyName.trim(),
+      totalRooms: 74,
+      avgOccupancy: 65,
+      hourlyWage: 12,
+      checkoutMinutes: 30,
+      stayoverMinutes: 20,
+      shiftMinutes: 480,
+      totalStaffOnRoster: 8,
+      weeklyBudget: 2500,
+      pmsConnected: false,
+      lastSyncedAt: null,
+      createdAt: new Date(),
+    } as any);
+    setActivePropertyId(pid);
+    setShowAddProperty(false);
+    setNewPropertyName('');
+  };
+
+  const Field = ({ label, field, type = 'text', suffix = '' }: { label: string; field: keyof typeof form; type?: string; suffix?: string }) => (
+    <div style={{ marginBottom: '16px' }}>
+      <label className="label">{label}</label>
+      <div style={{ position: 'relative' }}>
+        <input
+          type={type}
+          value={form[field]}
+          onChange={e => setForm(f => ({ ...f, [field]: type === 'number' ? Number(e.target.value) : e.target.value }))}
+          className="input"
+          style={suffix ? { paddingRight: '48px' } : {}}
+        />
+        {suffix && <span style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: '13px' }}>{suffix}</span>}
+      </div>
+    </div>
+  );
+
+  return (
+    <AppLayout>
+      <div style={{ padding: '16px', maxWidth: '600px', margin: '0 auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+          <Link href="/settings" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '14px' }}>← Settings</Link>
+          <span style={{ color: 'var(--text-muted)' }}>/</span>
+          <h1 style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: '20px', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Building2 size={18} color="var(--amber)" /> Property
+          </h1>
+        </div>
+
+        {/* Property switcher */}
+        {properties.length > 1 && (
+          <div className="card" style={{ padding: '16px', marginBottom: '20px' }}>
+            <p className="label" style={{ marginBottom: '10px' }}>Switch Property</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {properties.map(p => (
+                <button
+                  key={p.id}
+                  onClick={() => setActivePropertyId(p.id)}
+                  style={{
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    border: `1px solid ${p.id === activePropertyId ? 'rgba(212,144,64,0.4)' : 'var(--border)'}`,
+                    background: p.id === activePropertyId ? 'rgba(212,144,64,0.08)' : 'transparent',
+                    color: p.id === activePropertyId ? 'var(--amber)' : 'var(--text-primary)',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    fontWeight: 500,
+                    fontSize: '14px',
+                  }}
+                >
+                  {p.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Add property */}
+        {showAddProperty ? (
+          <div className="card" style={{ padding: '16px', marginBottom: '20px' }}>
+            <label className="label">New Property Name</label>
+            <input type="text" value={newPropertyName} onChange={e => setNewPropertyName(e.target.value)} className="input" placeholder="e.g. Hampton Inn Austin" style={{ marginBottom: '12px' }} />
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button onClick={() => setShowAddProperty(false)} className="btn btn-secondary" style={{ flex: 1, justifyContent: 'center' }}>Cancel</button>
+              <button onClick={handleAddProperty} disabled={!newPropertyName.trim()} className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}>Add Property</button>
+            </div>
+          </div>
+        ) : (
+          <button onClick={() => setShowAddProperty(true)} className="btn btn-secondary" style={{ width: '100%', justifyContent: 'center', marginBottom: '20px' }}>
+            <Plus size={16} /> Add Another Property
+          </button>
+        )}
+
+        {/* Property form */}
+        <div className="card" style={{ padding: '20px' }}>
+          <Field label="Property Name" field="name" />
+          <Field label="Total Rooms" field="totalRooms" type="number" />
+          <Field label="Average Occupied Per Night" field="avgOccupancy" type="number" suffix="rooms" />
+          <Field label="Housekeeping Staff on Roster" field="totalStaffOnRoster" type="number" suffix="people" />
+
+          <div className="divider" style={{ margin: '20px 0' }} />
+          <p className="label" style={{ marginBottom: '14px' }}>Labor Settings</p>
+
+          <Field label="Housekeeper Hourly Wage" field="hourlyWage" type="number" suffix="$/hr" />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <Field label="Checkout Minutes" field="checkoutMinutes" type="number" suffix="min" />
+            <Field label="Stayover Minutes" field="stayoverMinutes" type="number" suffix="min" />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <Field label="Shift Length" field="shiftMinutes" type="number" suffix="min" />
+            <Field label="Weekly Budget" field="weeklyBudget" type="number" suffix="$" />
+          </div>
+        </div>
+
+        <button
+          onClick={handleSave}
+          disabled={saving || saved}
+          className={`btn btn-xl ${saved ? 'btn-green' : 'btn-primary'}`}
+          style={{ width: '100%', justifyContent: 'center', marginTop: '20px' }}
+        >
+          {saved ? <><Check size={20} /> Saved!</> : saving ? 'Saving...' : 'Save Changes'}
+        </button>
+      </div>
+    </AppLayout>
+  );
+}

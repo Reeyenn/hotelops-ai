@@ -1,0 +1,176 @@
+'use client';
+
+import React from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useProperty } from '@/contexts/PropertyContext';
+import { useLang } from '@/contexts/LanguageContext';
+import { t } from '@/lib/translations';
+import { ChevronDown, LogOut } from 'lucide-react';
+
+export function Header() {
+  const { user, signOut } = useAuth();
+  const { properties, activeProperty, setActivePropertyId } = useProperty();
+  const { lang, setLang } = useLang();
+  const [showPropMenu, setShowPropMenu] = React.useState(false);
+  const [showUserMenu, setShowUserMenu] = React.useState(false);
+
+  return (
+    <header style={{
+      position: 'sticky', top: 0, zIndex: 40,
+      background: 'rgba(10, 10, 10, 0.92)',
+      backdropFilter: 'blur(16px) saturate(180%)',
+      WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+      borderBottom: '1px solid var(--border)',
+    }}>
+      <div style={{
+        maxWidth: '800px', margin: '0 auto',
+        padding: '0 16px', height: '52px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
+      }}>
+
+        {/* Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+          <div style={{
+            width: '28px', height: '28px', borderRadius: '7px',
+            background: 'var(--amber)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <span style={{ fontSize: '14px', fontWeight: 700, color: '#0A0A0A', fontFamily: 'var(--font-mono)' }}>H</span>
+          </div>
+          <span style={{
+            fontFamily: 'var(--font-sans)', fontWeight: 600,
+            fontSize: '15px', color: 'var(--text-primary)', letterSpacing: '-0.01em',
+          }}>
+            HotelOps <span style={{ color: 'var(--amber)' }}>AI</span>
+          </span>
+        </div>
+
+        {/* Right controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+
+          {/* Language toggle */}
+          <button
+            onClick={() => setLang(lang === 'en' ? 'es' : 'en')}
+            style={{
+              background: 'transparent', border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-sm)', padding: '4px 9px',
+              color: 'var(--text-muted)', fontSize: '11px', fontWeight: 600,
+              letterSpacing: '0.06em', cursor: 'pointer', fontFamily: 'var(--font-sans)',
+            }}
+          >
+            {lang === 'en' ? 'ES' : 'EN'}
+          </button>
+
+          {/* Property selector */}
+          {properties.length > 0 && (
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setShowPropMenu(v => !v)}
+                style={{
+                  background: 'var(--bg-card)', border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-md)', padding: '5px 10px',
+                  color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 500,
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
+                  maxWidth: '140px', fontFamily: 'var(--font-sans)',
+                }}
+              >
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {activeProperty?.name ?? 'Property'}
+                </span>
+                <ChevronDown size={11} color="var(--text-muted)" />
+              </button>
+
+              {showPropMenu && (
+                <>
+                  <div style={{ position: 'fixed', inset: 0, zIndex: 48 }} onClick={() => setShowPropMenu(false)} />
+                  <div style={{
+                    position: 'absolute', right: 0, top: 'calc(100% + 4px)',
+                    background: 'var(--bg-elevated)', border: '1px solid var(--border-bright)',
+                    borderRadius: 'var(--radius-lg)', minWidth: '180px',
+                    overflow: 'hidden', zIndex: 50,
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                  }}>
+                    {properties.map(p => (
+                      <button key={p.id}
+                        onClick={() => { setActivePropertyId(p.id); setShowPropMenu(false); }}
+                        style={{
+                          width: '100%', padding: '10px 14px', textAlign: 'left',
+                          background: p.id === activeProperty?.id ? 'var(--amber-dim)' : 'transparent',
+                          color: p.id === activeProperty?.id ? 'var(--amber)' : 'var(--text-primary)',
+                          fontSize: '13px', fontWeight: p.id === activeProperty?.id ? 600 : 400,
+                          cursor: 'pointer', border: 'none',
+                          borderBottom: '1px solid var(--border)',
+                          fontFamily: 'var(--font-sans)',
+                        }}
+                      >
+                        {p.name}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* User avatar */}
+          {user && (
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setShowUserMenu(v => !v)}
+                style={{
+                  width: '30px', height: '30px', borderRadius: '50%',
+                  border: '1px solid var(--border)',
+                  overflow: 'hidden', cursor: 'pointer',
+                  background: 'var(--bg-elevated)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: 'var(--text-secondary)', fontWeight: 600, fontSize: '12px', flexShrink: 0,
+                  fontFamily: 'var(--font-sans)',
+                }}
+              >
+                {user.photoURL
+                  ? <img src={user.photoURL} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : (user.displayName?.[0] ?? user.email?.[0] ?? 'U').toUpperCase()
+                }
+              </button>
+
+              {showUserMenu && (
+                <>
+                  <div style={{ position: 'fixed', inset: 0, zIndex: 48 }} onClick={() => setShowUserMenu(false)} />
+                  <div style={{
+                    position: 'absolute', right: 0, top: 'calc(100% + 4px)',
+                    background: 'var(--bg-elevated)', border: '1px solid var(--border-bright)',
+                    borderRadius: 'var(--radius-lg)', minWidth: '180px',
+                    overflow: 'hidden', zIndex: 50,
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                  }}>
+                    <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                        {user.displayName ?? 'User'}
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                        {user.email}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => { signOut(); setShowUserMenu(false); }}
+                      style={{
+                        width: '100%', padding: '10px 14px',
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        background: 'transparent', border: 'none',
+                        color: 'var(--red)', fontSize: '13px',
+                        cursor: 'pointer', fontFamily: 'var(--font-sans)',
+                      }}
+                    >
+                      <LogOut size={13} />
+                      {t('signOut', lang)}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+}
