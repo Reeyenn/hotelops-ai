@@ -3,6 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProperty } from '@/contexts/PropertyContext';
+import { useLang } from '@/contexts/LanguageContext';
+import { t } from '@/lib/translations';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { subscribeToRooms, updateRoom } from '@/lib/firestore';
 import { todayStr } from '@/lib/utils';
@@ -17,20 +19,6 @@ function getFloor(roomNumber: string): string {
   return String(Math.floor(num / 100));
 }
 
-const STATUS_INFO: Record<RoomStatus, { label: string; color: string; bgColor: string; borderColor: string }> = {
-  dirty:       { label: 'Dirty',     color: '#EF4444', bgColor: 'rgba(239,68,68,0.08)',   borderColor: 'rgba(239,68,68,0.25)'   },
-  in_progress: { label: 'Cleaning',  color: '#FBBF24', bgColor: 'rgba(251,191,36,0.08)',  borderColor: 'rgba(251,191,36,0.25)'  },
-  clean:       { label: 'Clean ✓',   color: '#22C55E', bgColor: 'rgba(34,197,94,0.08)',   borderColor: 'rgba(34,197,94,0.25)'   },
-  inspected:   { label: 'Approved',  color: '#8B5CF6', bgColor: 'rgba(139,92,246,0.08)',  borderColor: 'rgba(139,92,246,0.25)'  },
-};
-
-const ACTION_LABEL: Record<RoomStatus, string> = {
-  dirty:       'Start',
-  in_progress: 'Done ✓',
-  clean:       'Reset',
-  inspected:   'Locked',
-};
-
 const ACTION_COLOR: Record<RoomStatus, { bg: string; border: string; color: string }> = {
   dirty:       { bg: 'rgba(251,191,36,0.15)',  border: 'rgba(251,191,36,0.5)',  color: '#D97706' },
   in_progress: { bg: 'rgba(34,197,94,0.15)',   border: 'rgba(34,197,94,0.5)',   color: '#16A34A' },
@@ -41,6 +29,7 @@ const ACTION_COLOR: Record<RoomStatus, { bg: string; border: string; color: stri
 export default function HousekeepingPage() {
   const { user }                               = useAuth();
   const { activePropertyId, activeProperty }   = useProperty();
+  const { lang }                               = useLang();
 
   const [rooms,         setRooms]         = useState<Room[]>([]);
   const [loading,       setLoading]       = useState(true);
@@ -76,13 +65,28 @@ export default function HousekeepingPage() {
   const totalCount = rooms.length;
   const pct        = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
 
+  /* ── Status info (translated) ── */
+  const STATUS_INFO: Record<RoomStatus, { label: string; color: string; bgColor: string; borderColor: string }> = {
+    dirty:       { label: t('dirty', lang),            color: '#EF4444', bgColor: 'rgba(239,68,68,0.08)',   borderColor: 'rgba(239,68,68,0.25)'   },
+    in_progress: { label: t('cleaning', lang),         color: '#FBBF24', bgColor: 'rgba(251,191,36,0.08)',  borderColor: 'rgba(251,191,36,0.25)'  },
+    clean:       { label: t('clean', lang) + ' ✓',    color: '#22C55E', bgColor: 'rgba(34,197,94,0.08)',   borderColor: 'rgba(34,197,94,0.25)'   },
+    inspected:   { label: t('approved', lang),         color: '#8B5CF6', bgColor: 'rgba(139,92,246,0.08)',  borderColor: 'rgba(139,92,246,0.25)'  },
+  };
+
+  const ACTION_LABEL: Record<RoomStatus, string> = {
+    dirty:       t('start', lang),
+    in_progress: t('done', lang) + ' ✓',
+    clean:       t('reset', lang),
+    inspected:   t('locked', lang),
+  };
+
   /* ── Status cycling ── */
   const handleToggle = async (room: Room) => {
     if (!user || !activePropertyId || room.status === 'inspected') return;
     let newStatus: RoomStatus;
-    if (room.status === 'dirty')       newStatus = 'in_progress';
+    if (room.status === 'dirty')            newStatus = 'in_progress';
     else if (room.status === 'in_progress') newStatus = 'clean';
-    else                               newStatus = 'dirty'; // reset clean → dirty
+    else                                    newStatus = 'dirty'; // reset clean → dirty
 
     const updates: Partial<Room> = { status: newStatus };
     if (newStatus === 'in_progress') updates.startedAt  = new Date();
@@ -103,7 +107,7 @@ export default function HousekeepingPage() {
           )}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <h1 style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: '26px', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-              Housekeeping
+              {t('housekeeping', lang)}
             </h1>
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>
               {format(new Date(), 'EEE, MMM d')}
@@ -118,7 +122,7 @@ export default function HousekeepingPage() {
             borderRadius: 'var(--radius-md)', padding: '14px 16px',
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-              <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>Today&apos;s Progress</span>
+              <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{t('todaysProgress', lang)}</span>
               <span style={{ fontSize: '14px', fontWeight: 800, color: '#22C55E', fontFamily: 'var(--font-mono)' }}>
                 {pct}% &nbsp;<span style={{ fontWeight: 500, color: 'var(--text-muted)', fontSize: '12px' }}>({doneCount}/{totalCount})</span>
               </span>
@@ -170,7 +174,7 @@ export default function HousekeepingPage() {
                     fontFamily: 'var(--font-sans)', transition: 'all 120ms',
                   }}
                 >
-                  {floor === 'all' ? 'All' : `Floor ${floor}`}
+                  {floor === 'all' ? t('all', lang) : `${t('floor', lang)} ${floor}`}
                   {' '}
                   <span style={{ fontSize: '11px', opacity: 0.7 }}>
                     {floorDone}/{floorRooms.length}
@@ -184,7 +188,7 @@ export default function HousekeepingPage() {
         {/* ── Room list ── */}
         {loading ? (
           <p style={{ color: 'var(--text-muted)', fontSize: '14px', textAlign: 'center', padding: '48px 0' }}>
-            Loading rooms…
+            {t('loading', lang)}
           </p>
         ) : sorted.length === 0 ? (
           <div style={{
@@ -241,14 +245,14 @@ export default function HousekeepingPage() {
                       {info.label}
                     </div>
                     <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>
-                      {room.type === 'checkout' ? 'Checkout' : room.type === 'stayover' ? 'Stayover' : 'Vacant'}
+                      {room.type === 'checkout' ? t('checkout', lang) : room.type === 'stayover' ? t('stayover', lang) : t('vacant', lang)}
                       {room.assignedName ? ` · ${room.assignedName}` : ''}
                       {room.priority === 'vip' ? ' · ⭐ VIP' : ''}
-                      {room.isDnd ? ' · 🚫 DND' : ''}
+                      {room.isDnd ? ` · 🚫 ${t('dnd', lang)}` : ''}
                     </div>
                     {isDone && room.completedAt && (
                       <div style={{ fontSize: '11px', color: '#22C55E', fontWeight: 600, marginTop: '2px' }}>
-                        Done {format(
+                        {t('done', lang)} {format(
                           typeof (room.completedAt as unknown as { toDate?: () => Date })?.toDate === 'function'
                             ? (room.completedAt as unknown as { toDate: () => Date }).toDate()
                             : new Date(room.completedAt as unknown as string | number),

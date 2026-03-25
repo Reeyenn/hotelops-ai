@@ -105,7 +105,9 @@ type TranslationKey =
   // Ops-wall
   | 'liveOpsWall' | 'requests' | 'activeRequests' | 'active' | 'requestsCompleted' | 'noRoomsForToday'
   // Requests page
-  | 'new' | 'all' | 'newGuestRequest' | 'requestType' | 'notesOptional' | 'selectStaff' | 'create' | 'noStaff';
+  | 'new' | 'all' | 'newGuestRequest' | 'requestType' | 'notesOptional' | 'selectStaff' | 'create' | 'noStaff'
+  // Housekeeping page
+  | 'housekeeping' | 'todaysProgress' | 'approved' | 'locked' | 'cleaning' | 'reset' | 'vacant';
 
 const translations: Record<Language, Record<TranslationKey, string>> = {
   en: {
@@ -386,6 +388,14 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     selectStaff: '-- Select staff --',
     create: 'Create',
     noStaff: 'No staff',
+    // Housekeeping page
+    housekeeping: 'Housekeeping',
+    todaysProgress: "Today's Progress",
+    approved: 'Approved',
+    locked: 'Locked',
+    cleaning: 'Cleaning',
+    reset: 'Reset',
+    vacant: 'Vacant',
   },
 
   es: {
@@ -666,6 +676,14 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     selectStaff: '-- Seleccionar personal --',
     create: 'Crear',
     noStaff: 'Sin personal',
+    // Housekeeping page
+    housekeeping: 'Limpieza',
+    todaysProgress: 'Progreso de Hoy',
+    approved: 'Aprobada',
+    locked: 'Bloqueada',
+    cleaning: 'Limpiando',
+    reset: 'Reiniciar',
+    vacant: 'Vacía',
   },
 };
 
