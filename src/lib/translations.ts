@@ -107,7 +107,8 @@ type TranslationKey =
   // Requests page
   | 'new' | 'all' | 'newGuestRequest' | 'requestType' | 'notesOptional' | 'selectStaff' | 'create' | 'noStaff'
   // Housekeeping page
-  | 'housekeeping' | 'todaysProgress' | 'approved' | 'locked' | 'cleaning' | 'reset' | 'vacant';
+  | 'housekeeping' | 'todaysProgress' | 'approved' | 'locked' | 'cleaning' | 'reset' | 'vacant'
+  | 'noRoomsTodayHkp' | 'noRoomsFloor';
 
 const translations: Record<Language, Record<TranslationKey, string>> = {
   en: {
@@ -396,6 +397,8 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     cleaning: 'Cleaning',
     reset: 'Reset',
     vacant: 'Vacant',
+    noRoomsTodayHkp: 'No rooms for today. Ask the manager to add rooms first.',
+    noRoomsFloor: 'No rooms on this floor.',
   },
 
   es: {
@@ -684,6 +687,8 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     cleaning: 'Limpiando',
     reset: 'Reiniciar',
     vacant: 'Vacía',
+    noRoomsTodayHkp: 'Sin habitaciones para hoy. Pide al gerente que agregue habitaciones.',
+    noRoomsFloor: 'Sin habitaciones en este piso.',
   },
 };
 

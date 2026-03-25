@@ -199,8 +199,8 @@ export default function HousekeepingPage() {
             <p style={{ fontSize: '32px', marginBottom: '12px' }}>🛏️</p>
             <p style={{ color: 'var(--text-secondary)', fontSize: '15px', fontWeight: 500 }}>
               {rooms.length === 0
-                ? 'No rooms for today. Ask the manager to add rooms first.'
-                : 'No rooms on this floor.'}
+                ? t('noRoomsTodayHkp', lang)
+                : t('noRoomsFloor', lang)}
             </p>
           </div>
         ) : (

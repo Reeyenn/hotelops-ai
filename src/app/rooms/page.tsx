@@ -332,10 +332,10 @@ export default function RoomsPage() {
         <div className="animate-in stagger-1" style={{ display:'flex', flexDirection:'column', gap:'14px' }}>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:'10px' }}>
             {([
-              { status:'dirty'       as RoomStatus, label: lang === 'es' ? 'Sucias' : 'Dirty',        count:dirty,      ...STATUS.dirty       },
-              { status:'in_progress' as RoomStatus, label: lang === 'es' ? 'En Progreso' : 'Cleaning', count:inProgress, ...STATUS.in_progress },
-              { status:'clean'       as RoomStatus, label: lang === 'es' ? 'Listas' : 'Ready',         count:clean,      ...STATUS.clean       },
-              { status:'inspected'   as RoomStatus, label: lang === 'es' ? 'Aprobadas' : 'Approved',   count:inspected,  ...STATUS.inspected   },
+              { status:'dirty'       as RoomStatus, label: t('dirty',    lang), count:dirty,      ...STATUS.dirty       },
+              { status:'in_progress' as RoomStatus, label: t('cleaning', lang), count:inProgress, ...STATUS.in_progress },
+              { status:'clean'       as RoomStatus, label: t('clean',    lang), count:clean,      ...STATUS.clean       },
+              { status:'inspected'   as RoomStatus, label: t('approved', lang), count:inspected,  ...STATUS.inspected   },
             ]).map(({ status, label, count, color, bg, border }) => (
               <button key={status}
                 onClick={() => setFilterStatus(filterStatus === status ? 'all' : status)}
@@ -358,7 +358,7 @@ export default function RoomsPage() {
           </div>
           {/* Room type breakdown */}
           <div style={{ fontSize:'12px', color:'var(--text-muted)', fontWeight:500, textAlign:'center', paddingTop:'2px' }}>
-            {checkoutCount} {lang === 'es' ? 'salidas' : 'checkouts'} · {stayoverCount} {lang === 'es' ? 'permanencias' : 'stayovers'} · {vacantCount} {lang === 'es' ? 'vacantes' : 'vacant'}
+            {checkoutCount} {t('checkouts', lang)} · {stayoverCount} {t('stayovers', lang)} · {vacantCount} {t('vacant', lang)}
           </div>
         </div>
 
@@ -371,7 +371,7 @@ export default function RoomsPage() {
           }}>
             <ClipboardCheck size={15} color="#22C55E" style={{ flexShrink:0 }} />
             <span style={{ fontSize:'13px', color:'#22C55E', fontWeight:600 }}>
-              {clean} room{clean !== 1 ? 's' : ''} {lang === 'es' ? 'esperan inspección' : 'waiting for sign-off'}
+              {clean} {lang === 'es' ? `hab. ${clean !== 1 ? 'esperan' : 'espera'} inspección` : `room${clean !== 1 ? 's' : ''} waiting for sign-off`}
             </span>
           </div>
         )}
