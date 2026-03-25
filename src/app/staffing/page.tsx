@@ -2,6 +2,8 @@
 
 import React, { useState, useMemo } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { useLang } from '@/contexts/LanguageContext';
+import { t } from '@/lib/translations';
 import { Calculator, Clock, DollarSign, BedDouble, TrendingUp, TrendingDown, Users } from 'lucide-react';
 
 function parseTimeToMinutes(timeStr: string): number {
@@ -21,6 +23,7 @@ function minutesToDisplayTime(totalMins: number): string {
 }
 
 export default function StaffingPage() {
+  const { lang } = useLang();
   const [occupied, setOccupied] = useState('');
   const [checkouts, setCheckouts] = useState('');
   const [shiftStart, setShiftStart] = useState('09:00');
@@ -73,21 +76,21 @@ export default function StaffingPage() {
         {/* ── Header ── */}
         <div className="animate-in">
           <p style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '4px' }}>
-            Planning Tool
+            {t('planningTool', lang)}
           </p>
           <h1 style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: '26px', color: 'var(--text-primary)', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Calculator size={20} color="var(--amber)" />
-            Staffing Calculator
+            {t('staffingCalculatorTitle', lang)}
           </h1>
         </div>
 
         {/* ── Inputs ── */}
         <div className="card animate-in stagger-1">
-          <p className="section-title">Room Info</p>
+          <p className="section-title">{t('roomInfoSection', lang)}</p>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
             <div>
-              <label className="label">Rooms Occupied</label>
+              <label className="label">{t('roomsOccupiedLabel', lang)}</label>
               <input
                 className="input-mono"
                 type="number"
@@ -98,7 +101,7 @@ export default function StaffingPage() {
               />
             </div>
             <div>
-              <label className="label">Checkouts Today</label>
+              <label className="label">{t('checkoutsTodayLabel', lang)}</label>
               <input
                 className="input-mono"
                 type="number"
@@ -114,17 +117,17 @@ export default function StaffingPage() {
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
               <span className="badge badge-checkout">
                 <BedDouble size={10} />
-                {calc.co} checkouts · 35 min
+                {calc.co} {lang === 'es' ? 'salidas' : 'checkouts'} · 35 min
               </span>
               <span className="badge badge-stayover">
-                {calc.stayovers} stayovers · 22 min
+                {calc.stayovers} {lang === 'es' ? 'continuaciones' : 'stayovers'} · 22 min
               </span>
             </div>
           )}
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
-              <label className="label">Shift Start</label>
+              <label className="label">{t('shiftStartLabel', lang)}</label>
               <input
                 className="input"
                 type="time"
@@ -133,7 +136,7 @@ export default function StaffingPage() {
               />
             </div>
             <div>
-              <label className="label">Hourly Wage ($)</label>
+              <label className="label">{t('hourlyWageDollar', lang)}</label>
               <input
                 className="input-mono"
                 type="number"
@@ -156,7 +159,7 @@ export default function StaffingPage() {
           }}>
             <Users size={36} color="var(--text-muted)" style={{ margin: '0 auto 12px', display: 'block' }} />
             <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
-              Enter rooms occupied to see staffing recommendations
+              {t('enterRoomsToSeeRecs', lang)}
             </p>
           </div>
         )}
@@ -166,7 +169,7 @@ export default function StaffingPage() {
           <>
             {/* Big recommended number */}
             <div className="card-amber animate-in stagger-2" style={{ textAlign: 'center', padding: '28px 16px' }}>
-              <p className="stat-label" style={{ marginBottom: '10px' }}>Recommended Housekeepers</p>
+              <p className="stat-label" style={{ marginBottom: '10px' }}>{t('recommendedHousekeepers', lang)}</p>
               <div style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: '80px',
@@ -178,7 +181,7 @@ export default function StaffingPage() {
                 {calc.recommended}
               </div>
               <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '10px' }}>
-                {calc.totalMinutes.toLocaleString()} total work min · 8-hr shifts
+                {calc.totalMinutes.toLocaleString()} {lang === 'es' ? 'min total de trabajo' : 'total work min'} · {t('eightHrShifts', lang)}
               </p>
             </div>
 
@@ -188,7 +191,7 @@ export default function StaffingPage() {
               <div className="card" style={{ textAlign: 'center', padding: '18px 12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', marginBottom: '8px' }}>
                   <Clock size={12} color="var(--text-muted)" />
-                  <span className="stat-label">Est. Finish</span>
+                  <span className="stat-label">{t('estimatedFinish', lang)}</span>
                 </div>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: '26px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
                   {calc.finishTime}
@@ -198,7 +201,7 @@ export default function StaffingPage() {
               <div className="card" style={{ textAlign: 'center', padding: '18px 12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', marginBottom: '8px' }}>
                   <DollarSign size={12} color="var(--text-muted)" />
-                  <span className="stat-label">Labor Cost</span>
+                  <span className="stat-label">{t('laborCost', lang)}</span>
                 </div>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: '26px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
                   ${calc.laborCost.toFixed(0)}
@@ -208,7 +211,7 @@ export default function StaffingPage() {
               <div className="card" style={{ textAlign: 'center', padding: '18px 12px', gridColumn: '1 / -1' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', marginBottom: '8px' }}>
                   <TrendingUp size={12} color="var(--text-muted)" />
-                  <span className="stat-label">Cost Per Room</span>
+                  <span className="stat-label">{t('costPerRoom', lang)}</span>
                 </div>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: '40px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
                   ${calc.costPerRoom.toFixed(2)}
@@ -218,10 +221,10 @@ export default function StaffingPage() {
 
             {/* ── Staffing comparison ── */}
             <div className="card animate-in stagger-4">
-              <p className="section-title">Staffing Comparison</p>
+              <p className="section-title">{t('staffingComparison', lang)}</p>
 
               <div>
-                <label className="label">Actual Housekeepers Scheduled</label>
+                <label className="label">{t('actualHousekeepersLabel', lang)}</label>
                 <input
                   className="input-mono"
                   type="number"
@@ -234,7 +237,7 @@ export default function StaffingPage() {
 
               {!actualStaff && (
                 <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '10px' }}>
-                  Enter your actual scheduled count to see over/understaffing impact
+                  {t('enterCountToSeeImpact', lang)}
                 </p>
               )}
 
@@ -246,7 +249,7 @@ export default function StaffingPage() {
                 }}>
                   <div className="dot dot-green" style={{ flexShrink: 0 }} />
                   <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--green)' }}>
-                    Staffed exactly right
+                    {t('staffedRight', lang)}
                   </p>
                 </div>
               )}
@@ -260,10 +263,10 @@ export default function StaffingPage() {
                   <TrendingUp size={16} color="var(--yellow)" style={{ flexShrink: 0, marginTop: '1px' }} />
                   <div>
                     <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--yellow)', marginBottom: '2px' }}>
-                      Overstaffed by {calc.staffingStatus.diff}
+                      {t('overstaffedBy', lang)} {calc.staffingStatus.diff}
                     </p>
                     <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                      Extra labor cost: ${calc.staffingStatus.extraCost.toFixed(2)}
+                      {t('extraLaborCost', lang)} ${calc.staffingStatus.extraCost.toFixed(2)}
                     </p>
                   </div>
                 </div>
@@ -278,10 +281,10 @@ export default function StaffingPage() {
                   <TrendingDown size={16} color="var(--red)" style={{ flexShrink: 0, marginTop: '1px' }} />
                   <div>
                     <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--red)', marginBottom: '2px' }}>
-                      Understaffed by {calc.staffingStatus.diff}
+                      {t('understaffedBy', lang)} {calc.staffingStatus.diff}
                     </p>
                     <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                      Estimated overtime: ${calc.staffingStatus.extraCost.toFixed(2)}
+                      {t('estimatedOvertime', lang)} ${calc.staffingStatus.extraCost.toFixed(2)}
                     </p>
                   </div>
                 </div>

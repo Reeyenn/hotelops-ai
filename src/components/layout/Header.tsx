@@ -1,11 +1,13 @@
 'use client';
 
+'use client';
+
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProperty } from '@/contexts/PropertyContext';
 import { useLang } from '@/contexts/LanguageContext';
 import { t } from '@/lib/translations';
-import { ChevronDown, LogOut } from 'lucide-react';
+import { ChevronDown, LogOut, Globe } from 'lucide-react';
 
 export function Header() {
   const { user, signOut } = useAuth();
@@ -48,16 +50,21 @@ export function Header() {
         {/* Right controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
 
-          {/* Language toggle */}
+          {/* Language toggle — prominent for housekeeper adoption */}
           <button
             onClick={() => setLang(lang === 'en' ? 'es' : 'en')}
             style={{
-              background: 'transparent', border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-sm)', padding: '4px 9px',
-              color: 'var(--text-muted)', fontSize: '11px', fontWeight: 600,
-              letterSpacing: '0.06em', cursor: 'pointer', fontFamily: 'var(--font-sans)',
+              display: 'flex', alignItems: 'center', gap: '5px',
+              background: lang === 'es' ? 'rgba(212,144,64,0.12)' : 'transparent',
+              border: `1px solid ${lang === 'es' ? 'var(--amber-border)' : 'var(--border)'}`,
+              borderRadius: 'var(--radius-sm)', padding: '5px 10px',
+              color: lang === 'es' ? 'var(--amber)' : 'var(--text-muted)',
+              fontSize: '12px', fontWeight: 700,
+              letterSpacing: '0.04em', cursor: 'pointer', fontFamily: 'var(--font-sans)',
+              transition: 'all 150ms',
             }}
           >
+            <Globe size={11} />
             {lang === 'en' ? 'ES' : 'EN'}
           </button>
 

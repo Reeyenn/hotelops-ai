@@ -3,6 +3,8 @@
 import React, { useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProperty } from '@/contexts/PropertyContext';
+import { useLang } from '@/contexts/LanguageContext';
+import { t } from '@/lib/translations';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { addStaffMember, updateStaffMember, deleteStaffMember } from '@/lib/firestore';
 import { Modal } from '@/components/ui/Modal';
@@ -34,6 +36,7 @@ function initials(name: string): string {
 export default function StaffPage() {
   const { user } = useAuth();
   const { activePropertyId, staff } = useProperty();
+  const { lang } = useLang();
 
   const [showModal, setShowModal] = useState(false);
   const [editMember, setEditMember] = useState<StaffMember | null>(null);
@@ -88,7 +91,7 @@ export default function StaffPage() {
   };
 
   const handleDelete = (member: StaffMember) => {
-    if (window.confirm(`Delete ${member.name}?`)) {
+    if (window.confirm(lang === 'es' ? `¿Eliminar a ${member.name}?` : `Delete ${member.name}?`)) {
       if (!user || !activePropertyId) return;
       deleteStaffMember(user.uid, activePropertyId, member.id);
     }
@@ -142,7 +145,7 @@ export default function StaffPage() {
             }}
           >
             <Users size={20} color="var(--amber)" />
-            Staff Roster
+            {t('staffRosterTitle', lang)}
           </h1>
           <button
             onClick={openAdd}
@@ -162,7 +165,7 @@ export default function StaffPage() {
             }}
           >
             <Plus size={14} />
-            Add Staff
+            {t('addStaff', lang)}
           </button>
         </div>
 
@@ -178,7 +181,7 @@ export default function StaffPage() {
           >
             <div className="card" style={{ padding: '14px 12px', textAlign: 'center' }}>
               <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>
-                Total Staff
+                {t('totalStaffLabel', lang)}
               </div>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: '28px', fontWeight: 700, color: 'var(--amber)' }}>
                 {totalStaff}
@@ -186,7 +189,7 @@ export default function StaffPage() {
             </div>
             <div className="card" style={{ padding: '14px 12px', textAlign: 'center' }}>
               <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>
-                Scheduled Today
+                {t('scheduledTodayCount', lang)}
               </div>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: '28px', fontWeight: 700, color: 'var(--green)' }}>
                 {scheduledToday}
@@ -194,7 +197,7 @@ export default function StaffPage() {
             </div>
             <div className="card" style={{ padding: '14px 12px', textAlign: 'center' }}>
               <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>
-                Near Overtime
+                {t('nearOvertime', lang)}
               </div>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: '28px', fontWeight: 700, color: nearOvertime > 0 ? 'var(--amber)' : 'var(--text-muted)' }}>
                 {nearOvertime}
@@ -221,10 +224,10 @@ export default function StaffPage() {
             <AlertTriangle size={16} color="var(--amber)" style={{ flexShrink: 0, marginTop: '2px' }} />
             <div>
               <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--amber)', margin: 0 }}>
-                Overtime Alert
+                {t('overtimeAlert', lang)}
               </p>
               <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '4px 0 0' }}>
-                One or more staff members are approaching or exceeding their maximum weekly hours.
+                {t('overtimeAlertDesc', lang)}
               </p>
             </div>
           </div>
@@ -235,7 +238,7 @@ export default function StaffPage() {
           <div style={{ textAlign: 'center', padding: '48px 16px' }}>
             <Users size={40} color="var(--text-muted)" style={{ margin: '0 auto 12px' }} />
             <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>
-              No staff added yet. Add your first housekeeper to get started.
+              {t('noStaffYet', lang)}
             </p>
           </div>
         ) : (
@@ -342,7 +345,7 @@ export default function StaffPage() {
                           {member.weeklyHours}h / {member.maxWeeklyHours}h
                         </span>
                         <span style={{ color: atOrOverMax ? 'var(--red)' : nearMax ? 'var(--amber)' : 'var(--text-muted)' }}>
-                          {Math.max(0, member.maxWeeklyHours - member.weeklyHours)}h left
+                          {Math.max(0, member.maxWeeklyHours - member.weeklyHours)}{t('hoursLeftLabel', lang)}
                         </span>
                       </div>
                       <div
@@ -399,7 +402,7 @@ export default function StaffPage() {
                           color: member.scheduledToday ? 'var(--green)' : 'var(--text-secondary)',
                         }}
                       >
-                        {member.scheduledToday ? 'Scheduled Today' : 'Not Scheduled'}
+                        {member.scheduledToday ? t('scheduledTodayStatus', lang) : t('notScheduled', lang)}
                       </span>
                     </div>
 
@@ -428,7 +431,7 @@ export default function StaffPage() {
                         onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)')}
                       >
                         <Pencil size={12} />
-                        Edit
+                        {t('edit', lang)}
                       </button>
                       <button
                         onClick={() => handleDelete(member)}
@@ -464,11 +467,11 @@ export default function StaffPage() {
         <Modal
           isOpen={showModal}
           onClose={() => setShowModal(false)}
-          title={editMember ? `Edit ${editMember.name}` : 'Add Staff Member'}
+          title={editMember ? `${t('edit', lang)} ${editMember.name}` : t('addStaffMember', lang)}
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div>
-              <label className="label">Name *</label>
+              <label className="label">{t('nameRequired', lang)}</label>
               <input
                 type="text"
                 value={form.name}
@@ -480,7 +483,7 @@ export default function StaffPage() {
             </div>
 
             <div>
-              <label className="label">Phone (optional)</label>
+              <label className="label">{t('phoneOptional', lang)}</label>
               <input
                 type="tel"
                 value={form.phone ?? ''}
@@ -491,7 +494,7 @@ export default function StaffPage() {
             </div>
 
             <div>
-              <label className="label">Language</label>
+              <label className="label">{t('language', lang)}</label>
               <div style={{ display: 'flex', gap: '8px' }}>
                 {['en', 'es'].map(lang => (
                   <button
@@ -517,7 +520,7 @@ export default function StaffPage() {
             </div>
 
             <div>
-              <label className="label">Hourly Wage (optional)</label>
+              <label className="label">{t('hourlyWageOptional', lang)}</label>
               <input
                 type="number"
                 value={form.hourlyWage ?? ''}
@@ -530,7 +533,7 @@ export default function StaffPage() {
             </div>
 
             <div>
-              <label className="label">Max Weekly Hours</label>
+              <label className="label">{t('maxWeeklyHoursLabel', lang)}</label>
               <input
                 type="number"
                 value={form.maxWeeklyHours}
@@ -552,7 +555,7 @@ export default function StaffPage() {
                 borderRadius: 'var(--radius-md)',
               }}
             >
-              <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Senior Staff</span>
+              <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{t('seniorStaff', lang)}</span>
               <label
                 className="toggle"
                 style={{ margin: 0 }}
@@ -583,7 +586,7 @@ export default function StaffPage() {
                   fontFamily: 'var(--font-sans)',
                 }}
               >
-                Cancel
+                {t('cancel', lang)}
               </button>
               <button
                 onClick={handleSave}
@@ -601,7 +604,7 @@ export default function StaffPage() {
                   fontFamily: 'var(--font-sans)',
                 }}
               >
-                {saving ? 'Saving...' : editMember ? 'Update' : 'Add Staff'}
+                {saving ? t('savingDots', lang) : editMember ? t('update', lang) : t('addStaff', lang)}
               </button>
             </div>
           </div>

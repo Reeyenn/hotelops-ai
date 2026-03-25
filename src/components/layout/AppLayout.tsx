@@ -3,10 +3,13 @@
 import React, { useEffect, useState } from 'react';
 import { Header } from './Header';
 import { BottomNav } from './BottomNav';
+import { useLang } from '@/contexts/LanguageContext';
+import { t } from '@/lib/translations';
 import { WifiOff } from 'lucide-react';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [isOnline, setIsOnline] = useState(true);
+  const { lang } = useLang();
 
   useEffect(() => {
     setIsOnline(navigator.onLine);
@@ -33,7 +36,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         }}>
           <WifiOff size={14} color="#EF4444" />
           <span style={{ fontSize: '12px', fontWeight: 600, color: '#EF4444' }}>
-            You&apos;re offline — changes will sync when reconnected
+            {t('offline', lang)}
           </span>
         </div>
       )}

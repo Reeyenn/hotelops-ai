@@ -2,8 +2,10 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useLang } from '@/contexts/LanguageContext';
+import { t } from '@/lib/translations';
 import { registerForPushNotifications } from '@/lib/notifications';
-import { BedDouble, Bell, CheckCircle, AlertCircle } from 'lucide-react';
+import { BedDouble, Bell, CheckCircle, AlertCircle, Globe } from 'lucide-react';
 
 interface StaffMember {
   id: string;
@@ -25,6 +27,7 @@ function HousekeeperInner() {
   const params = useSearchParams();
   const uid = params.get('uid');
   const pid = params.get('pid');
+  const { lang, setLang } = useLang();
 
   const [staff,      setStaff]      = useState<StaffMember[]>([]);
   const [selectedId, setSelectedId] = useState('');
@@ -39,7 +42,9 @@ function HousekeeperInner() {
       .then(data => {
         if (!Array.isArray(data) || data.length === 0) {
           setStep('error');
-          setErrorMsg('No staff scheduled today. Ask your manager to add you to today\'s schedule.');
+          setErrorMsg(lang === 'es'
+            ? 'No hay personal programado hoy. Pide a tu gerente que te agregue al horario de hoy.'
+            : 'No staff scheduled today. Ask your manager to add you to today\'s schedule.');
         } else {
           setStaff(data);
           setStep('select');
@@ -47,7 +52,9 @@ function HousekeeperInner() {
       })
       .catch(() => {
         setStep('error');
-        setErrorMsg('Could not load staff list. Check your connection and try again.');
+        setErrorMsg(lang === 'es'
+          ? 'No se pudo cargar la lista. Verifica tu conexión e intenta de nuevo.'
+          : 'Could not load staff list. Check your connection and try again.');
       });
   }, [uid, pid]);
 
@@ -63,7 +70,9 @@ function HousekeeperInner() {
         setStep('denied');
       } else {
         setStep('error');
-        setErrorMsg('Could not enable notifications. On iPhone, you must add this page to your Home Screen first, then open it from there.');
+        setErrorMsg(lang === 'es'
+          ? 'No se pudieron activar las notificaciones. En iPhone, primero agrega esta página a tu Pantalla de Inicio y luego ábrela desde allí.'
+          : 'Could not enable notifications. On iPhone, you must add this page to your Home Screen first, then open it from there.');
       }
       return;
     }
@@ -78,7 +87,9 @@ function HousekeeperInner() {
       setStep('done');
     } catch {
       setStep('error');
-      setErrorMsg('Registered but could not save. Check your connection.');
+      setErrorMsg(lang === 'es'
+        ? 'Registrado pero no se pudo guardar. Verifica tu conexión.'
+        : 'Registered but could not save. Check your connection.');
     }
   };
 
@@ -91,6 +102,24 @@ function HousekeeperInner() {
       alignItems: 'center', justifyContent: 'center',
       padding: '24px', fontFamily: 'var(--font-sans)',
     }}>
+      {/* Language toggle — critical for housekeepers */}
+      <div style={{ position: 'fixed', top: '16px', right: '16px', zIndex: 50 }}>
+        <button
+          onClick={() => setLang(lang === 'en' ? 'es' : 'en')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            background: 'var(--bg-card)', border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-md)', padding: '8px 14px',
+            color: 'var(--text-secondary)', fontSize: '14px', fontWeight: 600,
+            cursor: 'pointer', fontFamily: 'var(--font-sans)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+          }}
+        >
+          <Globe size={14} />
+          {lang === 'en' ? 'Español' : 'English'}
+        </button>
+      </div>
+
       {/* Logo */}
       <div style={{ marginBottom: '32px', textAlign: 'center' }}>
         <div style={{
@@ -107,7 +136,7 @@ function HousekeeperInner() {
 
       {/* Loading */}
       {step === 'loading' && (
-        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Loading…</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{t('loading', lang)}</p>
       )}
 
       {/* Bad link */}
@@ -115,7 +144,7 @@ function HousekeeperInner() {
         <div style={{ textAlign: 'center', maxWidth: '320px' }}>
           <AlertCircle size={40} color="#EF4444" style={{ marginBottom: '12px' }} />
           <p style={{ color: 'var(--text-secondary)', fontSize: '14px', lineHeight: 1.6 }}>
-            This link is missing information. Ask your manager to resend the correct link.
+            {t('badLink', lang)}
           </p>
         </div>
       )}
@@ -128,10 +157,10 @@ function HousekeeperInner() {
           borderRadius: 'var(--radius-lg)', padding: '24px',
         }}>
           <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px', letterSpacing: '-0.02em' }}>
-            Set up notifications
+            {t('setupNotifications', lang)}
           </h1>
           <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '24px', lineHeight: 1.6 }}>
-            Select your name so we can send your room assignments to this phone.
+            {t('selectNameDesc', lang)}
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
@@ -160,7 +189,7 @@ function HousekeeperInner() {
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
             transition: 'all 120ms',
           }}>
-            <Bell size={18} /> Enable Notifications
+            <Bell size={18} /> {t('enableNotifications', lang)}
           </button>
         </div>
       )}
@@ -168,8 +197,8 @@ function HousekeeperInner() {
       {/* Requesting */}
       {step === 'requesting' && (
         <div style={{ textAlign: 'center' }}>
-          <p style={{ fontSize: '15px', color: 'var(--text-secondary)' }}>Setting up…</p>
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px' }}>Tap "Allow" when your browser asks.</p>
+          <p style={{ fontSize: '15px', color: 'var(--text-secondary)' }}>{t('settingUp', lang)}</p>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px' }}>{t('tapAllow', lang)}</p>
         </div>
       )}
 
@@ -188,12 +217,14 @@ function HousekeeperInner() {
             <CheckCircle size={30} color="var(--green)" />
           </div>
           <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
-            You&apos;re all set, {selectedName.split(' ')[0]}!
+            {lang === 'en'
+              ? `You're all set, ${selectedName.split(' ')[0]}!`
+              : `¡Todo listo, ${selectedName.split(' ')[0]}!`}
           </h2>
           <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-            When your manager assigns rooms, you&apos;ll get a notification on this phone — even if the app is closed.
+            {t('notifDoneDesc', lang)}
           </p>
-          <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '16px' }}>You can close this page.</p>
+          <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '16px' }}>{t('closeThisPage', lang)}</p>
         </div>
       )}
 
@@ -205,15 +236,15 @@ function HousekeeperInner() {
           borderRadius: 'var(--radius-lg)', padding: '32px 24px',
         }}>
           <AlertCircle size={40} color="var(--amber)" style={{ marginBottom: '16px' }} />
-          <h2 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>Notifications blocked</h2>
+          <h2 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>{t('notificationsBlocked', lang)}</h2>
           <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-            Go to your browser settings, find this site, and allow notifications. Then come back and try again.
+            {t('goToBrowserSettings', lang)}
           </p>
           <button onClick={() => setStep('select')} style={{
             marginTop: '20px', padding: '10px 24px',
             background: 'var(--amber)', color: '#0A0A0A', border: 'none',
             borderRadius: 'var(--radius-md)', fontFamily: 'var(--font-sans)', fontWeight: 600, cursor: 'pointer',
-          }}>Try again</button>
+          }}>{t('tryAgain', lang)}</button>
         </div>
       )}
 
@@ -225,13 +256,13 @@ function HousekeeperInner() {
           borderRadius: 'var(--radius-lg)', padding: '32px 24px',
         }}>
           <AlertCircle size={40} color="#EF4444" style={{ marginBottom: '16px' }} />
-          <h2 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>Something went wrong</h2>
+          <h2 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>{t('somethingWentWrong', lang)}</h2>
           <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>{errorMsg}</p>
           <button onClick={() => { setStep('loading'); }} style={{
             marginTop: '20px', padding: '10px 24px',
             background: 'var(--amber)', color: '#0A0A0A', border: 'none',
             borderRadius: 'var(--radius-md)', fontFamily: 'var(--font-sans)', fontWeight: 600, cursor: 'pointer',
-          }}>Try again</button>
+          }}>{t('tryAgain', lang)}</button>
         </div>
       )}
     </div>

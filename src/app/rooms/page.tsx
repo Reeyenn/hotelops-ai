@@ -111,7 +111,7 @@ export default function RoomsPage() {
     const count = await carryOverRooms(user.uid, activePropertyId, yesterdayStr(), todayStr());
     setCarryingOver(false);
     setYesterdayCount(null);
-    showToast(`${count} rooms carried over — all reset to dirty`);
+    showToast(lang === 'es' ? `${count} habitaciones transferidas — estado reiniciado a sucias` : `${count} rooms carried over — all reset to dirty`);
   };
 
   const sorted    = sortRooms(rooms);
@@ -141,7 +141,6 @@ export default function RoomsPage() {
     setShowBulkModal(false);
   };
 
-<<<<<<< HEAD
   const handleFloorAdd = async () => {
     if (!user || !activePropertyId) return;
     const roomsToAdd: Omit<Room, 'id'>[] = [];
@@ -161,14 +160,11 @@ export default function RoomsPage() {
     setFloorRows([{ id: '1', start: '101', end: '120', type: 'checkout', priority: 'standard' }]);
     setBulkMode('manual');
     setShowBulkModal(false);
-    showToast(`${roomsToAdd.length} rooms added!`);
+    showToast(lang === 'es' ? `${roomsToAdd.length} habitaciones agregadas!` : `${roomsToAdd.length} rooms added!`);
   };
 
-  const handleSmartAssign = async () => {
-=======
   // Open Smart Assign modal — compute AI assignments and show preview
-  const handleSmartAssign = () => {
->>>>>>> fb5b700 (feat: Smart Room Assignment — AI preview, manual tweaking, and publish flow)
+  const handleSmartAssign = async () => {
     if (!user || !activePropertyId || rooms.length === 0 || staff.length === 0) return;
     const assignable = rooms.filter(r => r.status !== 'clean' && r.status !== 'inspected');
     if (assignable.length === 0) { showToast('All rooms are already clean or inspected!'); return; }
@@ -217,7 +213,9 @@ export default function RoomsPage() {
       const count = Object.keys(pendingAssignments).length;
       setShowAssignModal(false);
       setPendingAssignments({});
-      showToast(`Assignments published! ${count} room${count !== 1 ? 's' : ''} assigned.`);
+      showToast(lang === 'es'
+        ? `¡Asignaciones publicadas! ${count} habitación${count !== 1 ? 'es' : ''} asignada${count !== 1 ? 's' : ''}.`
+        : `Assignments published! ${count} room${count !== 1 ? 's' : ''} assigned.`);
     } finally {
       setIsPublishing(false);
     }
@@ -241,7 +239,7 @@ export default function RoomsPage() {
     });
     setInspectingRoom(null);
     setInspectorName('');
-    showToast(`Room ${inspectingRoom.number} approved ✓`);
+    showToast(lang === 'es' ? `Habitación ${inspectingRoom.number} aprobada ✓` : `Room ${inspectingRoom.number} approved ✓`);
   };
 
   const handleDelete = async (rid: string) => {
@@ -489,7 +487,7 @@ export default function RoomsPage() {
                   onChange={e => setNewRoom(r => ({ ...r, assignedTo:e.target.value, assignedName:staff.find(s => s.id === e.target.value)?.name ?? '' }))}
                   className="input"
                 >
-                  <option value="">— Unassigned —</option>
+                  <option value="">{lang === 'es' ? '— Sin Asignar —' : '— Unassigned —'}</option>
                   {staff.filter(s => s.scheduledToday).map(s => (
                     <option key={s.id} value={s.id}>{s.name}{s.isSenior ? ' ⭐' : ''}</option>
                   ))}
@@ -518,7 +516,7 @@ export default function RoomsPage() {
                   fontWeight: bulkMode === mode ? 600 : 400, fontSize:'13px',
                   fontFamily:'var(--font-sans)', transition:'all 120ms',
                 }}>
-                  {mode === 'manual' ? 'Manual' : '🏨 Floor Setup'}
+                  {mode === 'manual' ? 'Manual' : (lang === 'es' ? '🏨 Por Piso' : '🏨 Floor Setup')}
                 </button>
               ))}
             </div>
@@ -526,9 +524,9 @@ export default function RoomsPage() {
             {bulkMode === 'manual' ? (
               <>
                 <div>
-                  <label className="label">Room Numbers (comma or line separated)</label>
+                  <label className="label">{lang === 'es' ? 'Números de Habitaciones (separados por coma o línea)' : 'Room Numbers (comma or line separated)'}</label>
                   <textarea
-                    placeholder={'201, 202, 203\nor one per line'}
+                    placeholder={lang === 'es' ? '201, 202, 203\nuno por línea' : '201, 202, 203\nor one per line'}
                     value={bulkText} onChange={e => setBulkText(e.target.value)}
                     className="input" rows={5}
                     style={{ resize:'vertical', fontFamily:'var(--font-mono)', fontSize:'16px' }}
@@ -554,14 +552,14 @@ export default function RoomsPage() {
                 <div style={{ display:'flex', gap:'10px', marginTop:'4px' }}>
                   <button onClick={() => setShowBulkModal(false)} className="btn btn-secondary" style={{ flex:1 }}>{t('cancel', lang)}</button>
                   <button onClick={handleBulkAdd} disabled={!bulkText.trim()} className="btn btn-primary" style={{ flex:1 }}>
-                    Add {bulkCount} Rooms
+                    {lang === 'es' ? `Agregar ${bulkCount} Habitaciones` : `Add ${bulkCount} Rooms`}
                   </button>
                 </div>
               </>
             ) : (
               <>
                 <p style={{ fontSize:'13px', color:'var(--text-muted)', marginTop:'-4px' }}>
-                  Set room ranges per floor. Each floor adds all rooms in the range.
+                  {lang === 'es' ? 'Define rangos por piso. Cada piso agrega todas las habitaciones del rango.' : 'Set room ranges per floor. Each floor adds all rooms in the range.'}
                 </p>
 
                 <div style={{ display:'flex', flexDirection:'column', gap:'10px', maxHeight:'360px', overflowY:'auto' }}>
@@ -577,12 +575,12 @@ export default function RoomsPage() {
                       }}>
                         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'8px' }}>
                           <span style={{ fontSize:'13px', fontWeight:700, color:'var(--text-primary)' }}>
-                            Floor {floorLabel}
+                            {lang === 'es' ? 'Piso' : 'Floor'} {floorLabel}
                           </span>
                           <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
                             {count > 0 && (
                               <span style={{ fontSize:'11px', fontWeight:600, color:'var(--amber)', background:'var(--amber-dim)', border:'1px solid var(--amber-border)', padding:'2px 8px', borderRadius:'100px' }}>
-                                {count} rooms
+                                {count} {lang === 'es' ? 'hab.' : 'rooms'}
                               </span>
                             )}
                             {floorRows.length > 1 && (
@@ -595,7 +593,7 @@ export default function RoomsPage() {
                         </div>
                         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px', marginBottom:'8px' }}>
                           <div>
-                            <label className="label" style={{ fontSize:'10px' }}>Start Room #</label>
+                            <label className="label" style={{ fontSize:'10px' }}>{lang === 'es' ? 'Hab. Inicial #' : 'Start Room #'}</label>
                             <input
                               type="text" inputMode="numeric" value={row.start}
                               onChange={e => setFloorRows(rows => rows.map(r => r.id === row.id ? { ...r, start: e.target.value } : r))}
@@ -603,7 +601,7 @@ export default function RoomsPage() {
                             />
                           </div>
                           <div>
-                            <label className="label" style={{ fontSize:'10px' }}>End Room #</label>
+                            <label className="label" style={{ fontSize:'10px' }}>{lang === 'es' ? 'Hab. Final #' : 'End Room #'}</label>
                             <input
                               type="text" inputMode="numeric" value={row.end}
                               onChange={e => setFloorRows(rows => rows.map(r => r.id === row.id ? { ...r, end: e.target.value } : r))}
@@ -613,19 +611,19 @@ export default function RoomsPage() {
                         </div>
                         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px' }}>
                           <div>
-                            <label className="label" style={{ fontSize:'10px' }}>Type</label>
+                            <label className="label" style={{ fontSize:'10px' }}>{t('type', lang)}</label>
                             <select value={row.type} onChange={e => setFloorRows(rows => rows.map(r => r.id === row.id ? { ...r, type: e.target.value as RoomType } : r))} className="input" style={{ fontSize:'13px' }}>
-                              <option value="checkout">Checkout</option>
-                              <option value="stayover">Stayover</option>
-                              <option value="vacant">Vacant</option>
+                              <option value="checkout">{t('checkout', lang)}</option>
+                              <option value="stayover">{t('stayover', lang)}</option>
+                              <option value="vacant">{lang === 'es' ? 'Vacante' : 'Vacant'}</option>
                             </select>
                           </div>
                           <div>
-                            <label className="label" style={{ fontSize:'10px' }}>Priority</label>
+                            <label className="label" style={{ fontSize:'10px' }}>{t('priority', lang)}</label>
                             <select value={row.priority} onChange={e => setFloorRows(rows => rows.map(r => r.id === row.id ? { ...r, priority: e.target.value as RoomPriority } : r))} className="input" style={{ fontSize:'13px' }}>
-                              <option value="standard">Standard</option>
+                              <option value="standard">{t('standard', lang)}</option>
                               <option value="vip">VIP</option>
-                              <option value="early">Early</option>
+                              <option value="early">{lang === 'es' ? 'Temprano' : 'Early'}</option>
                             </select>
                           </div>
                         </div>
@@ -649,7 +647,7 @@ export default function RoomsPage() {
                   className="btn btn-secondary"
                   style={{ width:'100%' }}
                 >
-                  + Add Floor
+                  {lang === 'es' ? '+ Agregar Piso' : '+ Add Floor'}
                 </button>
 
                 {(() => {
@@ -659,7 +657,7 @@ export default function RoomsPage() {
                   }, 0);
                   return total > 0 ? (
                     <p style={{ fontSize:'12px', color:'var(--text-muted)', textAlign:'center' }}>
-                      Preview: <strong style={{ color:'var(--text-primary)' }}>{total}</strong> rooms across <strong style={{ color:'var(--text-primary)' }}>{floorRows.length}</strong> floor{floorRows.length !== 1 ? 's' : ''}
+                      {lang === 'es' ? 'Vista previa:' : 'Preview:'} <strong style={{ color:'var(--text-primary)' }}>{total}</strong> {lang === 'es' ? 'hab. en' : 'rooms across'} <strong style={{ color:'var(--text-primary)' }}>{floorRows.length}</strong> {lang === 'es' ? `piso${floorRows.length !== 1 ? 's' : ''}` : `floor${floorRows.length !== 1 ? 's' : ''}`}
                     </p>
                   ) : null;
                 })()}
@@ -674,7 +672,7 @@ export default function RoomsPage() {
                     className="btn btn-primary"
                     style={{ flex:1 }}
                   >
-                    Add {floorRows.reduce((sum, row) => { const s = parseInt(row.start), e = parseInt(row.end); return (!isNaN(s) && !isNaN(e) && e >= s) ? sum + (e - s + 1) : sum; }, 0)} Rooms
+                    {(() => { const n = floorRows.reduce((sum, row) => { const s = parseInt(row.start), e = parseInt(row.end); return (!isNaN(s) && !isNaN(e) && e >= s) ? sum + (e - s + 1) : sum; }, 0); return lang === 'es' ? `Agregar ${n} Habitaciones` : `Add ${n} Rooms`; })()}
                   </button>
                 </div>
               </>

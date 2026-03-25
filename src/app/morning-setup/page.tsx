@@ -200,7 +200,7 @@ export default function MorningSetupPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Zap size={14} color="var(--amber)" />
               <div>
-                <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--amber)', marginBottom: '1px' }}>Smart Prediction</p>
+                <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--amber)', marginBottom: '1px' }}>{t('smartPrediction', lang)}</p>
                 <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
                   ~{prediction.occupied} occupied, ~{prediction.checkouts} checkouts — {prediction.label}
                 </p>
@@ -212,14 +212,14 @@ export default function MorningSetupPage() {
               padding: '6px 12px', fontSize: '12px', fontWeight: 600,
               cursor: 'pointer', fontFamily: 'var(--font-sans)', flexShrink: 0,
             }}>
-              Apply
+              {t('apply', lang)}
             </button>
           </div>
         )}
 
         {/* ── Input form ── */}
         <div className="animate-in stagger-1">
-          <p className="section-title">Room Numbers</p>
+          <p className="section-title">{t('roomNumbersSection', lang)}</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
             <NumInput label={t('occupied', lang)}  field="occupied"  form={form} upd={upd} />
             <NumInput label={t('checkouts', lang)} field="checkouts" form={form} upd={upd} />
@@ -241,7 +241,7 @@ export default function MorningSetupPage() {
             <NumInput label={t('earlyCheckinRequests', lang)} field="earlyCheckins" form={form} upd={upd} />
           </div>
 
-          <p className="section-title" style={{ marginTop: '16px' }}>Schedule</p>
+          <p className="section-title" style={{ marginTop: '16px' }}>{t('scheduleSection', lang)}</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
             <div>
               <label className="label">{t('startTime', lang)}</label>
@@ -254,7 +254,7 @@ export default function MorningSetupPage() {
             <NumInput label={t('scheduledStaff', lang)} field="scheduledStaff" min={1} form={form} upd={upd} />
           </div>
           <div style={{ marginBottom: '10px' }}>
-            <NumInput label="Hourly Wage ($)" field="hourlyWage" min={1} form={form} upd={upd} />
+            <NumInput label={t('hourlyWageDollar', lang)} field="hourlyWage" min={1} form={form} upd={upd} />
           </div>
 
           {/* Meeting room toggle */}
@@ -266,9 +266,9 @@ export default function MorningSetupPage() {
           }}>
             <div>
               <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', marginBottom: '1px' }}>
-                Meeting Room rented today?
+                {t('meetingRoomRented', lang)}
               </p>
-              <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Adds cleaning time</p>
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('addsCleaningTime', lang)}</p>
             </div>
             <SpecSwitch id="meeting-room" checked={meetingRoomRented} onChange={setMeetingRoomRented} />
           </div>
@@ -291,20 +291,20 @@ export default function MorningSetupPage() {
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                 <span style={{ fontSize: '16px' }}>🍳</span>
-                <p style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-primary)' }}>Breakfast Staffing</p>
+                <p style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-primary)' }}>{t('breakfastStaffing', lang)}</p>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <div style={{ background: 'var(--amber-dim)', border: '1px solid var(--amber-border)', borderRadius: 'var(--radius-md)', padding: '10px', textAlign: 'center' }}>
                   <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '24px', color: 'var(--amber)', lineHeight: 1 }}>{attendants}</div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Attendant{attendants !== 1 ? 's' : ''}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('attendantsLabel', lang)}</div>
                 </div>
                 <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '10px', textAlign: 'center' }}>
                   <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '18px', color: 'var(--text-primary)', lineHeight: 1 }}>{bfTime}</div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Setup Start</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('setupStart', lang)}</div>
                 </div>
               </div>
               <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px' }}>
-                Based on {form.occupied} occupied rooms · 1 attendant per ~45 guests
+                {lang === 'en' ? `Based on ${form.occupied} occupied rooms · ` : `Basado en ${form.occupied} habitaciones ocupadas · `}{t('basedOnOccupied', lang)}
               </p>
             </div>
           );
@@ -425,7 +425,7 @@ export default function MorningSetupPage() {
                 fontSize: '14px', color: 'var(--text-secondary)',
                 marginTop: '12px', letterSpacing: '0.04em', textTransform: 'uppercase',
               }}>
-                {t('housekeepers', lang)} needed today
+                {t('houseekeepersNeededToday', lang)}
               </p>
               {result.laborSaved > 0 && (
                 <div style={{
@@ -435,7 +435,7 @@ export default function MorningSetupPage() {
                   borderRadius: 'var(--radius-full)', padding: '4px 12px',
                 }}>
                   <span style={{ fontSize: '13px', color: 'var(--green)', fontWeight: 600 }}>
-                    Saving {formatCurrency(result.laborSaved)} today
+                    {t('savingToday', lang)} {formatCurrency(result.laborSaved)} {lang === 'es' ? 'hoy' : 'today'}
                   </span>
                 </div>
               )}
@@ -443,7 +443,7 @@ export default function MorningSetupPage() {
 
             {/* Workload breakdown */}
             <div className="card">
-              <p className="section-title">Workload Breakdown</p>
+              <p className="section-title">{t('workloadBreakdown', lang)}</p>
               {[
                 { label: t('roomMinutes', lang),       value: result.roomMinutes,       icon: BedDouble },
                 { label: t('publicAreaMinutes', lang), value: result.publicAreaMinutes, icon: MapPin    },
@@ -507,7 +507,7 @@ export default function MorningSetupPage() {
                   {formatCurrency(result.laborSaved)}
                 </div>
                 <p style={{ fontSize: '12px', color: 'rgba(34,197,94,0.55)', marginTop: '6px' }}>
-                  vs. scheduling your full team
+                  {t('vsFullTeam', lang)}
                 </p>
               </div>
             )}
@@ -516,14 +516,20 @@ export default function MorningSetupPage() {
             <div className="card-flat" style={{ display: 'flex', gap: '10px', padding: '14px' }}>
               <Info size={13} color="var(--text-muted)" style={{ marginTop: '2px', flexShrink: 0 }} />
               <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                Based on <strong style={{ color: 'var(--text-primary)' }}>{form.checkouts} checkouts</strong>,{' '}
-                <strong style={{ color: 'var(--text-primary)' }}>{form.stayovers} stayovers</strong>,{' '}
-                <strong style={{ color: 'var(--text-primary)' }}>{result.publicAreasDueToday.length} public areas</strong>,
-                and <strong style={{ color: 'var(--text-primary)' }}>{result.laundryBreakdown.reduce((s, b) => s + b.loads, 0)} laundry loads</strong>
-                {' '}— you need <strong style={{ color: 'var(--amber)' }}>{result.recommendedStaff} housekeepers</strong> starting at{' '}
-                <strong style={{ color: 'var(--amber)' }}>{form.startTime}</strong>.
+                {lang === 'en' ? 'Based on' : 'Basado en'}{' '}
+                <strong style={{ color: 'var(--text-primary)' }}>{form.checkouts} {lang === 'en' ? 'checkouts' : 'salidas'}</strong>,{' '}
+                <strong style={{ color: 'var(--text-primary)' }}>{form.stayovers} {lang === 'en' ? 'stayovers' : 'continuaciones'}</strong>,{' '}
+                <strong style={{ color: 'var(--text-primary)' }}>{result.publicAreasDueToday.length} {lang === 'en' ? 'public areas' : 'áreas comunes'}</strong>,
+                {lang === 'en' ? ' and' : ' y'}{' '}
+                <strong style={{ color: 'var(--text-primary)' }}>{result.laundryBreakdown.reduce((s, b) => s + b.loads, 0)} {lang === 'en' ? 'laundry loads' : 'cargas de lavandería'}</strong>
+                {lang === 'en'
+                  ? <>{' '}— you need <strong style={{ color: 'var(--amber)' }}>{result.recommendedStaff} housekeepers</strong> starting at{' '}<strong style={{ color: 'var(--amber)' }}>{form.startTime}</strong>.</>
+                  : <>{' '}— necesitas <strong style={{ color: 'var(--amber)' }}>{result.recommendedStaff} camareras</strong> empezando a las{' '}<strong style={{ color: 'var(--amber)' }}>{form.startTime}</strong>.</>
+                }
                 {result.laborSaved > 0 && (
-                  <> Saving <strong style={{ color: 'var(--green)' }}>{formatCurrency(result.laborSaved)}</strong> vs. full team.</>
+                  lang === 'en'
+                    ? <> Saving <strong style={{ color: 'var(--green)' }}>{formatCurrency(result.laborSaved)}</strong> vs. full team.</>
+                    : <> Ahorrando <strong style={{ color: 'var(--green)' }}>{formatCurrency(result.laborSaved)}</strong> vs. equipo completo.</>
                 )}
               </p>
             </div>
@@ -544,7 +550,7 @@ export default function MorningSetupPage() {
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <RefreshCw size={13} color="var(--text-muted)" />
-                  <span style={{ fontWeight: 500, fontSize: '13px', color: 'var(--text-primary)' }}>Laundry Breakdown</span>
+                  <span style={{ fontWeight: 500, fontSize: '13px', color: 'var(--text-primary)' }}>{t('laundryBreakdownLabel', lang)}</span>
                 </div>
                 {showLaundry ? <ChevronUp size={13} color="var(--text-muted)" /> : <ChevronDown size={13} color="var(--text-muted)" />}
               </button>
@@ -583,9 +589,9 @@ export default function MorningSetupPage() {
               }}
             >
               {saved ? (
-                <><CheckCircle size={18} /> Saved to Daily Log</>
+                <><CheckCircle size={18} /> {t('savedToLog', lang)}</>
               ) : saving ? (
-                <><div className="spinner" style={{ width: '18px', height: '18px' }} /> Saving…</>
+                <><div className="spinner" style={{ width: '18px', height: '18px' }} /> {t('savingInProgress', lang)}</>
               ) : (
                 <><Save size={18} /> {t('saveToLog', lang)}</>
               )}

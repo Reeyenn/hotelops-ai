@@ -479,7 +479,7 @@ export default function DashboardPage() {
         {total > 0 && (
           <div className="card-flat animate-in stagger-1" style={{ padding: '12px 14px', marginBottom: '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{clean} of {total} rooms complete</span>
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{clean} {t('roomsCompleteOf', lang)} {total} {t('roomsCompleteLabel', lang)}</span>
               <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '15px', color: progress === 100 ? 'var(--green)' : 'var(--amber)' }}>
                 {progress}%
               </span>
@@ -499,7 +499,7 @@ export default function DashboardPage() {
             <div key={label} className="card">
               <p className="stat-label" style={{ marginBottom: '6px' }}>{label}</p>
               <div className="stat-number" style={{ fontSize: '28px', color: 'var(--green)' }}>{value}</div>
-              <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>labor saved</p>
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>{t('laborSavedSuffix', lang)}</p>
             </div>
           ))}
         </div>
@@ -508,7 +508,7 @@ export default function DashboardPage() {
         {weekBudget > 0 && (
           <div className="card animate-in stagger-3" style={{ marginBottom: '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '10px' }}>
-              <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>Weekly Budget</span>
+              <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>{t('weeklyBudgetLabel', lang)}</span>
               <span style={{
                 fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 600,
                 color: budgetPct > 90 ? 'var(--red)' : budgetPct > 75 ? 'var(--yellow)' : 'var(--green)',
@@ -529,7 +529,7 @@ export default function DashboardPage() {
         {chartData.length > 2 && (
           <div className="card animate-in stagger-3" style={{ marginBottom: '8px' }}>
             <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '12px' }}>
-              Daily Savings — Last {chartData.length} Days
+              {t('dailySavingsChart', lang)} {chartData.length} {t('daysLabel', lang)}
             </p>
             <ResponsiveContainer width="100%" height={100}>
               <LineChart data={chartData}>
@@ -554,8 +554,8 @@ export default function DashboardPage() {
           <div className="card" style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
             <BedDouble size={16} color="var(--text-muted)" />
             <div style={{ flex: 1 }}>
-              <p style={{ fontWeight: 500, fontSize: '14px', color: 'var(--text-primary)' }}>Room Priority Queue</p>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '1px' }}>{dirty + inProgress} rooms remaining</p>
+              <p style={{ fontWeight: 500, fontSize: '14px', color: 'var(--text-primary)' }}>{t('roomPriorityQueue', lang)}</p>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '1px' }}>{dirty + inProgress} {t('roomsRemainingLabel', lang)}</p>
             </div>
             <ChevronRight size={16} color="var(--text-muted)" />
           </div>
@@ -564,15 +564,15 @@ export default function DashboardPage() {
         {/* ── Quick access grid ── */}
         <div className="animate-in stagger-4" style={{ marginBottom: '16px' }}>
           <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '8px' }}>
-            Operations
+            {t('operations', lang)}
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
             {[
-              { href: '/requests',  icon: Bell,     label: 'Guest Requests', sub: 'Track room requests'      },
-              { href: '/staff',     icon: Users,    label: 'Staff Roster',   sub: 'Manage housekeepers'      },
-              { href: '/inventory', icon: Package,  label: 'Inventory',      sub: 'Par levels & supplies'    },
-              { href: '/logbook',   icon: BookOpen, label: 'Shift Logbook',  sub: 'Handoff notes'            },
-              { href: '/ops-wall',  icon: Monitor,  label: 'Ops Wall',       sub: 'Live room status display' },
+              { href: '/requests',  icon: Bell,     label: t('guestRequests', lang),    sub: t('guestRequestsSub', lang)   },
+              { href: '/staff',     icon: Users,    label: t('staffRosterLabel', lang),  sub: t('staffRosterSub', lang)     },
+              { href: '/inventory', icon: Package,  label: t('inventoryLabel', lang),    sub: t('inventorySub', lang)       },
+              { href: '/logbook',   icon: BookOpen, label: t('shiftLogbookLabel', lang), sub: t('shiftLogbookSub', lang)    },
+              { href: '/ops-wall',  icon: Monitor,  label: t('opsWallLabel', lang),      sub: t('opsWallSub', lang)         },
             ].map(({ href, icon: Icon, label, sub }) => (
               <Link key={href} href={href} style={{ textDecoration: 'none' }}>
                 <div className="card" style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px', height: '100%' }}>

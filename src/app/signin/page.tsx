@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLang } from '@/contexts/LanguageContext';
 import { t } from '@/lib/translations';
-import { DollarSign, Zap, Clock } from 'lucide-react';
+import { DollarSign, Zap, Clock, Globe } from 'lucide-react';
 
 export default function SignInPage() {
   const { user, loading, signIn } = useAuth();
   const router = useRouter();
-  const { lang } = useLang();
+  const { lang, setLang } = useLang();
   const [signing, setSigning] = React.useState(false);
 
   useEffect(() => {
@@ -33,9 +33,9 @@ export default function SignInPage() {
   }
 
   const features = [
-    { icon: DollarSign, text: 'Know exactly how many housekeepers you need', color: 'var(--green)' },
-    { icon: Zap,        text: 'Zero manual entry — just input your numbers',  color: 'var(--amber)' },
-    { icon: Clock,      text: 'See dollar savings updated every single day',   color: 'var(--text-secondary)' },
+    { icon: DollarSign, text: t('signInFeature1', lang), color: 'var(--green)' },
+    { icon: Zap,        text: t('signInFeature2', lang), color: 'var(--amber)' },
+    { icon: Clock,      text: t('signInFeature3', lang), color: 'var(--text-secondary)' },
   ];
 
   return (
@@ -47,6 +47,23 @@ export default function SignInPage() {
       padding: '32px 24px',
     }}>
       <div style={{ width: '100%', maxWidth: '380px' }}>
+
+        {/* Language toggle */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+          <button
+            onClick={() => setLang(lang === 'en' ? 'es' : 'en')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              background: 'var(--bg-card)', border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-md)', padding: '7px 12px',
+              color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600,
+              cursor: 'pointer', fontFamily: 'var(--font-sans)',
+            }}
+          >
+            <Globe size={13} />
+            {lang === 'en' ? 'Español' : 'English'}
+          </button>
+        </div>
 
         {/* Logo mark */}
         <div style={{ marginBottom: '40px' }}>
@@ -69,10 +86,10 @@ export default function SignInPage() {
             color: 'var(--text-primary)', lineHeight: 1.2,
             marginBottom: '8px',
           }}>
-            Run your hotel<br />like a machine.
+            {t('signInHeroTitle', lang)}
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '14px', lineHeight: 1.5 }}>
-            Daily operations, optimized.
+            {t('signInSubtitle', lang)}
           </p>
         </div>
 
@@ -123,7 +140,7 @@ export default function SignInPage() {
         </button>
 
         <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '11px', letterSpacing: '0.02em' }}>
-          Secure sign-in via Google. No password needed.
+          {t('signInSecure', lang)}
         </p>
 
       </div>

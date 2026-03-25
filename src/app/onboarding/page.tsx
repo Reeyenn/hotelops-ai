@@ -4,11 +4,11 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProperty } from '@/contexts/PropertyContext';
+import { useLang } from '@/contexts/LanguageContext';
+import { t } from '@/lib/translations';
 import { createProperty } from '@/lib/firestore';
 import { DEFAULT_PROPERTY } from '@/lib/defaults';
-import { Building2, ChevronRight, ChevronLeft, Check } from 'lucide-react';
-
-const STEPS = ['Property', 'Rooms & Staff', 'Financials', 'Done'];
+import { Building2, ChevronRight, ChevronLeft, Check, Globe } from 'lucide-react';
 
 const Field = ({ label, value, onChange, type = 'text', placeholder = '', suffix = '' }: any) => {
   const [raw, setRaw] = React.useState(String(value));
@@ -55,6 +55,7 @@ const Field = ({ label, value, onChange, type = 'text', placeholder = '', suffix
 export default function OnboardingPage() {
   const { user } = useAuth();
   const { properties, setActivePropertyId } = useProperty();
+  const { lang, setLang } = useLang();
   const router = useRouter();
 
   const [step, setStep] = useState(0);
@@ -96,9 +97,34 @@ export default function OnboardingPage() {
     }
   };
 
+  const STEP_LABELS = [
+    t('stepPropertyLabel', lang),
+    t('stepRoomsStaff', lang),
+    t('stepFinancials', lang),
+    t('stepDone', lang),
+  ];
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
       <div style={{ width: '100%', maxWidth: '480px' }}>
+
+        {/* Language toggle */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
+          <button
+            onClick={() => setLang(lang === 'en' ? 'es' : 'en')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              background: 'var(--bg-card)', border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-md)', padding: '7px 12px',
+              color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600,
+              cursor: 'pointer', fontFamily: 'var(--font-sans)',
+            }}
+          >
+            <Globe size={13} />
+            {lang === 'en' ? 'Español' : 'English'}
+          </button>
+        </div>
+
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '8px' }}>
@@ -108,14 +134,14 @@ export default function OnboardingPage() {
             </span>
           </div>
           <h2 style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: '2rem', color: 'var(--text-primary)' }}>
-            Set up your property
+            {t('onboardingTitle', lang)}
           </h2>
-          <p style={{ color: 'var(--text-secondary)', marginTop: '6px', fontSize: '14px' }}>Takes about 2 minutes</p>
+          <p style={{ color: 'var(--text-secondary)', marginTop: '6px', fontSize: '14px' }}>{t('onboardingSubtitle', lang)}</p>
         </div>
 
         {/* Step indicators */}
         <div style={{ display: 'flex', gap: '6px', marginBottom: '32px' }}>
-          {STEPS.map((s, i) => (
+          {STEP_LABELS.map((s, i) => (
             <div
               key={s}
               style={{
@@ -131,20 +157,20 @@ export default function OnboardingPage() {
 
         {/* Step label */}
         <p style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--amber)', marginBottom: '24px' }}>
-          Step {step + 1} of {STEPS.length} — {STEPS[step]}
+          {lang === 'en' ? 'Step' : 'Paso'} {step + 1} {lang === 'en' ? 'of' : 'de'} {STEP_LABELS.length} — {STEP_LABELS[step]}
         </p>
 
         {/* Step 0: Property name */}
         {step === 0 && (
           <div className="animate-slide-in-up">
             <Field
-              label="Property Name"
+              label={t('propertyNameLabel', lang)}
               value={form.name}
               onChange={(v: string) => upd('name', v)}
-              placeholder="e.g. Comfort Suites Beaumont"
+              placeholder={lang === 'en' ? 'e.g. Comfort Suites Beaumont' : 'ej. Comfort Suites Beaumont'}
             />
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '-12px' }}>
-              This will appear in all your reports and schedules
+              {t('propertyNameHelp', lang)}
             </p>
           </div>
         )}
@@ -152,20 +178,20 @@ export default function OnboardingPage() {
         {/* Step 1: Rooms & Staff */}
         {step === 1 && (
           <div className="animate-slide-in-up">
-            <Field label="Total Rooms" value={form.totalRooms} onChange={(v: number) => upd('totalRooms', v)} type="number" />
-            <Field label="Average Rooms Occupied Per Night" value={form.avgOccupancy} onChange={(v: number) => upd('avgOccupancy', v)} type="number" suffix="rooms" />
-            <Field label="Housekeeping Staff on Roster" value={form.totalStaffOnRoster} onChange={(v: number) => upd('totalStaffOnRoster', v)} type="number" suffix="people" />
+            <Field label={t('totalRoomsField', lang)} value={form.totalRooms} onChange={(v: number) => upd('totalRooms', v)} type="number" />
+            <Field label={t('avgOccupancyField', lang)} value={form.avgOccupancy} onChange={(v: number) => upd('avgOccupancy', v)} type="number" suffix={lang === 'en' ? 'rooms' : 'hab.'} />
+            <Field label={t('staffOnRosterField', lang)} value={form.totalStaffOnRoster} onChange={(v: number) => upd('totalStaffOnRoster', v)} type="number" suffix={lang === 'en' ? 'people' : 'personas'} />
           </div>
         )}
 
         {/* Step 2: Financials */}
         {step === 2 && (
           <div className="animate-slide-in-up">
-            <Field label="Housekeeper Hourly Wage" value={form.hourlyWage} onChange={(v: number) => upd('hourlyWage', v)} type="number" suffix="$/hr" />
-            <Field label="Minutes to Clean a Checkout Room" value={form.checkoutMinutes} onChange={(v: number) => upd('checkoutMinutes', v)} type="number" suffix="min" />
-            <Field label="Minutes to Clean a Stayover Room" value={form.stayoverMinutes} onChange={(v: number) => upd('stayoverMinutes', v)} type="number" suffix="min" />
-            <Field label="Shift Length" value={form.shiftMinutes} onChange={(v: number) => upd('shiftMinutes', v)} type="number" suffix="min" />
-            <Field label="Weekly Labor Budget (optional)" value={form.weeklyBudget} onChange={(v: number) => upd('weeklyBudget', v)} type="number" suffix="$" />
+            <Field label={t('hourlyWageField', lang)} value={form.hourlyWage} onChange={(v: number) => upd('hourlyWage', v)} type="number" suffix="$/hr" />
+            <Field label={t('checkoutMinutesField', lang)} value={form.checkoutMinutes} onChange={(v: number) => upd('checkoutMinutes', v)} type="number" suffix="min" />
+            <Field label={t('stayoverMinutesField', lang)} value={form.stayoverMinutes} onChange={(v: number) => upd('stayoverMinutes', v)} type="number" suffix="min" />
+            <Field label={t('shiftLengthField', lang)} value={form.shiftMinutes} onChange={(v: number) => upd('shiftMinutes', v)} type="number" suffix="min" />
+            <Field label={t('weeklyBudgetField', lang)} value={form.weeklyBudget} onChange={(v: number) => upd('weeklyBudget', v)} type="number" suffix="$" />
           </div>
         )}
 
@@ -189,10 +215,15 @@ export default function OnboardingPage() {
               <Check size={40} color="#22c55e" />
             </div>
             <h3 style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: '1.8rem', marginBottom: '12px' }}>
-              You're all set, {user?.displayName?.split(' ')[0]}!
+              {lang === 'en'
+                ? `You're all set, ${user?.displayName?.split(' ')[0]}!`
+                : `¡Todo listo, ${user?.displayName?.split(' ')[0]}!`}
             </h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '15px', lineHeight: 1.6, maxWidth: '320px', margin: '0 auto' }}>
-              <strong style={{ color: 'var(--text-primary)' }}>{form.name}</strong> is ready. Your public areas and laundry settings are pre-loaded with standard Comfort Suites defaults — customize them in Settings any time.
+              <strong style={{ color: 'var(--text-primary)' }}>{form.name}</strong>
+              {lang === 'en'
+                ? ' is ready. Your public areas and laundry settings are pre-loaded with standard Comfort Suites defaults — customize them in Settings any time.'
+                : ' está lista. Las áreas comunes y la lavandería están pre-cargadas con valores estándar — personalízalas en Ajustes cuando quieras.'}
             </p>
 
             <div
@@ -206,7 +237,8 @@ export default function OnboardingPage() {
               }}
             >
               <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                <strong style={{ color: 'var(--amber)' }}>Next step:</strong> Open Morning Setup every day and hit Calculate. You'll see exactly how many housekeepers you need — and how much you're saving.
+                <strong style={{ color: 'var(--amber)' }}>{t('nextStepTitle', lang)}</strong>{' '}
+                {t('nextStepDesc', lang)}
               </p>
             </div>
           </div>
@@ -217,7 +249,7 @@ export default function OnboardingPage() {
           {step > 0 && step < 3 && (
             <button onClick={() => setStep(s => s - 1)} className="btn btn-secondary" style={{ flex: 1 }}>
               <ChevronLeft size={18} />
-              Back
+              {t('back', lang)}
             </button>
           )}
           {step < 2 && (
@@ -227,13 +259,13 @@ export default function OnboardingPage() {
               className="btn btn-primary"
               style={{ flex: 1 }}
             >
-              Continue
+              {t('continue', lang)}
               <ChevronRight size={18} />
             </button>
           )}
           {step === 2 && (
             <button onClick={() => setStep(3)} className="btn btn-primary" style={{ flex: 1 }}>
-              Review
+              {t('review', lang)}
               <ChevronRight size={18} />
             </button>
           )}
@@ -244,7 +276,7 @@ export default function OnboardingPage() {
               className="btn btn-primary btn-lg"
               style={{ flex: 1 }}
             >
-              {saving ? 'Saving...' : 'Open HotelOps AI →'}
+              {saving ? t('savingDots', lang) : t('openApp', lang)}
             </button>
           )}
         </div>
