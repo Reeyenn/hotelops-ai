@@ -115,7 +115,16 @@ type TranslationKey =
   | 'avoidableLaborCost' | 'roomsMayNotFinish' | 'scheduledMatchesRec'
   | 'estimatedFinishLabel' | 'savedPast30' | 'addRooms'
   // Smart Assign modal
-  | 'assignPreview' | 'confirmAssign';
+  | 'assignPreview' | 'confirmAssign'
+  // Performance tracking page
+  | 'performance' | 'performanceSub' | 'teamPerformance'
+  | 'onPace' | 'ahead' | 'behindPace'
+  | 'roomsPerHr' | 'avgCleanTime'
+  | 'leaderboard' | 'last7Days' | 'last14Days'
+  | 'roomsDone' | 'avgPerDay' | 'noActivityToday'
+  | 'noHistoryYet' | 'historyTab' | 'liveToday'
+  | 'totalAssigned' | 'checkoutsShort' | 'stayoversShort'
+  | 'loadingHistory' | 'topPerformer';
 
 const translations: Record<Language, Record<TranslationKey, string>> = {
   en: {
@@ -423,6 +432,29 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     // Smart Assign modal
     assignPreview: 'Assignment Preview',
     confirmAssign: 'Confirm & Assign',
+    // Performance tracking
+    performance: 'Performance',
+    performanceSub: 'Track team output',
+    teamPerformance: 'Team Performance',
+    onPace: 'On Pace',
+    ahead: 'Ahead',
+    behindPace: 'Behind',
+    roomsPerHr: 'Rooms/hr',
+    avgCleanTime: 'Avg Clean Time',
+    leaderboard: 'Leaderboard',
+    last7Days: 'Last 7 Days',
+    last14Days: 'Last 14 Days',
+    roomsDone: 'Rooms Done',
+    avgPerDay: 'Avg/Day',
+    noActivityToday: 'No activity yet today',
+    noHistoryYet: 'No history yet',
+    historyTab: 'History',
+    liveToday: 'Live Today',
+    totalAssigned: 'Assigned',
+    checkoutsShort: 'CO',
+    stayoversShort: 'SO',
+    loadingHistory: 'Loading history...',
+    topPerformer: 'Top Performer',
   },
 
   es: {
@@ -730,6 +762,29 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     // Smart Assign modal
     assignPreview: 'Vista Previa de Asignación',
     confirmAssign: 'Confirmar y Asignar',
+    // Performance tracking
+    performance: 'Desempeño',
+    performanceSub: 'Rastrear desempeño del equipo',
+    teamPerformance: 'Desempeño del Equipo',
+    onPace: 'Al Día',
+    ahead: 'Adelantado',
+    behindPace: 'Atrasado',
+    roomsPerHr: 'Hab./hr',
+    avgCleanTime: 'Tiempo Prom.',
+    leaderboard: 'Clasificación',
+    last7Days: 'Últimos 7 días',
+    last14Days: 'Últimos 14 días',
+    roomsDone: 'Hab. Listas',
+    avgPerDay: 'Prom./Día',
+    noActivityToday: 'Sin actividad hoy',
+    noHistoryYet: 'Sin historial aún',
+    historyTab: 'Historial',
+    liveToday: 'En Vivo Hoy',
+    totalAssigned: 'Asignadas',
+    checkoutsShort: 'SAL',
+    stayoversShort: 'CON',
+    loadingHistory: 'Cargando historial...',
+    topPerformer: 'Mejor Desempeño',
   },
 };
 
