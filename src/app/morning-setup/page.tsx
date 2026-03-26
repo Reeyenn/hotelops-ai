@@ -291,7 +291,7 @@ export default function MorningSetupPage() {
 
         {/* ── Breakfast staffing ── */}
         {form.occupied > 0 && (() => {
-          const attendants = Math.max(1, Math.ceil(form.occupied / 45));
+          const attendants = 1;
           const setupMins  = form.occupied > 30 ? 30 : 15;
           const startHr    = parseInt(form.startTime.split(':')[0]);
           const startMin   = parseInt(form.startTime.split(':')[1]);
@@ -319,7 +319,7 @@ export default function MorningSetupPage() {
                 </div>
               </div>
               <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px' }}>
-                {lang === 'en' ? `Based on ${form.occupied} occupied rooms · ` : `Basado en ${form.occupied} habitaciones ocupadas · `}{t('basedOnOccupied', lang)}
+                {lang === 'en' ? '5:00 AM – 12:00 PM daily' : '5:00 AM – 12:00 PM todos los días'}
               </p>
             </div>
           );
