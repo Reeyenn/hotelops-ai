@@ -14,6 +14,7 @@ const { initializeApp, cert } = require('firebase-admin/app');
 const { getFirestore, Timestamp } = require('firebase-admin/firestore');
 const path = require('path');
 const fs = require('fs');
+const { runNightlyScheduler } = require('./scheduler');
 
 // ─── Config ────────────────────────────────────────────────────────────────
 
@@ -307,6 +308,31 @@ async function writeRoomsToFirestore(rooms) {
     .update({ lastSyncedAt: Timestamp.now(), pmsConnected: true });
 }
 
+// ─── Scheduler trigger ─────────────────────────────────────────────────────
+// Tracks whether the nightly scheduler has already run today so it
+// fires exactly once per night even though the scraper loops every 15 min.
+let lastSchedulerDate = null;
+
+async function maybeRunScheduler() {
+  const hour = localHour();
+  const today = todayISO();
+
+  // Run between 22:00–22:59 local time, once per calendar day
+  if (hour === 22 && lastSchedulerDate !== today) {
+    lastSchedulerDate = today;
+    try {
+      await runNightlyScheduler(db, {
+        USER_ID:     CONFIG.USER_ID,
+        PROPERTY_ID: CONFIG.PROPERTY_ID,
+        TIMEZONE:    CONFIG.TIMEZONE,
+        APP_URL:     process.env.APP_URL || 'https://hotelops-ai.vercel.app',
+      }, log);
+    } catch (err) {
+      log(`Scheduler error: ${err.message}`);
+    }
+  }
+}
+
 // ─── Main loop ─────────────────────────────────────────────────────────────
 
 async function run() {
@@ -339,8 +365,11 @@ async function run() {
 
   // Run once immediately, then on interval
   async function scrapeAndWrite() {
+    // Always check the nightly scheduler, even outside scraping hours
+    await maybeRunScheduler();
+
     if (!isOperationalHours()) {
-      log(`Outside operational hours (${CONFIG.OPERATIONAL_HOURS_START}:00–${CONFIG.OPERATIONAL_HOURS_END}:00) — skipping`);
+      log(`Outside operational hours (${CONFIG.OPERATIONAL_HOURS_START}:00–${CONFIG.OPERATIONAL_HOURS_END}:00) — skipping scrape`);
       return;
     }
 
