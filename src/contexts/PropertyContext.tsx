@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { useAuth } from './AuthContext';
-import type { AppUser } from './AuthContext';
 import {
   getProperties,
   getProperty,
@@ -51,8 +50,7 @@ const PropertyContext = createContext<PropertyContextType>({
 });
 
 export function PropertyProvider({ children }: { children: React.ReactNode }) {
-  const { user: authUser } = useAuth();
-  const user = authUser as AppUser | null;
+  const { user } = useAuth();
   const [properties, setProperties] = useState<Property[]>([]);
   const [activePropertyId, setActivePropertyIdState] = useState<string | null>(null);
   const [activeProperty, setActiveProperty] = useState<Property | null>(null);
@@ -77,10 +75,11 @@ export function PropertyProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
       try {
         const allProps = await getProperties(user.uid);
-        // Filter by propertyAccess: ["*"] = all, otherwise only listed IDs
-        const props = user.propertyAccess?.includes('*')
+        // Admin role or wildcard access sees all properties
+        const access = user.propertyAccess ?? [];
+        const props = user.role === 'admin' || access.includes('*')
           ? allProps
-          : allProps.filter(p => user.propertyAccess?.includes(p.id));
+          : allProps.filter(p => access.includes(p.id));
         setProperties(props);
 
         const stored = localStorage.getItem('hotelops-active-property');
