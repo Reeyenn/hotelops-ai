@@ -5,15 +5,12 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useLang } from '@/contexts/LanguageContext';
 import { t } from '@/lib/translations';
-import { LayoutDashboard, Sun, BedDouble, BarChart3, Settings, CalendarClock } from 'lucide-react';
+import { LayoutDashboard, BedDouble, Settings } from 'lucide-react';
 
 const navItems = [
-  { href: '/dashboard',     icon: LayoutDashboard, key: 'dashboard'    as const },
-  { href: '/morning-setup', icon: Sun,              key: 'morningSetup' as const },
-  { href: '/scheduling',    icon: CalendarClock,    key: 'scheduling'   as const },
-  { href: '/rooms',         icon: BedDouble,        key: 'rooms'        as const },
-  { href: '/analytics',     icon: BarChart3,        key: 'analytics'    as const },
-  { href: '/settings',      icon: Settings,         key: 'settings'     as const },
+  { href: '/dashboard',    icon: LayoutDashboard, key: 'dashboard'    as const },
+  { href: '/housekeeping', icon: BedDouble,        key: 'housekeeping' as const },
+  { href: '/settings',     icon: Settings,         key: 'settings'     as const },
 ];
 
 export function BottomNav() {

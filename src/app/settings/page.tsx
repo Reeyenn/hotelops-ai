@@ -6,15 +6,11 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { useLang } from '@/contexts/LanguageContext';
 import { useProperty } from '@/contexts/PropertyContext';
 import { t } from '@/lib/translations';
-import { Users, MapPin, RefreshCw, Building2, Wifi, Upload, ChevronRight, Settings } from 'lucide-react';
+import { Building2, Wifi, ChevronRight, Settings } from 'lucide-react';
 
 const sections = [
-  { href:'/settings/property',    icon:Building2, label:'Property',       desc:'Name, room count, wages, shift length'              },
-  { href:'/settings/staff',       icon:Users,     label:'Staff',          desc:'Add/remove housekeepers, track hours'               },
-  { href:'/settings/public-areas',icon:MapPin,    label:'Public Areas',   desc:'Areas, cleaning frequency, minutes per clean'       },
-  { href:'/settings/laundry',     icon:RefreshCw, label:'Laundry',        desc:'Towels, sheets, comforters — loads per run'         },
-  { href:'/settings/pms',         icon:Wifi,      label:'PMS Connection', desc:'Auto-sync data from your property management system'},
-  { href:'/settings/import',      icon:Upload,    label:'Room Import',    desc:'Manually import occupancy from a PMS CSV export'    },
+  { href:'/settings/property', icon:Building2, label:'Property',       desc:'Name, room count, wages, shift length'              },
+  { href:'/settings/pms',      icon:Wifi,      label:'PMS Connection', desc:'Auto-sync data from your property management system'},
 ];
 
 export default function SettingsPage() {
