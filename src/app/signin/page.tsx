@@ -24,12 +24,17 @@ export default function SignInPage() {
     setSigning(true);
     setError('');
 
-    const err = await signIn(username.trim(), password);
-    if (err) {
-      setError(err);
+    try {
+      const err = await signIn(username.trim(), password);
+      if (err) {
+        setError(err);
+        setSigning(false);
+      }
+      // On success, onAuthStateChanged → redirect via useEffect above
+    } catch {
+      setError('Invalid username or password.');
       setSigning(false);
     }
-    // On success, onAuthStateChanged → redirect via useEffect above
   };
 
   if (loading) {
