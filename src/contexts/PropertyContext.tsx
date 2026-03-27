@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { useAuth } from './AuthContext';
 import {
   getProperties,
@@ -10,6 +10,7 @@ import {
   getLaundryConfig,
   bulkSetPublicAreas,
   setLaundryCategory,
+  subscribeToStaff,
 } from '@/lib/firestore';
 import { getDefaultPublicAreas, getDefaultLaundryCategories } from '@/lib/defaults';
 import { format } from 'date-fns';
@@ -21,6 +22,7 @@ interface PropertyContextType {
   activeProperty: Property | null;
   activePropertyId: string | null;
   staff: StaffMember[];
+  staffLoaded: boolean;
   publicAreas: PublicArea[];
   laundryConfig: LaundryCategory[];
   loading: boolean;
@@ -36,6 +38,7 @@ const PropertyContext = createContext<PropertyContextType>({
   activeProperty: null,
   activePropertyId: null,
   staff: [],
+  staffLoaded: false,
   publicAreas: [],
   laundryConfig: [],
   loading: true,
@@ -52,6 +55,7 @@ export function PropertyProvider({ children }: { children: React.ReactNode }) {
   const [activePropertyId, setActivePropertyIdState] = useState<string | null>(null);
   const [activeProperty, setActiveProperty] = useState<Property | null>(null);
   const [staff, setStaff] = useState<StaffMember[]>([]);
+  const [staffLoaded, setStaffLoaded] = useState(false);
   const [publicAreas, setPublicAreas] = useState<PublicArea[]>([]);
   const [laundryConfig, setLaundryConfig] = useState<LaundryCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -84,40 +88,56 @@ export function PropertyProvider({ children }: { children: React.ReactNode }) {
     })();
   }, [user]);
 
-  // Load active property data
+  // Load active property data.
+  // Staff is loaded via onSnapshot (real-time) so it updates when the network
+  // response arrives after a cache miss — preventing the intermittent "no staff"
+  // bug caused by getDocs returning an empty cached snapshot.
   useEffect(() => {
     if (!user || !activePropertyId) {
       setActiveProperty(null);
+      setStaff([]);
+      setStaffLoaded(false);
       return;
     }
-    (async () => {
-      // Load core data (property + staff) first so staff is always populated
-      // even if the secondary area/laundry migration step fails.
-      try {
-        const [prop, staffList] = await Promise.all([
-          getProperty(user.uid, activePropertyId),
-          getStaff(user.uid, activePropertyId),
-        ]);
-        setActiveProperty(prop);
+
+    let cancelled = false;
+
+    // ── Real-time staff listener ───────────────────────────────────────────
+    // Fires immediately with whatever is in the local cache (possibly empty),
+    // then fires again when the server response arrives. This eliminates the
+    // race where getDocs resolves from cache before data is on the server.
+    const unsubStaff = subscribeToStaff(user.uid, activePropertyId, staffList => {
+      if (!cancelled) {
         setStaff(staffList);
+        setStaffLoaded(true);
+      }
+    });
+
+    // ── Rest of property data (one-time fetch) ─────────────────────────────
+    (async () => {
+      // Load property separately so a failure here doesn't kill staff.
+      try {
+        const prop = await getProperty(user.uid, activePropertyId);
+        if (!cancelled) setActiveProperty(prop);
       } catch (err) {
-        console.error('PropertyContext: failed to load property/staff', err);
-        return;
+        console.error('PropertyContext: failed to load property', err);
       }
 
       // Load areas + laundry config in a separate try/catch so a migration
-      // failure never leaves staff empty.
+      // failure never affects staff loading.
       try {
         const [areas, laundry] = await Promise.all([
           getPublicAreas(user.uid, activePropertyId),
           getLaundryConfig(user.uid, activePropertyId),
         ]);
 
+        if (cancelled) return;
+
         // Seed defaults if empty
         if (areas.length === 0) {
           const defaults = getDefaultPublicAreas().map(a => ({ ...a, id: generateId() }));
-          await bulkSetPublicAreas(user.uid, activePropertyId, defaults);
-          setPublicAreas(defaults);
+          await bulkSetPublicAreas(user.uid, activePropertyId!, defaults);
+          if (!cancelled) setPublicAreas(defaults);
         } else {
           setPublicAreas(areas);
         }
@@ -128,9 +148,9 @@ export function PropertyProvider({ children }: { children: React.ReactNode }) {
         if (laundryNeedsMigration) {
           const defaults = getDefaultLaundryCategories().map(c => ({ ...c, id: generateId() }));
           await Promise.all(defaults.map(c => setLaundryCategory(user.uid, activePropertyId!, c)));
-          setLaundryConfig(defaults);
+          if (!cancelled) setLaundryConfig(defaults);
         } else {
-          setLaundryConfig(laundry);
+          if (!cancelled) setLaundryConfig(laundry);
         }
 
         // Migrate bad public area defaults: if all non-daily areas have today as startDate,
@@ -142,12 +162,17 @@ export function PropertyProvider({ children }: { children: React.ReactNode }) {
         if (areasNeedMigration) {
           const defaults = getDefaultPublicAreas().map(a => ({ ...a, id: generateId() }));
           await bulkSetPublicAreas(user.uid, activePropertyId!, defaults);
-          setPublicAreas(defaults);
+          if (!cancelled) setPublicAreas(defaults);
         }
       } catch (err) {
         console.error('PropertyContext: failed to load areas/laundry config', err);
       }
     })();
+
+    return () => {
+      cancelled = true;
+      unsubStaff();
+    };
   }, [user, activePropertyId]);
 
   const refreshProperty = async () => {
@@ -181,6 +206,7 @@ export function PropertyProvider({ children }: { children: React.ReactNode }) {
         activeProperty,
         activePropertyId,
         staff,
+        staffLoaded,
         publicAreas,
         laundryConfig,
         loading,

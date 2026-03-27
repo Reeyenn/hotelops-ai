@@ -77,7 +77,7 @@ const STATUS_ICON: Record<ConfirmationStatus, React.ReactNode> = {
 
 export default function SchedulingPage() {
   const { user } = useAuth();
-  const { activePropertyId, staff, refreshStaff } = useProperty();
+  const { activePropertyId, staff, staffLoaded, refreshStaff } = useProperty();
   const { lang } = useLang();
 
   const tomorrow = addDays(todayStr(), 1);
@@ -413,7 +413,11 @@ export default function SchedulingPage() {
             </button>
           </div>
 
-          {staff.filter(s => s.isActive !== false).length === 0 ? (
+          {!staffLoaded ? (
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
+              {lang === 'es' ? 'Cargando…' : 'Loading…'}
+            </p>
+          ) : staff.filter(s => s.isActive !== false).length === 0 ? (
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
               {t('noEligibleStaff', lang)}
             </p>
@@ -557,7 +561,11 @@ export default function SchedulingPage() {
           <p style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', marginBottom: '14px' }}>
             {t('weeklyHoursTracker', lang)}
           </p>
-          {activeStaff.length === 0 ? (
+          {!staffLoaded ? (
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
+              {lang === 'es' ? 'Cargando…' : 'Loading…'}
+            </p>
+          ) : activeStaff.length === 0 ? (
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>{t('noStaffYet', lang)}</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
