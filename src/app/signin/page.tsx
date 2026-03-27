@@ -89,7 +89,7 @@ export default function SignInPage() {
             <input
               type="text"
               value={username}
-              onChange={e => setUsername(e.target.value)}
+              onChange={e => { setUsername(e.target.value); setError(''); }}
               autoComplete="username"
               autoCapitalize="off"
               spellCheck={false}
@@ -120,7 +120,7 @@ export default function SignInPage() {
             <input
               type="password"
               value={password}
-              onChange={e => setPassword(e.target.value)}
+              onChange={e => { setPassword(e.target.value); setError(''); }}
               autoComplete="current-password"
               disabled={signing}
               style={{
