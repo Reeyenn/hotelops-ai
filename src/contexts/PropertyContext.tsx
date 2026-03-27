@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from './AuthContext';
 import {
   getProperties,
@@ -53,12 +53,17 @@ export function PropertyProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [properties, setProperties] = useState<Property[]>([]);
   const [activePropertyId, setActivePropertyIdState] = useState<string | null>(null);
-  const [activeProperty, setActiveProperty] = useState<Property | null>(null);
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [staffLoaded, setStaffLoaded] = useState(false);
   const [publicAreas, setPublicAreas] = useState<PublicArea[]>([]);
   const [laundryConfig, setLaundryConfig] = useState<LaundryCategory[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Derived from properties list — no async needed, always in sync
+  const activeProperty = useMemo(
+    () => properties.find(p => p.id === activePropertyId) ?? null,
+    [properties, activePropertyId]
+  );
 
   const setActivePropertyId = (id: string) => {
     setActivePropertyIdState(id);
@@ -99,7 +104,6 @@ export function PropertyProvider({ children }: { children: React.ReactNode }) {
   // bug caused by getDocs returning an empty cached snapshot.
   useEffect(() => {
     if (!user || !activePropertyId) {
-      setActiveProperty(null);
       setStaff([]);
       setStaffLoaded(false);
       return;
@@ -120,14 +124,6 @@ export function PropertyProvider({ children }: { children: React.ReactNode }) {
 
     // ── Rest of property data (one-time fetch) ─────────────────────────────
     (async () => {
-      // Load property separately so a failure here doesn't kill staff.
-      try {
-        const prop = await getProperty(user.uid, activePropertyId);
-        if (!cancelled) setActiveProperty(prop);
-      } catch (err) {
-        console.error('PropertyContext: failed to load property', err);
-      }
-
       // Load areas + laundry config in a separate try/catch so a migration
       // failure never affects staff loading.
       try {
@@ -183,7 +179,9 @@ export function PropertyProvider({ children }: { children: React.ReactNode }) {
   const refreshProperty = async () => {
     if (!user || !activePropertyId) return;
     const prop = await getProperty(user.uid, activePropertyId);
-    setActiveProperty(prop);
+    if (prop) {
+      setProperties(prev => prev.map(p => p.id === activePropertyId ? prop : p));
+    }
   };
 
   const refreshStaff = async () => {
