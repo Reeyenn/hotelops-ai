@@ -26,12 +26,11 @@ import {
 
 // ─── Tab config ──────────────────────────────────────────────────────────────
 
-type TabKey = 'schedule' | 'rooms' | 'staff' | 'performance' | 'import';
+type TabKey = 'schedule' | 'rooms' | 'performance' | 'import';
 
 const TABS: { key: TabKey; label: string; labelEs: string }[] = [
   { key: 'schedule',    label: 'Schedule',    labelEs: 'Horario'       },
   { key: 'rooms',       label: 'Rooms',       labelEs: 'Habitaciones'  },
-  { key: 'staff',       label: 'Staff',       labelEs: 'Personal'      },
   { key: 'performance', label: 'Performance', labelEs: 'Rendimiento'   },
   { key: 'import',      label: 'Import',      labelEs: 'Importar'      },
 ];
@@ -1239,7 +1238,6 @@ export default function HousekeepingPage() {
       {/* ── Section content ── */}
       {activeTab === 'schedule'    && <ScheduleSection />}
       {activeTab === 'rooms'       && <RoomsSection />}
-      {activeTab === 'staff'       && <StaffSection />}
       {activeTab === 'performance' && <PerformanceSection />}
       {activeTab === 'import'      && <ImportSection />}
     </AppLayout>

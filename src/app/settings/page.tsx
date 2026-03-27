@@ -15,8 +15,9 @@ export default function SettingsPage() {
   const { user }           = useAuth();
 
   const sections = [
-    { href:'/settings/property', icon:Building2, label:'Property',       desc:'Name, room count, wages, shift length'              },
-    { href:'/settings/pms',      icon:Wifi,      label:'PMS Connection', desc:'Auto-sync data from your property management system'},
+    { href:'/settings/property', icon:Building2, label:'Property',        desc:'Name, room count, wages, shift length'              },
+    { href:'/settings/pms',      icon:Wifi,      label:'PMS Connection',  desc:'Auto-sync data from your property management system'},
+    { href:'/staff',             icon:Users,     label:'Staff Directory', desc:'View and manage all hotel staff by department'      },
     ...(user?.role === 'admin'
       ? [{ href:'/settings/accounts', icon:Users, label:'Accounts', desc:'Manage user logins and property access' }]
       : []),

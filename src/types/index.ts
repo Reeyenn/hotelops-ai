@@ -22,12 +22,15 @@ export interface Property {
 
 // ─── Staff ─────────────────────────────────────────────────────────────────
 
+export type StaffDepartment = 'housekeeping' | 'front_desk' | 'maintenance' | 'other';
+
 export interface StaffMember {
   id: string;
   name: string;
   phone?: string;
   language: 'en' | 'es';
   isSenior: boolean;
+  department?: StaffDepartment;  // default 'housekeeping' if not set
   hourlyWage?: number;          // override property wage
   scheduledToday: boolean;
   weeklyHours: number;          // tracked this week
