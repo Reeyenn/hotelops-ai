@@ -31,13 +31,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
-      if (firebaseUser) {
-        await createOrUpdateUser(firebaseUser.uid, {
+      if (firebaseUser && !firebaseUser.isAnonymous) {
+        const userData: Parameters<typeof createOrUpdateUser>[1] = {
           uid: firebaseUser.uid,
           email: firebaseUser.email ?? '',
           displayName: firebaseUser.displayName ?? '',
-          photoURL: firebaseUser.photoURL ?? undefined,
-        });
+        };
+        if (firebaseUser.photoURL) userData.photoURL = firebaseUser.photoURL;
+        await createOrUpdateUser(firebaseUser.uid, userData);
       }
       setLoading(false);
     });
