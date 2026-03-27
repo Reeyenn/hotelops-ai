@@ -133,7 +133,17 @@ type TranslationKey =
   // CSV room import
   | 'roomImport' | 'csvImportTitle' | 'uploadCsv' | 'csvPreviewLabel'
   | 'importRoomsBtn' | 'csvHelpText' | 'csvRoomsFound' | 'csvImportDone'
-  | 'csvImportFailed' | 'csvDropHint' | 'csvSkipped';
+  | 'csvImportFailed' | 'csvDropHint' | 'csvSkipped'
+  // Scheduling page
+  | 'scheduling' | 'schedulingTitle' | 'schedulingSubtitle'
+  | 'selectShiftDate' | 'autoSelectCrew' | 'sendConfirmations'
+  | 'confirmationsSent' | 'crewForDate' | 'noEligibleStaff'
+  | 'statusPending' | 'statusConfirmed' | 'statusDeclined' | 'statusNoResponse'
+  | 'weeklyHoursTracker' | 'notificationsTitle' | 'noNotifications' | 'markAllRead'
+  | 'daysWorkedLabel' | 'onVacation' | 'inactiveLabel' | 'maxDaysPerWeekLabel'
+  | 'vacationDatesLabel' | 'vacationDatesHelp' | 'isActiveLabel'
+  | 'eligibleLabel' | 'atLimitLabel' | 'sendingLabel' | 'crewSelectedCount'
+  | 'confirmDeclinedMsg' | 'replacementFoundMsg' | 'noReplacementMsg' | 'allConfirmedMsg';
 
 const translations: Record<Language, Record<TranslationKey, string>> = {
   en: {
@@ -490,6 +500,39 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     csvImportFailed: 'Import failed — check the file format and try again',
     csvDropHint: 'Drop a CSV here or click to browse',
     csvSkipped: 'skipped (already exist today)',
+    // Scheduling
+    scheduling: 'Schedule',
+    schedulingTitle: 'Scheduling',
+    schedulingSubtitle: 'Send shift confirmations',
+    selectShiftDate: 'Shift Date',
+    autoSelectCrew: 'Auto-Select Crew',
+    sendConfirmations: 'Send Confirmations',
+    confirmationsSent: 'Confirmations sent',
+    crewForDate: 'Crew for',
+    noEligibleStaff: 'No eligible staff — check hours & vacation dates',
+    statusPending: 'Pending',
+    statusConfirmed: 'Confirmed',
+    statusDeclined: 'Declined',
+    statusNoResponse: 'No Response',
+    weeklyHoursTracker: 'Weekly Hours',
+    notificationsTitle: 'Notifications',
+    noNotifications: 'No notifications',
+    markAllRead: 'Mark all read',
+    daysWorkedLabel: 'days this week',
+    onVacation: 'On vacation',
+    inactiveLabel: 'Inactive',
+    maxDaysPerWeekLabel: 'Max Days/Week',
+    vacationDatesLabel: 'Vacation Dates',
+    vacationDatesHelp: 'One date per line (YYYY-MM-DD)',
+    isActiveLabel: 'Active',
+    eligibleLabel: 'Eligible',
+    atLimitLabel: 'At limit',
+    sendingLabel: 'Sending…',
+    crewSelectedCount: 'selected',
+    confirmDeclinedMsg: 'declined — finding replacement',
+    replacementFoundMsg: 'Replacement found',
+    noReplacementMsg: 'No replacement available',
+    allConfirmedMsg: 'All confirmed',
   },
 
   es: {
@@ -846,6 +889,39 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     csvImportFailed: 'Error al importar — verifica el formato del archivo',
     csvDropHint: 'Arrastra un CSV aquí o haz clic para buscar',
     csvSkipped: 'omitidas (ya existen hoy)',
+    // Scheduling
+    scheduling: 'Horario',
+    schedulingTitle: 'Horarios',
+    schedulingSubtitle: 'Enviar confirmaciones de turno',
+    selectShiftDate: 'Fecha del Turno',
+    autoSelectCrew: 'Seleccionar Equipo',
+    sendConfirmations: 'Enviar Confirmaciones',
+    confirmationsSent: 'Confirmaciones enviadas',
+    crewForDate: 'Equipo para',
+    noEligibleStaff: 'Sin personal disponible — revisa horas y vacaciones',
+    statusPending: 'Pendiente',
+    statusConfirmed: 'Confirmado',
+    statusDeclined: 'Rechazado',
+    statusNoResponse: 'Sin Respuesta',
+    weeklyHoursTracker: 'Horas Semanales',
+    notificationsTitle: 'Notificaciones',
+    noNotifications: 'Sin notificaciones',
+    markAllRead: 'Marcar todo como leído',
+    daysWorkedLabel: 'días esta semana',
+    onVacation: 'De vacaciones',
+    inactiveLabel: 'Inactiva',
+    maxDaysPerWeekLabel: 'Días Máx./Semana',
+    vacationDatesLabel: 'Fechas de Vacaciones',
+    vacationDatesHelp: 'Una fecha por línea (AAAA-MM-DD)',
+    isActiveLabel: 'Activa',
+    eligibleLabel: 'Disponible',
+    atLimitLabel: 'Al límite',
+    sendingLabel: 'Enviando…',
+    crewSelectedCount: 'seleccionadas',
+    confirmDeclinedMsg: 'rechazó — buscando reemplazo',
+    replacementFoundMsg: 'Reemplazo encontrado',
+    noReplacementMsg: 'Sin reemplazo disponible',
+    allConfirmedMsg: 'Todas confirmadas',
   },
 };
 

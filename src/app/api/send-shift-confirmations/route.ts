@@ -1,0 +1,122 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { randomUUID } from 'crypto';
+import admin from '@/lib/firebase-admin';
+
+interface StaffEntry {
+  staffId: string;
+  name: string;
+  phone: string;
+  language: 'en' | 'es';
+}
+
+interface RequestBody {
+  uid: string;
+  pid: string;
+  shiftDate: string;   // YYYY-MM-DD
+  baseUrl: string;
+  staff: StaffEntry[];
+}
+
+function toE164(raw: string): string | null {
+  const digits = raw.replace(/\D/g, '');
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`;
+  if (raw.startsWith('+')) return raw.trim();
+  return null;
+}
+
+async function sendSms(phone: string, message: string): Promise<void> {
+  const res = await fetch('https://textbelt.com/text', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      phone,
+      message,
+      key: process.env.TEXTBELT_API_KEY ?? 'textbelt',
+    }),
+  });
+  const data = await res.json() as { success: boolean; error?: string };
+  if (!data.success) throw new Error(data.error ?? 'Textbelt send failed');
+}
+
+function formatShiftDate(dateStr: string, lang: 'en' | 'es'): string {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const d = new Date(year, month - 1, day);
+  const locale = lang === 'es' ? 'es-US' : 'en-US';
+  const dayName = d.toLocaleDateString(locale, { weekday: 'long' });
+  const dateFormatted = d.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
+  return `${dayName} ${dateFormatted}`;
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const body: RequestBody = await req.json();
+    const { uid, pid, shiftDate, baseUrl, staff } = body;
+
+    if (!uid || !pid || !shiftDate || !staff?.length) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    const db = admin.firestore();
+
+    const results = await Promise.allSettled(
+      staff.map(async ({ staffId, name, phone, language }) => {
+        const token = randomUUID();
+        const phone164 = toE164(phone);
+        if (!phone164) throw new Error(`Invalid phone number: ${phone}`);
+
+        // Create confirmation doc (token = doc ID)
+        await db
+          .collection('users').doc(uid)
+          .collection('properties').doc(pid)
+          .collection('shiftConfirmations').doc(token)
+          .set({
+            uid,
+            pid,
+            staffId,
+            staffName: name,
+            staffPhone: phone,
+            shiftDate,
+            status: 'pending',
+            language,
+            sentAt: admin.firestore.FieldValue.serverTimestamp(),
+            respondedAt: null,
+            smsSent: false,
+          });
+
+        const dateLabel = formatShiftDate(shiftDate, language);
+        const confirmUrl = `${baseUrl}/confirm/${token}?uid=${uid}&pid=${pid}`;
+        const firstName = name.split(' ')[0];
+
+        const message = language === 'es'
+          ? `Hola ${firstName}, estás programada para el ${dateLabel}. Confirma aquí: ${confirmUrl} – HotelOps`
+          : `Hi ${firstName}, you're scheduled for ${dateLabel}. Confirm: ${confirmUrl} – HotelOps`;
+
+        await sendSms(phone164, message);
+
+        await db
+          .collection('users').doc(uid)
+          .collection('properties').doc(pid)
+          .collection('shiftConfirmations').doc(token)
+          .update({ smsSent: true });
+
+        return { staffId, token };
+      })
+    );
+
+    const sent = results.filter(r => r.status === 'fulfilled').length;
+    const failed = results.filter(r => r.status === 'rejected').length;
+    const tokens = results.flatMap(r => r.status === 'fulfilled' ? [r.value] : []);
+
+    results.forEach((r, i) => {
+      if (r.status === 'rejected') {
+        console.error(`Confirmation SMS failed for ${staff[i].name} (${staff[i].phone}):`, r.reason);
+      }
+    });
+
+    return NextResponse.json({ sent, failed, tokens });
+  } catch (err) {
+    console.error('send-shift-confirmations error:', err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

@@ -32,6 +32,10 @@ export interface StaffMember {
   scheduledToday: boolean;
   weeklyHours: number;          // tracked this week
   maxWeeklyHours: number;       // default 40
+  maxDaysPerWeek?: number;      // default 5
+  daysWorkedThisWeek?: number;  // tracked this week
+  vacationDates?: string[];     // YYYY-MM-DD strings
+  isActive?: boolean;           // default true (undefined = active)
   fcmToken?: string;            // FCM device token for push notifications
 }
 
@@ -252,6 +256,41 @@ export interface PreventiveTask {
   lastCompletedAt: Date | null; // null = never done
   lastCompletedBy?: string;     // name of who did it
   notes?: string;
+  createdAt: Date | null;
+}
+
+// ─── Shift Confirmation ────────────────────────────────────────────────────
+
+export type ConfirmationStatus = 'pending' | 'confirmed' | 'declined' | 'no_response';
+
+export interface ShiftConfirmation {
+  id: string;               // token — also the Firestore doc ID
+  uid: string;
+  pid: string;
+  staffId: string;
+  staffName: string;
+  staffPhone: string;
+  shiftDate: string;        // YYYY-MM-DD
+  status: ConfirmationStatus;
+  language: 'en' | 'es';
+  sentAt: Date | null;
+  respondedAt: Date | null;
+  smsSent: boolean;
+  smsError?: string;
+}
+
+export type NotificationType = 'decline' | 'no_response' | 'all_confirmed' | 'replacement_found' | 'no_replacement';
+
+export interface ManagerNotification {
+  id: string;
+  uid: string;
+  pid: string;
+  type: NotificationType;
+  message: string;
+  staffName?: string;
+  replacementName?: string;
+  shiftDate: string;
+  read: boolean;
   createdAt: Date | null;
 }
 

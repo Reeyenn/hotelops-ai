@@ -43,5 +43,12 @@ service cloud.firestore {
               'hasPhoto'
             ]);
     }
+
+    // ── Shift confirmations ──────────────────────────────────────────────────
+    // All reads/writes to shiftConfirmations and managerNotifications are done
+    // via the Admin SDK in API routes (/api/confirmation, /api/send-shift-confirmations).
+    // The scheduling page reads these as the authenticated owner via the
+    // /users/{uid}/... rule above, which covers all subcollections.
+    // No additional rules needed for client-side access.
   }
 }

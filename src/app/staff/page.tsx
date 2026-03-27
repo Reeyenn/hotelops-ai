@@ -18,6 +18,9 @@ interface StaffFormData {
   isSenior: boolean;
   hourlyWage?: number;
   maxWeeklyHours: number;
+  maxDaysPerWeek: number;
+  vacationDates: string;   // newline-separated YYYY-MM-DD strings
+  isActive: boolean;
 }
 
 const EMPTY_FORM: StaffFormData = {
@@ -25,6 +28,9 @@ const EMPTY_FORM: StaffFormData = {
   language: 'en',
   isSenior: false,
   maxWeeklyHours: 40,
+  maxDaysPerWeek: 5,
+  vacationDates: '',
+  isActive: true,
 };
 
 function initials(name: string): string {
@@ -58,6 +64,9 @@ export default function StaffPage() {
       isSenior: member.isSenior,
       hourlyWage: member.hourlyWage,
       maxWeeklyHours: member.maxWeeklyHours,
+      maxDaysPerWeek: member.maxDaysPerWeek ?? 5,
+      vacationDates: (member.vacationDates ?? []).join('\n'),
+      isActive: member.isActive ?? true,
     });
     setShowModal(true);
   };
@@ -66,6 +75,11 @@ export default function StaffPage() {
     if (!user || !activePropertyId || !form.name.trim()) return;
     setSaving(true);
     try {
+      const vacationDates = form.vacationDates
+        .split('\n')
+        .map(s => s.trim())
+        .filter(s => /^\d{4}-\d{2}-\d{2}$/.test(s));
+
       const data = {
         name: form.name.trim(),
         ...(form.phone && { phone: form.phone }),
@@ -73,6 +87,9 @@ export default function StaffPage() {
         isSenior: form.isSenior,
         ...(form.hourlyWage !== undefined && { hourlyWage: form.hourlyWage }),
         maxWeeklyHours: form.maxWeeklyHours,
+        maxDaysPerWeek: form.maxDaysPerWeek,
+        vacationDates,
+        isActive: form.isActive,
       };
 
       if (editMember) {
@@ -542,6 +559,57 @@ export default function StaffPage() {
                 placeholder="40"
                 min="1"
               />
+            </div>
+
+            <div>
+              <label className="label">{t('maxDaysPerWeekLabel', lang)}</label>
+              <input
+                type="number"
+                value={form.maxDaysPerWeek}
+                onChange={e => setForm(f => ({ ...f, maxDaysPerWeek: parseInt(e.target.value) || 5 }))}
+                className="input"
+                placeholder="5"
+                min="1"
+                max="7"
+              />
+            </div>
+
+            <div>
+              <label className="label">{t('vacationDatesLabel', lang)}</label>
+              <textarea
+                value={form.vacationDates}
+                onChange={e => setForm(f => ({ ...f, vacationDates: e.target.value }))}
+                className="input"
+                placeholder={'2026-03-28\n2026-03-29'}
+                rows={3}
+                style={{ resize: 'vertical', fontFamily: 'var(--font-mono)', fontSize: '12px' }}
+              />
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '4px 0 0' }}>
+                {t('vacationDatesHelp', lang)}
+              </p>
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '10px 14px',
+                background: 'rgba(255, 255, 255, 0.03)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-md)',
+              }}
+            >
+              <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{t('isActiveLabel', lang)}</span>
+              <label className="toggle" style={{ margin: 0 }}>
+                <input
+                  type="checkbox"
+                  checked={form.isActive}
+                  onChange={e => setForm(f => ({ ...f, isActive: e.target.checked }))}
+                />
+                <span className="toggle-track" />
+                <span className="toggle-thumb" />
+              </label>
             </div>
 
             <div

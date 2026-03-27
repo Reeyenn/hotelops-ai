@@ -30,6 +30,8 @@ import type {
   InventoryItem,
   HandoffEntry,
   GuestRequest,
+  ShiftConfirmation,
+  ManagerNotification,
 } from '@/types';
 
 // ─── Path helpers ──────────────────────────────────────────────────────────
@@ -433,4 +435,83 @@ export async function updateGuestRequest(
 
 export async function deleteGuestRequest(uid: string, pid: string, gid: string) {
   await deleteDoc(guestRequestDocRef(uid, pid, gid));
+}
+
+// ─── Shift Confirmations ────────────────────────────────────────────────────
+
+export const shiftConfirmationsRef = (uid: string, pid: string) =>
+  collection(db, 'users', uid, 'properties', pid, 'shiftConfirmations');
+export const shiftConfirmationDocRef = (uid: string, pid: string, token: string) =>
+  doc(db, 'users', uid, 'properties', pid, 'shiftConfirmations', token);
+
+export function subscribeToShiftConfirmations(
+  uid: string,
+  pid: string,
+  shiftDate: string,
+  callback: (confirmations: ShiftConfirmation[]) => void
+) {
+  const q = query(shiftConfirmationsRef(uid, pid), where('shiftDate', '==', shiftDate));
+  return onSnapshot(q, snap => {
+    callback(snap.docs.map(d => {
+      const data = d.data();
+      return {
+        id: d.id,
+        ...data,
+        sentAt: data.sentAt?.toDate?.() ?? null,
+        respondedAt: data.respondedAt?.toDate?.() ?? null,
+      } as ShiftConfirmation;
+    }));
+  });
+}
+
+export async function getShiftConfirmationsForDate(
+  uid: string, pid: string, shiftDate: string
+): Promise<ShiftConfirmation[]> {
+  const q = query(shiftConfirmationsRef(uid, pid), where('shiftDate', '==', shiftDate));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => {
+    const data = d.data();
+    return {
+      id: d.id,
+      ...data,
+      sentAt: data.sentAt?.toDate?.() ?? null,
+      respondedAt: data.respondedAt?.toDate?.() ?? null,
+    } as ShiftConfirmation;
+  });
+}
+
+// ─── Manager Notifications ──────────────────────────────────────────────────
+
+export const managerNotificationsRef = (uid: string, pid: string) =>
+  collection(db, 'users', uid, 'properties', pid, 'managerNotifications');
+export const managerNotificationDocRef = (uid: string, pid: string, nid: string) =>
+  doc(db, 'users', uid, 'properties', pid, 'managerNotifications', nid);
+
+export function subscribeToManagerNotifications(
+  uid: string,
+  pid: string,
+  callback: (notifications: ManagerNotification[]) => void
+) {
+  const q = query(managerNotificationsRef(uid, pid), orderBy('createdAt', 'desc'));
+  return onSnapshot(q, snap => {
+    callback(snap.docs.map(d => {
+      const data = d.data();
+      return {
+        id: d.id,
+        ...data,
+        createdAt: data.createdAt?.toDate?.() ?? null,
+      } as ManagerNotification;
+    }));
+  });
+}
+
+export async function markNotificationRead(uid: string, pid: string, nid: string) {
+  await updateDoc(managerNotificationDocRef(uid, pid, nid), { read: true });
+}
+
+export async function markAllNotificationsRead(uid: string, pid: string) {
+  const snap = await getDocs(
+    query(managerNotificationsRef(uid, pid), where('read', '==', false))
+  );
+  await Promise.all(snap.docs.map(d => updateDoc(d.ref, { read: true })));
 }
