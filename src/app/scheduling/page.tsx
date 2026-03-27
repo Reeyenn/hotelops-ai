@@ -77,7 +77,7 @@ const STATUS_ICON: Record<ConfirmationStatus, React.ReactNode> = {
 
 export default function SchedulingPage() {
   const { user } = useAuth();
-  const { activePropertyId, staff } = useProperty();
+  const { activePropertyId, staff, refreshStaff } = useProperty();
   const { lang } = useLang();
 
   const tomorrow = addDays(todayStr(), 1);
@@ -91,6 +91,15 @@ export default function SchedulingPage() {
 
   const uid = user?.uid ?? '';
   const pid = activePropertyId ?? '';
+
+  // If staff is empty after the property is known, force a fresh load.
+  // This guards against the case where PropertyContext loaded before auth
+  // resolved and the initial getStaff call was skipped.
+  useEffect(() => {
+    if (uid && pid && staff.length === 0) {
+      refreshStaff();
+    }
+  }, [uid, pid]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Subscribe to confirmations for the selected date
   useEffect(() => {

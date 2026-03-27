@@ -69,13 +69,18 @@ export function PropertyProvider({ children }: { children: React.ReactNode }) {
     }
     (async () => {
       setLoading(true);
-      const props = await getProperties(user.uid);
-      setProperties(props);
+      try {
+        const props = await getProperties(user.uid);
+        setProperties(props);
 
-      const stored = localStorage.getItem('hotelops-active-property');
-      const pid = stored && props.find(p => p.id === stored) ? stored : props[0]?.id ?? null;
-      setActivePropertyIdState(pid);
-      setLoading(false);
+        const stored = localStorage.getItem('hotelops-active-property');
+        const pid = stored && props.find(p => p.id === stored) ? stored : props[0]?.id ?? null;
+        setActivePropertyIdState(pid);
+      } catch (err) {
+        console.error('PropertyContext: failed to load properties', err);
+      } finally {
+        setLoading(false);
+      }
     })();
   }, [user]);
 
@@ -86,16 +91,27 @@ export function PropertyProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     (async () => {
+      // Load core data (property + staff) first so staff is always populated
+      // even if the secondary area/laundry migration step fails.
       try {
-        const [prop, staffList, areas, laundry] = await Promise.all([
+        const [prop, staffList] = await Promise.all([
           getProperty(user.uid, activePropertyId),
           getStaff(user.uid, activePropertyId),
+        ]);
+        setActiveProperty(prop);
+        setStaff(staffList);
+      } catch (err) {
+        console.error('PropertyContext: failed to load property/staff', err);
+        return;
+      }
+
+      // Load areas + laundry config in a separate try/catch so a migration
+      // failure never leaves staff empty.
+      try {
+        const [areas, laundry] = await Promise.all([
           getPublicAreas(user.uid, activePropertyId),
           getLaundryConfig(user.uid, activePropertyId),
         ]);
-
-        setActiveProperty(prop);
-        setStaff(staffList);
 
         // Seed defaults if empty
         if (areas.length === 0) {
@@ -129,7 +145,7 @@ export function PropertyProvider({ children }: { children: React.ReactNode }) {
           setPublicAreas(defaults);
         }
       } catch (err) {
-        console.error('PropertyContext: failed to load property data', err);
+        console.error('PropertyContext: failed to load areas/laundry config', err);
       }
     })();
   }, [user, activePropertyId]);
