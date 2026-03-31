@@ -61,6 +61,7 @@ function normalise(text: string): string {
 const YES_SET = new Set(['YES', 'Y', 'SI', 'SÍ', 'SÌ', 'S']);
 const NO_SET  = new Set(['NO', 'N']);
 const ES_SET  = new Set(['ESPANOL', 'ESPAÑOL', 'SPANISH', 'ESP']);
+const EN_SET  = new Set(['ENGLISH', 'INGLES', 'INGLÉS', 'EN']);
 
 export async function POST(req: NextRequest) {
   try {
@@ -143,6 +144,24 @@ export async function POST(req: NextRequest) {
         `Responde SÍ o NO.\n– HotelOps`;
 
       await sendSms(phone164, esMsg, replyWebhookUrl);
+      return NextResponse.json({ ok: true });
+    }
+
+    // ── ENGLISH — switch back to English ─────────────────────────────────
+    if (EN_SET.has(reply)) {
+      await db.collection('staffPrefs').doc(staffId).set(
+        { language: 'en', updatedAt: admin.firestore.FieldValue.serverTimestamp() },
+        { merge: true },
+      );
+
+      await checkDoc.ref.update({ language: 'en' });
+
+      const dateLabel = formatShiftDate(shiftDate, 'en');
+      const enMsg =
+        `Hi ${firstName}! Can you come in tomorrow (${dateLabel})?\n` +
+        `Reply YES or NO.\n\nPara español, responde ESPAÑOL\n– HotelOps`;
+
+      await sendSms(phone164, enMsg, replyWebhookUrl);
       return NextResponse.json({ ok: true });
     }
 
