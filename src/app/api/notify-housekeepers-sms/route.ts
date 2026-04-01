@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
         const link = housekeeperId
           ? ` View your rooms: https://hotelops-ai.vercel.app/housekeeper/${housekeeperId}`
           : '';
-        const message = `Hi ${name.split(' ')[0]}, your rooms for today: ${roomList}.${link} – HotelOps`;
+        const message = `Hi ${name.split(' ')[0]}, your rooms for today: ${roomList}.${link} – Comfort Suites`;
 
         return sendSms(e164, message);
       })

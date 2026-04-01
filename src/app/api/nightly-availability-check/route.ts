@@ -14,7 +14,7 @@ import admin from '@/lib/firebase-admin';
  *   Reply YES or NO.
  *
  *   Para español, responde ESPAÑOL
- *   – HotelOps
+ *   – Comfort Suites
  *
  * Stores a nightlyAvailabilityCheck doc per staff member so sms-reply
  * can look up who replied what.
@@ -121,9 +121,9 @@ export async function POST(req: NextRequest) {
         // Always include ESPAÑOL prompt unless they already speak Spanish
         let message: string;
         if (lang === 'es') {
-          message = `Hola ${firstName}! ¿Puedes venir mañana (${dateLabel})?\nResponde SÍ o NO.\n\nFor English, reply ENGLISH\n– HotelOps`;
+          message = `Hola ${firstName}! ¿Puedes venir mañana (${dateLabel})?\nResponde SÍ o NO.\n\nFor English, reply ENGLISH\n– Comfort Suites`;
         } else {
-          message = `Hi ${firstName}! Can you come in tomorrow (${dateLabel})?\nReply YES or NO.\n\nPara español, responde ESPAÑOL\n– HotelOps`;
+          message = `Hi ${firstName}! Can you come in tomorrow (${dateLabel})?\nReply YES or NO.\n\nPara español, responde ESPAÑOL\n– Comfort Suites`;
         }
 
         // Store the check doc so sms-reply can look it up by phone

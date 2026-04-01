@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
       const dateLabel = formatShiftDate(shiftDate, 'es');
       const esMsg =
         `Hola ${firstName}! ¿Puedes venir mañana (${dateLabel})?\n` +
-        `Responde SÍ o NO.\n\nFor English, reply ENGLISH\n– HotelOps`;
+        `Responde SÍ o NO.\n\nFor English, reply ENGLISH\n– Comfort Suites`;
 
       await sendSms(phone164, esMsg, replyWebhookUrl);
       return NextResponse.json({ ok: true });
@@ -159,7 +159,7 @@ export async function POST(req: NextRequest) {
       const dateLabel = formatShiftDate(shiftDate, 'en');
       const enMsg =
         `Hi ${firstName}! Can you come in tomorrow (${dateLabel})?\n` +
-        `Reply YES or NO.\n\nPara español, responde ESPAÑOL\n– HotelOps`;
+        `Reply YES or NO.\n\nPara español, responde ESPAÑOL\n– Comfort Suites`;
 
       await sendSms(phone164, enMsg, replyWebhookUrl);
       return NextResponse.json({ ok: true });
@@ -198,12 +198,12 @@ export async function POST(req: NextRequest) {
         confirmMsg = `✅ ¡Confirmado, ${firstName}!`;
         if (assignedRooms.length > 0) confirmMsg += `\nHabitaciones: ${assignedRooms.join(', ')}`;
         if (assignedAreas.length > 0) confirmMsg += `\nÁreas: ${assignedAreas.join(', ')}`;
-        confirmMsg += `\n– HotelOps`;
+        confirmMsg += `\n– Comfort Suites`;
       } else {
         confirmMsg = `✅ Got it, ${firstName}! See you tomorrow.`;
         if (assignedRooms.length > 0) confirmMsg += `\nRooms: ${assignedRooms.join(', ')}`;
         if (assignedAreas.length > 0) confirmMsg += `\nAreas: ${assignedAreas.join(', ')}`;
-        confirmMsg += `\n– HotelOps`;
+        confirmMsg += `\n– Comfort Suites`;
       }
 
       await sendSms(phone164, confirmMsg);
@@ -233,8 +233,8 @@ export async function POST(req: NextRequest) {
       });
 
       const ackMsg = lang === 'es'
-        ? `Entendido, ${firstName}. No te preocupes.\n– HotelOps`
-        : `No problem, ${firstName}. We'll find cover.\n– HotelOps`;
+        ? `Entendido, ${firstName}. No te preocupes.\n– Comfort Suites`
+        : `No problem, ${firstName}. We'll find cover.\n– Comfort Suites`;
       await sendSms(phone164, ackMsg);
 
       const notifRef = db
@@ -316,8 +316,8 @@ export async function POST(req: NextRequest) {
           const dateLabel = formatShiftDate(shiftDate, nextLang);
 
           const nextMsg = nextLang === 'es'
-            ? `Hola ${nextFirstName}! ¿Puedes venir mañana (${dateLabel})?\nResponde SÍ o NO.\n– HotelOps`
-            : `Hi ${nextFirstName}! Can you come in tomorrow (${dateLabel})?\nReply YES or NO.\n\nPara español, responde ESPAÑOL\n– HotelOps`;
+            ? `Hola ${nextFirstName}! ¿Puedes venir mañana (${dateLabel})?\nResponde SÍ o NO.\n– Comfort Suites`
+            : `Hi ${nextFirstName}! Can you come in tomorrow (${dateLabel})?\nReply YES or NO.\n\nPara español, responde ESPAÑOL\n– Comfort Suites`;
 
           const newCheckRef = db
             .collection('users').doc(uid)
@@ -364,8 +364,8 @@ export async function POST(req: NextRequest) {
 
     // ── Unrecognised reply ────────────────────────────────────────────────
     const hint = lang === 'es'
-      ? `No entendí eso. Por favor responde SÍ o NO.\n– HotelOps`
-      : `Didn't catch that. Please reply YES or NO.\n– HotelOps`;
+      ? `No entendí eso. Por favor responde SÍ o NO.\n– Comfort Suites`
+      : `Didn't catch that. Please reply YES or NO.\n– Comfort Suites`;
     await sendSms(phone164, hint);
 
     return NextResponse.json({ ok: true });

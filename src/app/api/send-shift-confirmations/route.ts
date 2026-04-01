@@ -106,8 +106,8 @@ export async function POST(req: NextRequest) {
           : `${roomCount} room${roomCount !== 1 ? 's' : ''}${areaCount > 0 ? ` + ${areaCount} area${areaCount !== 1 ? 's' : ''}` : ''}`;
 
         const message = language === 'es'
-          ? `Hola ${firstName} 👋 ¿Puedes venir mañana (${dateLabel})? Tendrías ${workSummary}. Confirma: ${confirmUrl} – HotelOps`
-          : `Hi ${firstName} 👋 Can you come in tomorrow (${dateLabel})? You'd have ${workSummary}. Confirm: ${confirmUrl} – HotelOps`;
+          ? `Hola ${firstName} 👋 ¿Puedes venir mañana (${dateLabel})? Tendrías ${workSummary}. Confirma: ${confirmUrl} – Comfort Suites`
+          : `Hi ${firstName} 👋 Can you come in tomorrow (${dateLabel})? You'd have ${workSummary}. Confirm: ${confirmUrl} – Comfort Suites`;
 
         await sendSms(phone164, message);
 

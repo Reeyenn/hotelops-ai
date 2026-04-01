@@ -127,13 +127,13 @@ export async function POST(req: NextRequest) {
           if (rooms.length > 0) followUp += `\nHabitaciones: ${rooms.join(', ')}`;
           if (areas.length > 0) followUp += `\nÁreas: ${areas.join(', ')}`;
           if (hkUrl)            followUp += `\nTu enlace: ${hkUrl}`;
-          followUp += `\n– HotelOps`;
+          followUp += `\n– Comfort Suites`;
         } else {
           followUp = `✅ Confirmed, ${firstName}! Here's your assignment for tomorrow:`;
           if (rooms.length > 0) followUp += `\nRooms: ${rooms.join(', ')}`;
           if (areas.length > 0) followUp += `\nAreas: ${areas.join(', ')}`;
           if (hkUrl)            followUp += `\nYour link: ${hkUrl}`;
-          followUp += `\n– HotelOps`;
+          followUp += `\n– Comfort Suites`;
         }
         try {
           await sendSms(phone164, followUp);
@@ -245,8 +245,8 @@ export async function POST(req: NextRequest) {
           const firstName = (replacement.name as string).split(' ')[0];
 
           const message = lang === 'es'
-            ? `Hola ${firstName}, estás programada para el ${dateLabel}. Confirma aquí: ${confirmUrl} – HotelOps`
-            : `Hi ${firstName}, you're scheduled for ${dateLabel}. Confirm: ${confirmUrl} – HotelOps`;
+            ? `Hola ${firstName}, estás programada para el ${dateLabel}. Confirma aquí: ${confirmUrl} – Comfort Suites`
+            : `Hi ${firstName}, you're scheduled for ${dateLabel}. Confirm: ${confirmUrl} – Comfort Suites`;
 
           await db
             .collection('users').doc(uid)

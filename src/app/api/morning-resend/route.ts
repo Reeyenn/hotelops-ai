@@ -193,12 +193,12 @@ export async function POST(req: NextRequest) {
             msg  = `📋 Actualización de turno, ${firstName}. Lista revisada:`;
             if (newRooms.length > 0) msg += `\nHabitaciones: ${newRooms.join(', ')}`;
             if (hk.assignedAreas?.length > 0) msg += `\nÁreas: ${hk.assignedAreas.join(', ')}`;
-            msg += `\nTu enlace: ${hkUrl}\n– HotelOps`;
+            msg += `\nTu enlace: ${hkUrl}\n– Comfort Suites`;
           } else {
             msg  = `📋 Shift update, ${firstName}. Revised list:`;
             if (newRooms.length > 0) msg += `\nRooms: ${newRooms.join(', ')}`;
             if (hk.assignedAreas?.length > 0) msg += `\nAreas: ${hk.assignedAreas.join(', ')}`;
-            msg += `\nYour link: ${hkUrl}\n– HotelOps`;
+            msg += `\nYour link: ${hkUrl}\n– Comfort Suites`;
           }
 
           try {
