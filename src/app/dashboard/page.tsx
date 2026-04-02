@@ -17,6 +17,74 @@ import {
   Sparkles, CircleDot,
 } from 'lucide-react';
 
+/* ── Room grid helper ── */
+function RoomGrid({ rooms }: { rooms: Room[] }) {
+  // Group by floor (first digit of room number, e.g. "101" → floor 1)
+  const floors = new Map<string, Room[]>();
+  [...rooms]
+    .sort((a, b) => parseInt(a.number, 10) - parseInt(b.number, 10))
+    .forEach(room => {
+      const floor = room.number.length >= 3 ? room.number[0] : '1';
+      if (!floors.has(floor)) floors.set(floor, []);
+      floors.get(floor)!.push(room);
+    });
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      {Array.from(floors.entries()).map(([floor, floorRooms]) => (
+        <div key={floor}>
+          {floors.size > 1 && (
+            <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', marginBottom: '6px' }}>
+              Floor {floor}
+            </div>
+          )}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+            {floorRooms.map(room => {
+              const isClean = room.status === 'clean' || room.status === 'inspected';
+              const isDirty = room.status === 'dirty';
+              const isProgress = room.status === 'in_progress';
+              const bg = isClean ? '#DCFCE7' : isProgress ? '#FEF9C3' : '#FEE2E2';
+              const border = isClean ? '#86EFAC' : isProgress ? '#FCD34D' : '#FCA5A5';
+              const color = isClean ? '#16A34A' : isProgress ? '#D97706' : '#DC2626';
+              return (
+                <div
+                  key={room.id}
+                  title={`Room ${room.number} · ${room.type ?? ''} · ${room.status}`}
+                  style={{
+                    width: '34px', height: '34px',
+                    borderRadius: '7px',
+                    background: bg,
+                    border: `1.5px solid ${border}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '10px', fontWeight: 700,
+                    fontFamily: 'var(--font-mono)',
+                    color,
+                    position: 'relative',
+                    transition: 'transform 0.1s',
+                    cursor: 'default',
+                    flexShrink: 0,
+                  }}
+                >
+                  {room.number.slice(-2)}
+                  {/* Red dot for checkout rooms that are dirty */}
+                  {isDirty && room.type === 'checkout' && (
+                    <div style={{
+                      position: 'absolute', top: '2px', right: '2px',
+                      width: '5px', height: '5px', borderRadius: '50%',
+                      background: '#DC2626',
+                      border: '1px solid white',
+                    }} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function addDays(dateStr: string, n: number): string {
   const [y, m, d] = dateStr.split('-').map(Number);
   const dt = new Date(y, m - 1, d + n);
@@ -144,42 +212,60 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* ── Room status card ── */}
+        {/* ── Room status card with visual grid ── */}
         <div className="animate-in stagger-2">
           <div className="card" style={{ padding: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
               <Sparkles size={16} color="var(--navy-light)" />
               <h2 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)' }}>
                 {lang === 'es' ? 'Estado de Habitaciones' : 'Room Status'}
               </h2>
-              <span style={{ marginLeft: 'auto', fontSize: '13px', fontWeight: 600, color: 'var(--green)' }}>
+              <span style={{ marginLeft: 'auto', fontSize: '20px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: pct === 100 ? 'var(--green)' : 'var(--navy-light)' }}>
                 {pct}%
               </span>
             </div>
 
             {/* Progress bar */}
-            <div style={{ height: '8px', background: '#E5E7EB', borderRadius: '4px', overflow: 'hidden', marginBottom: '16px' }}>
+            <div style={{ height: '6px', background: '#E5E7EB', borderRadius: '99px', overflow: 'hidden', marginBottom: '14px' }}>
               <div style={{
-                height: '100%', borderRadius: '4px', transition: 'width 500ms ease',
+                height: '100%', borderRadius: '99px', transition: 'width 600ms cubic-bezier(0.4,0,0.2,1)',
                 width: `${pct}%`,
                 background: pct === 100 ? 'var(--green)' : 'var(--navy-light)',
               }} />
             </div>
 
-            {/* Status breakdown row */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
-              {[
-                { label: lang === 'es' ? 'Total'      : 'Total',       count: total,      color: 'var(--text-primary)', bg: 'rgba(0,0,0,0.03)' },
-                { label: t('clean', lang),                              count: clean,      color: 'var(--green)',        bg: 'rgba(22,163,74,0.06)' },
-                { label: t('inProgress', lang),                         count: inProgress, color: 'var(--yellow)',       bg: 'rgba(202,138,4,0.06)' },
-                { label: t('dirty', lang),                              count: dirty,      color: 'var(--red)',          bg: 'rgba(220,38,38,0.06)' },
-              ].map(({ label, count, color, bg }) => (
-                <div key={label} style={{ textAlign: 'center', padding: '12px 4px', borderRadius: 'var(--radius-md)', background: bg }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '24px', color, lineHeight: 1 }}>{count}</div>
-                  <div style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-muted)', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</div>
+            {total === 0 ? (
+              <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-muted)', fontSize: '13px' }}>
+                {lang === 'es' ? 'No hay habitaciones asignadas hoy.' : 'No rooms assigned today.'}
+              </div>
+            ) : (
+              <>
+                {/* Visual room grid — grouped by floor */}
+                <RoomGrid rooms={rooms} />
+
+                {/* Legend + counts */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '14px', paddingTop: '12px', borderTop: '1px solid var(--border)' }}>
+                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                    {[
+                      { dot: '#86EFAC', bg: '#DCFCE7', label: lang === 'es' ? 'Limpia' : 'Clean', count: clean },
+                      { dot: '#FCD34D', bg: '#FEF9C3', label: lang === 'es' ? 'En Progreso' : 'Progress', count: inProgress },
+                      { dot: '#FCA5A5', bg: '#FEE2E2', label: lang === 'es' ? 'Sucia' : 'Dirty', count: dirty },
+                    ].map(({ dot, bg, label, count }) => (
+                      <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <div style={{ width: '10px', height: '10px', borderRadius: '3px', background: bg, border: `1.5px solid ${dot}`, flexShrink: 0 }} />
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>
+                          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{count}</span> {label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500, flexShrink: 0 }}>
+                    {total} {lang === 'es' ? 'total' : 'total'}
+                  </span>
                 </div>
-              ))}
-            </div>
+              </>
+            )}
           </div>
         </div>
 
