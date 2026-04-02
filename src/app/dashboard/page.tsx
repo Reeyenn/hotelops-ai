@@ -13,7 +13,7 @@ import type { Room, ShiftConfirmation, ConfirmationStatus } from '@/types';
 import { format } from 'date-fns';
 import {
   CheckCircle2, XCircle, Clock, AlertTriangle,
-  BedDouble, Users, DollarSign, Timer,
+  Users, DollarSign,
   Sparkles, CircleDot,
 } from 'lucide-react';
 
@@ -181,15 +181,8 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ── Summary stat cards — 2x2 grid ── */}
+        {/* ── Summary stat cards — 2-column row ── */}
         <div className="animate-in stagger-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
-          <StatCard
-            icon={<BedDouble size={18} color="#1B3A5C" />}
-            iconBg="rgba(27,58,92,0.08)"
-            label={lang === 'es' ? 'Habitaciones' : 'Rooms Today'}
-            value={total}
-            sub={`${pct}% ${t('complete', lang).toLowerCase()}`}
-          />
           <StatCard
             icon={<Users size={18} color="#16A34A" />}
             iconBg="rgba(22,163,74,0.08)"
@@ -203,13 +196,6 @@ export default function DashboardPage() {
             label={lang === 'es' ? 'Costo Estimado' : 'Est. Labor Cost'}
             value={total > 0 ? `$${Math.round(total * 3.2)}` : '—'}
             sub={lang === 'es' ? 'hoy' : 'today'}
-          />
-          <StatCard
-            icon={<Timer size={18} color="#7C3AED" />}
-            iconBg="rgba(124,58,237,0.08)"
-            label={lang === 'es' ? 'Hora Estimada' : 'Est. Done By'}
-            value={total > 0 ? '2 PM' : '—'}
-            sub={lang === 'es' ? 'finalización' : 'completion'}
           />
         </div>
 
