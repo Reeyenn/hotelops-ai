@@ -51,11 +51,19 @@ export async function POST(req: NextRequest) {
     let fromNumber: string | undefined;
     let text: string | undefined;
 
-    // Twilio always sends application/x-www-form-urlencoded
-    // Fields: From, Body, MessageSid, To, etc.
-    const form = await req.formData();
-    fromNumber = form.get('From') as string | undefined ?? undefined;
-    text       = form.get('Body') as string | undefined ?? undefined;
+    // Textbelt sends JSON: { fromNumber, text }
+    // Twilio sends form-encoded: From, Body
+    const contentType = req.headers.get('content-type') ?? '';
+    if (contentType.includes('application/json')) {
+      const body = await req.json() as { fromNumber?: string; text?: string };
+      fromNumber = body.fromNumber;
+      text = body.text;
+    } else {
+      const rawBody = await req.text();
+      const params = new URLSearchParams(rawBody);
+      fromNumber = params.get('fromNumber') ?? params.get('From') ?? undefined;
+      text = params.get('text') ?? params.get('Body') ?? undefined;
+    }
 
     if (!fromNumber || !text) {
       return NextResponse.json({ ok: true }); // Always 200 to prevent Textbelt retries
@@ -173,12 +181,12 @@ export async function POST(req: NextRequest) {
         confirmMsg = `✅ ¡Confirmado, ${firstName}!`;
         if (assignedRooms.length > 0) confirmMsg += `\nHabitaciones: ${assignedRooms.join(', ')}`;
         if (assignedAreas.length > 0) confirmMsg += `\nÁreas: ${assignedAreas.join(', ')}`;
-        confirmMsg += `\nTu enlace: ${hkUrl}\n– Comfort Suites`;
+        confirmMsg += `\n– Comfort Suites`;
       } else {
         confirmMsg = `✅ Got it, ${firstName}! See you tomorrow.`;
         if (assignedRooms.length > 0) confirmMsg += `\nRooms: ${assignedRooms.join(', ')}`;
         if (assignedAreas.length > 0) confirmMsg += `\nAreas: ${assignedAreas.join(', ')}`;
-        confirmMsg += `\nYour link: ${hkUrl}\n– Comfort Suites`;
+        confirmMsg += `\n– Comfort Suites`;
       }
 
       await sendSms(phone164, confirmMsg);
