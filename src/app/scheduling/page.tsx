@@ -201,7 +201,7 @@ export default function SchedulingPage() {
             gap: '10px',
             margin: 0,
           }}>
-            <Calendar size={20} color="var(--amber)" />
+            <Calendar size={20} color="var(--navy)" />
             {t('schedulingTitle', lang)}
           </h1>
 
@@ -536,8 +536,8 @@ export default function SchedulingPage() {
                 marginTop: '16px',
                 width: '100%',
                 padding: '14px',
-                background: sending ? 'rgba(251,191,36,0.4)' : 'var(--amber)',
-                color: sending ? 'rgba(10,10,10,0.5)' : '#0A0A0A',
+                background: sending ? 'rgba(37,99,235,0.4)' : 'var(--navy-light)',
+                color: sending ? 'rgba(255,255,255,0.5)' : '#FFFFFF',
                 border: 'none',
                 borderRadius: 'var(--radius-md)',
                 fontWeight: 700,

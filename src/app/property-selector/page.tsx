@@ -49,8 +49,8 @@ export default function PropertySelectorPage() {
       }}>
         <div style={{
           width: '40px', height: '40px',
-          border: '3px solid rgba(212,144,64,0.2)',
-          borderTopColor: 'var(--amber)',
+          border: '3px solid rgba(37,99,235,0.15)',
+          borderTopColor: 'var(--navy-light)',
           borderRadius: '50%',
           animation: 'spin 0.8s linear infinite',
         }} />
@@ -79,7 +79,7 @@ export default function PropertySelectorPage() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto 16px',
           }}>
-            <span style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>S</span>
+            <span style={{ fontSize: '22px', fontWeight: 700, color: '#FFFFFF', fontFamily: 'var(--font-mono)' }}>S</span>
           </div>
           <h1 style={{
             fontFamily: 'var(--font-sans)', fontWeight: 700,
@@ -136,8 +136,8 @@ export default function PropertySelectorPage() {
                   transition: 'border-color 150ms, background 150ms',
                 }}
                 onMouseEnter={e => {
-                  (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--amber-border)';
-                  (e.currentTarget as HTMLButtonElement).style.background = 'var(--amber-dim)';
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(37,99,235,0.25)';
+                  (e.currentTarget as HTMLButtonElement).style.background = 'rgba(37,99,235,0.04)';
                 }}
                 onMouseLeave={e => {
                   (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)';
@@ -146,12 +146,12 @@ export default function PropertySelectorPage() {
               >
                 <div style={{
                   width: '40px', height: '40px', borderRadius: '10px',
-                  background: 'var(--amber-dim)',
-                  border: '1px solid var(--amber-border)',
+                  background: 'rgba(27,58,92,0.06)',
+                  border: '1px solid rgba(27,58,92,0.12)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   flexShrink: 0,
                 }}>
-                  <Building2 size={18} color="var(--amber)" />
+                  <Building2 size={18} color="var(--navy)" />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{

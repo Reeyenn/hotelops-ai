@@ -122,7 +122,7 @@ function HousekeeperInner() {
             borderRadius: 'var(--radius-md)', padding: '8px 14px',
             color: 'var(--text-secondary)', fontSize: '14px', fontWeight: 600,
             cursor: 'pointer', fontFamily: 'var(--font-sans)',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
           }}
         >
           <Globe size={14} />
@@ -191,8 +191,8 @@ function HousekeeperInner() {
 
           <button onClick={handleSetup} disabled={!selectedId} style={{
             width: '100%', height: '48px',
-            background: selectedId ? 'var(--amber)' : 'var(--border)',
-            color: selectedId ? '#0A0A0A' : 'var(--text-muted)',
+            background: selectedId ? 'var(--navy-light)' : 'var(--border)',
+            color: selectedId ? '#FFFFFF' : 'var(--text-muted)',
             border: 'none', borderRadius: 'var(--radius-md)',
             fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '15px',
             cursor: selectedId ? 'pointer' : 'not-allowed',
@@ -252,7 +252,7 @@ function HousekeeperInner() {
           </p>
           <button onClick={() => setStep('select')} style={{
             marginTop: '20px', padding: '10px 24px',
-            background: 'var(--amber)', color: 'var(--text-primary)', border: 'none',
+            background: 'var(--navy-light)', color: '#FFFFFF', border: 'none',
             borderRadius: 'var(--radius-md)', fontFamily: 'var(--font-sans)', fontWeight: 600, cursor: 'pointer',
           }}>{t('tryAgain', lang)}</button>
         </div>
@@ -270,7 +270,7 @@ function HousekeeperInner() {
           <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>{errorMsg}</p>
           <button onClick={() => { setStep('loading'); }} style={{
             marginTop: '20px', padding: '10px 24px',
-            background: 'var(--amber)', color: 'var(--text-primary)', border: 'none',
+            background: 'var(--navy-light)', color: '#FFFFFF', border: 'none',
             borderRadius: 'var(--radius-md)', fontFamily: 'var(--font-sans)', fontWeight: 600, cursor: 'pointer',
           }}>{t('tryAgain', lang)}</button>
         </div>

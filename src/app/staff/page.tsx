@@ -197,14 +197,14 @@ export default function StaffPage() {
               fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: '24px',
               letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '10px', margin: 0,
             }}>
-              <Users size={20} color="var(--amber)" />
+              <Users size={20} color="var(--navy)" />
               Staff Directory
             </h1>
             <button
               onClick={openAdd}
               style={{
                 display: 'flex', alignItems: 'center', gap: '8px',
-                padding: '8px 14px', background: 'var(--amber)', color: 'var(--text-primary)',
+                padding: '8px 14px', background: 'var(--navy-light)', color: '#FFFFFF',
                 border: 'none', borderRadius: 'var(--radius-md)',
                 fontWeight: 600, fontSize: '13px', cursor: 'pointer', fontFamily: 'var(--font-sans)',
               }}
@@ -308,7 +308,7 @@ export default function StaffPage() {
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
                       <div style={{
                         width: '38px', height: '38px', borderRadius: 'var(--radius-md)',
-                        background: 'var(--amber)', color: 'var(--text-primary)',
+                        background: 'var(--navy)', color: '#FFFFFF',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontWeight: 700, fontSize: '14px', flexShrink: 0,
                       }}>
@@ -540,8 +540,8 @@ export default function StaffPage() {
               </button>
               <button onClick={handleSave} disabled={saving || !form.name.trim()} style={{
                 flex: 1, padding: '10px',
-                background: saving || !form.name.trim() ? 'rgba(251,191,36,0.4)' : 'var(--amber)',
-                color: saving || !form.name.trim() ? 'rgba(10,10,10,0.4)' : '#0A0A0A',
+                background: saving || !form.name.trim() ? 'rgba(37,99,235,0.4)' : 'var(--navy-light)',
+                color: saving || !form.name.trim() ? 'rgba(255,255,255,0.5)' : '#FFFFFF',
                 border: 'none', borderRadius: 'var(--radius-md)',
                 fontWeight: 600, fontSize: '13px',
                 cursor: saving || !form.name.trim() ? 'not-allowed' : 'pointer',

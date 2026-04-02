@@ -316,7 +316,7 @@ export default function HousekeeperRoomPage({ params }: { params: Promise<{ id: 
           aria-modal="true"
           style={{
             position: 'fixed', inset: 0,
-            background: 'rgba(0,0,0,0.55)',
+            background: 'rgba(0,0,0,0.4)',
             display: 'flex', alignItems: 'flex-end',
             zIndex: 200,
           }}

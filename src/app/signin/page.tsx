@@ -63,14 +63,14 @@ export default function SignInPage() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto 16px',
           }}>
-            <span style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>S</span>
+            <span style={{ fontSize: '22px', fontWeight: 700, color: '#FFFFFF', fontFamily: 'var(--font-mono)' }}>S</span>
           </div>
           <h1 style={{
             fontFamily: 'var(--font-sans)', fontWeight: 700,
             fontSize: '26px', letterSpacing: '-0.02em',
             color: 'var(--text-primary)', marginBottom: '6px',
           }}>
-            Staxis <span style={{ color: 'var(--amber)' }}>AI</span>
+            Staxis <span style={{ color: 'var(--navy-light)' }}>AI</span>
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Sign in to your account</p>
         </div>
@@ -104,7 +104,7 @@ export default function SignInPage() {
                 transition: 'border-color 120ms',
                 opacity: signing ? 0.6 : 1,
               }}
-              onFocus={e => { e.currentTarget.style.borderColor = 'var(--amber-border)'; }}
+              onFocus={e => { e.currentTarget.style.borderColor = 'var(--border-focus)'; }}
               onBlur={e => { e.currentTarget.style.borderColor = 'var(--border)'; }}
             />
           </div>
@@ -133,7 +133,7 @@ export default function SignInPage() {
                 transition: 'border-color 120ms',
                 opacity: signing ? 0.6 : 1,
               }}
-              onFocus={e => { e.currentTarget.style.borderColor = 'var(--amber-border)'; }}
+              onFocus={e => { e.currentTarget.style.borderColor = 'var(--border-focus)'; }}
               onBlur={e => { e.currentTarget.style.borderColor = 'var(--border)'; }}
             />
           </div>
@@ -158,9 +158,9 @@ export default function SignInPage() {
               width: '100%', height: '48px', marginTop: '4px',
               borderRadius: 'var(--radius-md)',
               background: (signing || !username.trim() || !password)
-                ? 'rgba(212,144,64,0.4)'
-                : 'var(--amber)',
-              color: 'var(--text-primary)',
+                ? 'rgba(37,99,235,0.4)'
+                : 'var(--navy-light)',
+              color: '#FFFFFF',
               fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '15px',
               border: 'none',
               cursor: (signing || !username.trim() || !password) ? 'not-allowed' : 'pointer',
@@ -169,7 +169,7 @@ export default function SignInPage() {
             }}
           >
             {signing
-              ? <div className="spinner" style={{ width: '18px', height: '18px', borderTopColor: '#0A0A0A', borderColor: 'rgba(0,0,0,0.2)' }} />
+              ? <div className="spinner" style={{ width: '18px', height: '18px', borderTopColor: '#FFFFFF', borderColor: 'rgba(255,255,255,0.3)' }} />
               : 'Sign in'
             }
           </button>

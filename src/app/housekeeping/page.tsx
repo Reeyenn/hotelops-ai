@@ -478,7 +478,7 @@ function ScheduleSection() {
 
         {selected.length > 0 && (
           <button onClick={handleSend} disabled={sending} className="animate-in"
-            style={{ marginTop: '16px', width: '100%', padding: '14px', background: sending ? 'rgba(251,191,36,0.4)' : 'var(--amber)', color: sending ? 'rgba(10,10,10,0.5)' : '#0A0A0A', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '14px', cursor: sending ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-sans)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            style={{ marginTop: '16px', width: '100%', padding: '14px', background: sending ? 'rgba(37,99,235,0.4)' : 'var(--navy-light)', color: sending ? 'rgba(255,255,255,0.5)' : '#FFFFFF', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '14px', cursor: sending ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-sans)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
             <Send size={14} />
             {sending ? t('sendingLabel', lang) : `${t('sendConfirmations', lang)} (${selected.length})`}
           </button>
@@ -750,9 +750,9 @@ function StaffSection() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
         <h2 style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: '20px', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '10px', margin: 0 }}>
-          <Users size={18} color="var(--amber)" />{t('staffRosterTitle', lang)}
+          <Users size={18} color="var(--navy)" />{t('staffRosterTitle', lang)}
         </h2>
-        <button onClick={openAdd} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 14px', background: 'var(--amber)', color: 'var(--text-primary)', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: 600, fontSize: '13px', cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>
+        <button onClick={openAdd} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 14px', background: 'var(--navy-light)', color: '#FFFFFF', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: 600, fontSize: '13px', cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>
           <Plus size={14} />{t('addStaff', lang)}
         </button>
       </div>
@@ -760,7 +760,7 @@ function StaffSection() {
       {totalStaff > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '20px' }}>
           {[
-            { label: t('totalStaffLabel', lang),      value: totalStaff,     color: 'var(--amber)' },
+            { label: t('totalStaffLabel', lang),      value: totalStaff,     color: 'var(--navy)' },
             { label: t('scheduledTodayCount', lang),  value: scheduledToday, color: 'var(--green)' },
             { label: t('nearOvertime', lang),          value: nearOvertime,   color: nearOvertime > 0 ? 'var(--amber)' : 'var(--text-muted)' },
           ].map(({ label, value, color }) => (
@@ -797,7 +797,7 @@ function StaffSection() {
               <div key={member.id} className="animate-in" style={{ animationDelay: `${idx * 50}ms` }}>
                 <div className="card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px', height: '100%', borderColor: nearMax ? 'rgba(251,191,36,0.3)' : 'var(--border)', background: nearMax ? 'rgba(251,191,36,0.04)' : 'var(--bg-card)' }}>
                   <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                    <div style={{ width: '38px', height: '38px', borderRadius: 'var(--radius-md)', background: 'var(--amber)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '14px', flexShrink: 0 }}>{staffInitials(member.name)}</div>
+                    <div style={{ width: '38px', height: '38px', borderRadius: 'var(--radius-md)', background: 'var(--navy)', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '14px', flexShrink: 0 }}>{staffInitials(member.name)}</div>
                     <div style={{ flex: 1 }}>
                       <p style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)', margin: '0 0 4px' }}>{member.name}</p>
                       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
@@ -882,7 +882,7 @@ function StaffSection() {
           </div>
           <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
             <button onClick={() => setShowModal(false)} style={{ flex: 1, padding: '10px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-secondary)', borderRadius: 'var(--radius-md)', fontWeight: 500, fontSize: '13px', cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>{t('cancel', lang)}</button>
-            <button onClick={handleSave} disabled={saving || !form.name.trim()} style={{ flex: 1, padding: '10px', background: saving || !form.name.trim() ? 'rgba(251,191,36,0.4)' : 'var(--amber)', color: saving || !form.name.trim() ? 'rgba(10,10,10,0.4)' : '#0A0A0A', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: 600, fontSize: '13px', cursor: saving || !form.name.trim() ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-sans)' }}>
+            <button onClick={handleSave} disabled={saving || !form.name.trim()} style={{ flex: 1, padding: '10px', background: saving || !form.name.trim() ? 'rgba(37,99,235,0.4)' : 'var(--navy-light)', color: saving || !form.name.trim() ? 'rgba(255,255,255,0.5)' : '#FFFFFF', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: 600, fontSize: '13px', cursor: saving || !form.name.trim() ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-sans)' }}>
               {saving ? t('savingDots', lang) : editMember ? t('update', lang) : t('addStaff', lang)}
             </button>
           </div>
@@ -1149,7 +1149,7 @@ function ImportSection() {
     <div style={{ padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
       <div>
         <h2 style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: '20px', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '10px', margin: '0 0 6px', color: 'var(--text-primary)' }}>
-          <Upload size={18} color="var(--amber)" />{t('csvImportTitle', lang)}
+          <Upload size={18} color="var(--navy)" />{t('csvImportTitle', lang)}
         </h2>
         <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>{t('csvHelpText', lang)}</p>
       </div>

@@ -213,7 +213,7 @@ export default function AccountsPage() {
             letterSpacing: '-0.02em',
             display: 'flex', alignItems: 'center', gap: '8px',
           }}>
-            <Users size={18} color="var(--amber)" />
+            <Users size={18} color="var(--navy)" />
             Accounts
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '4px' }}>
@@ -227,7 +227,7 @@ export default function AccountsPage() {
           className="animate-in stagger-1"
           style={{
             display: 'inline-flex', alignItems: 'center', gap: '8px',
-            background: 'var(--amber)', color: 'var(--text-primary)',
+            background: 'var(--navy-light)', color: '#FFFFFF',
             border: 'none', borderRadius: 'var(--radius-md)',
             padding: '10px 16px', fontSize: '14px', fontWeight: 600,
             cursor: 'pointer', fontFamily: 'var(--font-sans)',
@@ -333,7 +333,7 @@ export default function AccountsPage() {
       {showForm && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 60,
-          background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
+          background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)',
           display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
         }}
           onClick={e => { if (e.target === e.currentTarget) setShowForm(false); }}
@@ -482,15 +482,15 @@ export default function AccountsPage() {
               disabled={saving}
               style={{
                 height: '48px', borderRadius: 'var(--radius-md)',
-                background: saving ? 'rgba(212,144,64,0.5)' : 'var(--amber)',
-                color: 'var(--text-primary)',
+                background: saving ? 'rgba(37,99,235,0.5)' : 'var(--navy-light)',
+                color: '#FFFFFF',
                 fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '15px',
                 border: 'none', cursor: saving ? 'wait' : 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}
             >
               {saving
-                ? <div className="spinner" style={{ width: '18px', height: '18px', borderTopColor: '#0A0A0A', borderColor: 'rgba(0,0,0,0.2)' }} />
+                ? <div className="spinner" style={{ width: '18px', height: '18px', borderTopColor: '#FFFFFF', borderColor: 'rgba(255,255,255,0.3)' }} />
                 : editingId ? 'Save changes' : 'Create account'
               }
             </button>
