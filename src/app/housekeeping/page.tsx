@@ -229,7 +229,7 @@ function PaceBadge({ pace, lang }: { pace: HKLive['pace']; lang: 'en' | 'es' }) 
 }
 
 function RankBadge({ rank }: { rank: number }) {
-  const s = ({ 1: { bg: 'rgba(251,191,36,0.18)', color: '#D97706' }, 2: { bg: 'rgba(156,163,175,0.18)', color: '#9CA3AF' }, 3: { bg: 'rgba(180,120,60,0.18)', color: '#B4783C' } } as Record<number, { bg: string; color: string }>)[rank] ?? { bg: 'rgba(255,255,255,0.06)', color: 'var(--text-muted)' };
+  const s = ({ 1: { bg: 'rgba(251,191,36,0.18)', color: '#D97706' }, 2: { bg: 'rgba(156,163,175,0.18)', color: '#9CA3AF' }, 3: { bg: 'rgba(180,120,60,0.18)', color: '#B4783C' } } as Record<number, { bg: string; color: string }>)[rank] ?? { bg: 'rgba(0,0,0,0.05)', color: 'var(--text-muted)' };
   return (
     <div style={{ width: '26px', height: '26px', borderRadius: '8px', background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '12px', color: s.color, flexShrink: 0 }}>
       {rank === 1 ? '🏆' : `#${rank}`}
@@ -239,7 +239,7 @@ function RankBadge({ rank }: { rank: number }) {
 
 function StatPill({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '100px', background: highlight ? 'var(--amber-dim)' : 'rgba(255,255,255,0.04)', border: `1px solid ${highlight ? 'var(--amber-border)' : 'var(--border)'}` }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '100px', background: highlight ? 'var(--amber-dim)' : 'rgba(0,0,0,0.04)', border: `1px solid ${highlight ? 'var(--amber-border)' : 'var(--border)'}` }}>
       <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>{label}</span>
       <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 700, color: highlight ? 'var(--amber)' : 'var(--text-secondary)' }}>{value}</span>
     </div>
@@ -407,7 +407,7 @@ function ScheduleSection() {
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {confirmations.map(conf => (
-              <div key={conf.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
+              <div key={conf.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: 'rgba(0,0,0,0.02)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
                 <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>{conf.staffName}</span>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 600, color: STATUS_COLOR[conf.status] }}>
                   {STATUS_ICON[conf.status]}
@@ -458,7 +458,7 @@ function ScheduleSection() {
                     ((member.daysWorkedThisWeek ?? 0) >= (member.maxDaysPerWeek ?? 5) || (member.weeklyHours ?? 0) >= (member.maxWeeklyHours ?? 40));
                   return (
                     <div key={member.id} onClick={() => eligible && toggleSelected(member)}
-                      style={{ padding: '10px 12px', border: `1px solid ${inPool ? 'rgba(34,197,94,0.3)' : isSelected ? 'rgba(251,191,36,0.5)' : eligible ? 'var(--border)' : 'rgba(255,255,255,0.04)'}`, background: inPool ? 'rgba(34,197,94,0.05)' : isSelected ? 'rgba(251,191,36,0.07)' : 'rgba(255,255,255,0.02)', borderRadius: 'var(--radius-md)', cursor: eligible ? 'pointer' : 'default', display: 'flex', alignItems: 'center', gap: '10px', opacity: (!eligible && !inPool) ? 0.45 : 1, transition: 'all 0.15s' }}>
+                      style={{ padding: '10px 12px', border: `1px solid ${inPool ? 'rgba(34,197,94,0.3)' : isSelected ? 'rgba(251,191,36,0.5)' : eligible ? 'var(--border)' : 'rgba(0,0,0,0.04)'}`, background: inPool ? 'rgba(34,197,94,0.05)' : isSelected ? 'rgba(251,191,36,0.07)' : 'rgba(0,0,0,0.02)', borderRadius: 'var(--radius-md)', cursor: eligible ? 'pointer' : 'default', display: 'flex', alignItems: 'center', gap: '10px', opacity: (!eligible && !inPool) ? 0.45 : 1, transition: 'all 0.15s' }}>
                       <div style={{ width: '18px', height: '18px', borderRadius: '5px', border: `2px solid ${inPool ? 'var(--green)' : isSelected ? 'var(--amber)' : 'var(--border)'}`, background: inPool ? 'rgba(34,197,94,0.2)' : isSelected ? 'rgba(251,191,36,0.2)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         {(inPool || isSelected) && <CheckCircle2 size={11} color={inPool ? 'var(--green)' : 'var(--amber)'} strokeWidth={2.5} />}
                       </div>
@@ -511,7 +511,7 @@ function ScheduleSection() {
                     </span>
                     <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: atLimit ? 'var(--red)' : nearLimit ? 'var(--amber)' : 'var(--text-muted)' }}>{hrs}h / {maxHrs}h</span>
                   </div>
-                  <div style={{ height: '3px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden' }}>
+                  <div style={{ height: '3px', background: 'rgba(0,0,0,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
                     <div style={{ width: `${pct}%`, height: '100%', background: atLimit ? 'var(--red)' : nearLimit ? 'var(--amber)' : 'var(--green)', borderRadius: '2px', transition: 'width 0.3s' }} />
                   </div>
                 </div>
@@ -752,7 +752,7 @@ function StaffSection() {
         <h2 style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: '20px', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '10px', margin: 0 }}>
           <Users size={18} color="var(--amber)" />{t('staffRosterTitle', lang)}
         </h2>
-        <button onClick={openAdd} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 14px', background: 'var(--amber)', color: '#0A0A0A', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: 600, fontSize: '13px', cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>
+        <button onClick={openAdd} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 14px', background: 'var(--amber)', color: 'var(--text-primary)', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: 600, fontSize: '13px', cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>
           <Plus size={14} />{t('addStaff', lang)}
         </button>
       </div>
@@ -797,7 +797,7 @@ function StaffSection() {
               <div key={member.id} className="animate-in" style={{ animationDelay: `${idx * 50}ms` }}>
                 <div className="card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px', height: '100%', borderColor: nearMax ? 'rgba(251,191,36,0.3)' : 'var(--border)', background: nearMax ? 'rgba(251,191,36,0.04)' : 'var(--bg-card)' }}>
                   <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                    <div style={{ width: '38px', height: '38px', borderRadius: 'var(--radius-md)', background: 'var(--amber)', color: '#0A0A0A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '14px', flexShrink: 0 }}>{staffInitials(member.name)}</div>
+                    <div style={{ width: '38px', height: '38px', borderRadius: 'var(--radius-md)', background: 'var(--amber)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '14px', flexShrink: 0 }}>{staffInitials(member.name)}</div>
                     <div style={{ flex: 1 }}>
                       <p style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)', margin: '0 0 4px' }}>{member.name}</p>
                       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
@@ -811,16 +811,16 @@ function StaffSection() {
                       <span>{member.weeklyHours}h / {member.maxWeeklyHours}h</span>
                       <span style={{ color: atOrOverMax ? 'var(--red)' : nearMax ? 'var(--amber)' : 'var(--text-muted)' }}>{Math.max(0, member.maxWeeklyHours - member.weeklyHours)}{t('hoursLeftLabel', lang)}</span>
                     </div>
-                    <div className="progress-track" style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden' }}>
+                    <div className="progress-track" style={{ height: '4px', background: 'rgba(0,0,0,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
                       <div style={{ width: `${Math.min(utilizationPct, 100)}%`, height: '100%', background: utilizationPct > 100 ? 'var(--red)' : utilizationPct > 90 ? 'var(--amber)' : 'var(--green)', borderRadius: '2px' }} />
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', background: member.scheduledToday ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.03)', border: '1px solid ' + (member.scheduledToday ? 'rgba(34,197,94,0.2)' : 'var(--border)'), borderRadius: 'var(--radius-md)', cursor: 'pointer' }} onClick={() => toggleScheduledToday(member)}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', background: member.scheduledToday ? 'rgba(34,197,94,0.08)' : 'rgba(0,0,0,0.03)', border: '1px solid ' + (member.scheduledToday ? 'rgba(34,197,94,0.2)' : 'var(--border)'), borderRadius: 'var(--radius-md)', cursor: 'pointer' }} onClick={() => toggleScheduledToday(member)}>
                     <Clock size={14} color={member.scheduledToday ? 'var(--green)' : 'var(--text-muted)'} />
                     <span style={{ flex: 1, fontSize: '13px', fontWeight: 500, color: member.scheduledToday ? 'var(--green)' : 'var(--text-secondary)' }}>{member.scheduledToday ? t('scheduledTodayStatus', lang) : t('notScheduled', lang)}</span>
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <button onClick={() => openEdit(member)} style={{ flex: 1, padding: '8px 12px', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', fontWeight: 500, fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontFamily: 'var(--font-sans)' }}>
+                    <button onClick={() => openEdit(member)} style={{ flex: 1, padding: '8px 12px', background: 'rgba(0,0,0,0.05)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', fontWeight: 500, fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontFamily: 'var(--font-sans)' }}>
                       <Pencil size={12} />{t('edit', lang)}
                     </button>
                     <button onClick={() => handleDelete(member)} style={{ padding: '8px 12px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius-md)', color: 'var(--red)', fontWeight: 500, fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-sans)' }}>
@@ -872,11 +872,11 @@ function StaffSection() {
             <textarea value={form.vacationDates} onChange={e => setForm(f => ({ ...f, vacationDates: e.target.value }))} className="input" placeholder={'2026-03-28\n2026-03-29'} rows={3} style={{ resize: 'vertical', fontFamily: 'var(--font-mono)', fontSize: '12px' }} />
             <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '4px 0 0' }}>{t('vacationDatesHelp', lang)}</p>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'rgba(0,0,0,0.03)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
             <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{t('isActiveLabel', lang)}</span>
             <label className="toggle" style={{ margin: 0 }}><input type="checkbox" checked={form.isActive} onChange={e => setForm(f => ({ ...f, isActive: e.target.checked }))} /><span className="toggle-track" /><span className="toggle-thumb" /></label>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'rgba(0,0,0,0.03)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
             <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{t('seniorStaff', lang)}</span>
             <label className="toggle" style={{ margin: 0 }}><input type="checkbox" checked={form.isSenior} onChange={e => setForm(f => ({ ...f, isSenior: e.target.checked }))} /><span className="toggle-track" /><span className="toggle-thumb" /></label>
           </div>
@@ -990,7 +990,7 @@ function PerformanceSection() {
 
           {livePerfs.length === 0 && unassignedToday.length === 0 && (
             <div style={{ textAlign: 'center', padding: '52px 20px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
-              <div style={{ width: '60px', height: '60px', borderRadius: '16px', margin: '0 auto 14px', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '60px', height: '60px', borderRadius: '16px', margin: '0 auto 14px', background: 'rgba(0,0,0,0.04)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Users size={28} color="var(--text-muted)" />
               </div>
               <p style={{ color: 'var(--text-secondary)', fontSize: '15px', fontWeight: 500 }}>{t('noActivityToday', lang)}</p>
@@ -1063,7 +1063,7 @@ function PerformanceSection() {
             </div>
           ) : historyPerfs.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '52px 20px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
-              <div style={{ width: '60px', height: '60px', borderRadius: '16px', margin: '0 auto 14px', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '60px', height: '60px', borderRadius: '16px', margin: '0 auto 14px', background: 'rgba(0,0,0,0.04)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Clock size={28} color="var(--text-muted)" />
               </div>
               <p style={{ color: 'var(--text-secondary)', fontSize: '15px', fontWeight: 500 }}>{t('noHistoryYet', lang)}</p>
@@ -1156,7 +1156,7 @@ function ImportSection() {
 
       <div
         onClick={() => fileRef.current?.click()}
-        style={{ border: '2px dashed var(--border)', borderRadius: 'var(--radius-lg)', padding: '40px 20px', textAlign: 'center', cursor: 'pointer', background: 'rgba(255,255,255,0.02)', transition: 'all 150ms' }}
+        style={{ border: '2px dashed var(--border)', borderRadius: 'var(--radius-lg)', padding: '40px 20px', textAlign: 'center', cursor: 'pointer', background: 'rgba(0,0,0,0.02)', transition: 'all 150ms' }}
       >
         <Upload size={32} color="var(--text-muted)" style={{ margin: '0 auto 12px' }} />
         <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' }}>{fileName ?? t('csvDropHint', lang)}</p>
@@ -1169,7 +1169,7 @@ function ImportSection() {
           <p style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', marginBottom: '10px' }}>{t('csvPreviewLabel', lang)}</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             {preview.map((line, i) => (
-              <p key={i} style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-secondary)', margin: 0, padding: '4px 8px', background: 'rgba(255,255,255,0.03)', borderRadius: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{line}</p>
+              <p key={i} style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-secondary)', margin: 0, padding: '4px 8px', background: 'rgba(0,0,0,0.03)', borderRadius: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{line}</p>
             ))}
           </div>
         </div>

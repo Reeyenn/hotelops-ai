@@ -6,35 +6,38 @@
 
 /* ─────────────────────────────────────────────────────────────────────────────
    Staxis — Ops Tool Design System
-   Inspired by Linear / Vercel / Raycast
-   True black. One accent. Dense, sharp, professional.
+   Light, professional, B2B SaaS — built for hotel operators.
+   Navy sidebar. White cards. Clean and readable.
    ───────────────────────────────────────────────────────────────────────────── */
 
 :root {
-  --bg:          #0A0A0A;
-  --bg-subtle:   #111111;
-  --bg-card:     #141414;
-  --bg-elevated: #1A1A1A;
-  --bg-hover:    #1F1F1F;
+  --bg:          #F0F2F5;
+  --bg-subtle:   #E8EBF0;
+  --bg-card:     #FFFFFF;
+  --bg-elevated: #FFFFFF;
+  --bg-hover:    #F5F7FA;
 
-  --border:        rgba(255, 255, 255, 0.08);
-  --border-bright: rgba(255, 255, 255, 0.14);
-  --border-focus:  rgba(212, 144, 64, 0.6);
+  --border:        rgba(0, 0, 0, 0.08);
+  --border-bright: rgba(0, 0, 0, 0.14);
+  --border-focus:  rgba(37, 99, 235, 0.5);
+
+  --navy:         #1B3A5C;
+  --navy-light:   #2563EB;
 
   --amber:        #D49040;
-  --amber-dim:    rgba(212, 144, 64, 0.12);
-  --amber-border: rgba(212, 144, 64, 0.25);
+  --amber-dim:    rgba(212, 144, 64, 0.10);
+  --amber-border: rgba(212, 144, 64, 0.30);
 
-  --green:      #22C55E;
-  --green-dim:  rgba(34, 197, 94, 0.10);
-  --red:        #EF4444;
-  --red-dim:    rgba(239, 68, 68, 0.10);
-  --yellow:     #EAB308;
-  --yellow-dim: rgba(234, 179, 8, 0.10);
+  --green:      #16A34A;
+  --green-dim:  rgba(22, 163, 74, 0.08);
+  --red:        #DC2626;
+  --red-dim:    rgba(220, 38, 38, 0.08);
+  --yellow:     #CA8A04;
+  --yellow-dim: rgba(202, 138, 4, 0.08);
 
-  --text-primary:   #EFEFEF;
-  --text-secondary: #888888;
-  --text-muted:     #444444;
+  --text-primary:   #1A1A2E;
+  --text-secondary: #6B7280;
+  --text-muted:     #9CA3AF;
 
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
@@ -86,7 +89,8 @@ body {
   border-radius: var(--radius-lg);
   padding: 16px;
 }
-.card:hover { background: var(--bg-hover); border-color: var(--border-bright); transition: all var(--duration-fast) var(--ease); }
+.card { box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04); }
+.card:hover { background: var(--bg-hover); border-color: var(--border-bright); box-shadow: 0 2px 6px rgba(0,0,0,0.08); transition: all var(--duration-fast) var(--ease); }
 
 /* ── Stat ──────────────────────────────────────────────────────────────────── */
 .stat-number {
@@ -112,9 +116,9 @@ body {
 .dot-muted  { background: var(--text-muted); }
 
 /* ── Progress ──────────────────────────────────────────────────────────────── */
-.progress-track { height: 2px; background: var(--border); border-radius: var(--radius-full); overflow: hidden; }
+.progress-track { height: 2px; background: #E5E7EB; border-radius: var(--radius-full); overflow: hidden; }
 .progress-track-lg { height: 4px; }
-.progress-fill { height: 100%; border-radius: var(--radius-full); background: var(--amber); transition: width var(--duration-base) var(--ease); }
+.progress-fill { height: 100%; border-radius: var(--radius-full); background: var(--navy-light); transition: width var(--duration-base) var(--ease); }
 .progress-fill-green { background: var(--green); }
 
 /* ── Button ────────────────────────────────────────────────────────────────── */
@@ -127,7 +131,7 @@ body {
   transition: all var(--duration-fast) var(--ease);
   text-decoration: none; white-space: nowrap;
 }
-.btn-primary { background: var(--amber); color: #0A0A0A; }
+.btn-primary { background: var(--navy-light); color: #FFFFFF; }
 .btn-primary:hover { filter: brightness(1.08); }
 .btn-ghost { background: transparent; color: var(--text-secondary); border: 1px solid var(--border); }
 .btn-ghost:hover { color: var(--text-primary); border-color: var(--border-bright); }
@@ -136,19 +140,19 @@ body {
 /* ── Input ─────────────────────────────────────────────────────────────────── */
 .input {
   width: 100%; height: 40px; padding: 0 12px;
-  background: var(--bg-subtle); border: 1px solid var(--border); border-radius: var(--radius-md);
+  background: #FFFFFF; border: 1px solid #D1D5DB; border-radius: var(--radius-md);
   font-family: var(--font-sans); font-size: 14px; color: var(--text-primary);
   outline: none; transition: border-color var(--duration-fast) var(--ease);
 }
-.input:focus { border-color: var(--border-focus); }
+.input:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
 
 .input-mono {
   width: 100%; height: 52px; padding: 0 14px;
-  background: var(--bg-subtle); border: 1px solid var(--border); border-radius: var(--radius-md);
+  background: #FFFFFF; border: 1px solid #D1D5DB; border-radius: var(--radius-md);
   font-family: var(--font-mono); font-size: 22px; font-weight: 600; color: var(--text-primary);
   outline: none; transition: border-color var(--duration-fast) var(--ease);
 }
-.input-mono:focus { border-color: var(--border-focus); }
+.input-mono:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
 
 /* ── Label ─────────────────────────────────────────────────────────────────── */
 .label {
@@ -176,14 +180,14 @@ body {
   transition: background 250ms var(--ease), border-color 250ms var(--ease);
   flex-shrink: 0;
 }
-.sw__input:checked + .sw__track { background: var(--amber); border-color: var(--amber); }
+.sw__input:checked + .sw__track { background: var(--navy); border-color: var(--navy); }
 .sw__handle {
   position: absolute; top: 3px; left: 3px;
   width: 18px; height: 18px;
-  background: var(--text-muted); border-radius: 50%;
+  background: #D1D5DB; border-radius: 50%;
   transition: left 250ms var(--ease), background 250ms var(--ease);
 }
-.sw__input:checked + .sw__track .sw__handle { left: calc(100% - 18px - 3px); background: #0A0A0A; }
+.sw__input:checked + .sw__track .sw__handle { left: calc(100% - 18px - 3px); background: #FFFFFF; }
 
 /* ── Chip ──────────────────────────────────────────────────────────────────── */
 .chip {
@@ -193,10 +197,10 @@ body {
   border: 1px solid var(--border); background: transparent; color: var(--text-secondary);
   cursor: pointer; transition: all var(--duration-fast) var(--ease); white-space: nowrap;
 }
-.chip-active { background: var(--amber-dim); border-color: var(--amber-border); color: var(--amber); }
+.chip-active { background: rgba(37, 99, 235, 0.08); border-color: rgba(37, 99, 235, 0.25); color: var(--navy-light); }
 
 /* ── Spinner ───────────────────────────────────────────────────────────────── */
-.spinner { border: 2px solid var(--border); border-top-color: var(--amber); border-radius: 50%; animation: spin 0.7s linear infinite; }
+.spinner { border: 2px solid var(--border); border-top-color: var(--navy-light); border-radius: 50%; animation: spin 0.7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── Animations ────────────────────────────────────────────────────────────── */
@@ -255,15 +259,15 @@ body {
   border-radius: var(--radius-full); cursor: pointer;
   transition: background 250ms var(--ease), border-color 250ms var(--ease);
 }
-.toggle input:checked ~ .toggle-track { background: var(--amber); border-color: var(--amber); }
+.toggle input:checked ~ .toggle-track { background: var(--navy); border-color: var(--navy); }
 .toggle-thumb {
   position: absolute; top: 3px; left: 3px;
   width: 18px; height: 18px;
-  background: var(--text-muted); border-radius: 50%;
+  background: #D1D5DB; border-radius: 50%;
   transition: left 250ms var(--ease), background 250ms var(--ease);
   pointer-events: none; z-index: 1;
 }
-.toggle input:checked ~ .toggle-thumb { left: calc(100% - 21px); background: #0A0A0A; }
+.toggle input:checked ~ .toggle-thumb { left: calc(100% - 21px); background: #FFFFFF; }
 
 /* ── Divider ───────────────────────────────────────────────────────────────── */
 .divider { height: 1px; background: var(--border); border: none; }
@@ -271,16 +275,16 @@ body {
 /* ── Scrollbar ─────────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 2px; }
+::-webkit-scrollbar-thumb { background: #C4C9D4; border-radius: 2px; }
 
-:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--navy-light); outline-offset: 2px; }
 
 /* ── Modal ─────────────────────────────────────────────────────────────────── */
 .modal-overlay {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: rgba(0, 0, 0, 0.72);
+  background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   display: flex;

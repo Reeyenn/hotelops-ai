@@ -204,7 +204,7 @@ export default function StaffPage() {
               onClick={openAdd}
               style={{
                 display: 'flex', alignItems: 'center', gap: '8px',
-                padding: '8px 14px', background: 'var(--amber)', color: '#0A0A0A',
+                padding: '8px 14px', background: 'var(--amber)', color: 'var(--text-primary)',
                 border: 'none', borderRadius: 'var(--radius-md)',
                 fontWeight: 600, fontSize: '13px', cursor: 'pointer', fontFamily: 'var(--font-sans)',
               }}
@@ -254,7 +254,7 @@ export default function StaffPage() {
                 {tab.label}
                 <span style={{
                   fontSize: '11px', fontWeight: 700,
-                  background: isActive ? 'rgba(212,144,64,0.2)' : 'rgba(255,255,255,0.08)',
+                  background: isActive ? 'rgba(212,144,64,0.2)' : 'rgba(0,0,0,0.05)',
                   borderRadius: '10px', padding: '1px 6px',
                 }}>
                   {count}
@@ -308,7 +308,7 @@ export default function StaffPage() {
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
                       <div style={{
                         width: '38px', height: '38px', borderRadius: 'var(--radius-md)',
-                        background: 'var(--amber)', color: '#0A0A0A',
+                        background: 'var(--amber)', color: 'var(--text-primary)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontWeight: 700, fontSize: '14px', flexShrink: 0,
                       }}>
@@ -356,7 +356,7 @@ export default function StaffPage() {
                           {Math.max(0, member.maxWeeklyHours - member.weeklyHours)}{t('hoursLeftLabel', lang)}
                         </span>
                       </div>
-                      <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden' }}>
+                      <div style={{ height: '4px', background: 'rgba(0,0,0,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
                         <div style={{
                           width: `${Math.min(utilizationPct, 100)}%`, height: '100%', borderRadius: '2px',
                           background: utilizationPct > 100 ? 'var(--red)' : utilizationPct > 90 ? 'var(--amber)' : 'var(--green)',
@@ -370,7 +370,7 @@ export default function StaffPage() {
                       style={{
                         display: 'flex', alignItems: 'center', gap: '8px',
                         padding: '10px',
-                        background: member.scheduledToday ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.03)',
+                        background: member.scheduledToday ? 'rgba(34,197,94,0.08)' : 'rgba(0,0,0,0.03)',
                         border: '1px solid ' + (member.scheduledToday ? 'rgba(34,197,94,0.2)' : 'var(--border)'),
                         borderRadius: 'var(--radius-md)', cursor: 'pointer',
                       }}
@@ -387,7 +387,7 @@ export default function StaffPage() {
                         onClick={() => openEdit(member)}
                         style={{
                           flex: 1, padding: '8px 12px',
-                          background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)',
+                          background: 'rgba(0,0,0,0.05)', border: '1px solid var(--border)',
                           borderRadius: 'var(--radius-md)', color: 'var(--text-primary)',
                           fontWeight: 500, fontSize: '13px', cursor: 'pointer',
                           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
@@ -515,7 +515,7 @@ export default function StaffPage() {
               <div key={field} style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 padding: '10px 14px',
-                background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',
+                background: 'rgba(0,0,0,0.03)', border: '1px solid var(--border)',
                 borderRadius: 'var(--radius-md)',
               }}>
                 <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{label}</span>

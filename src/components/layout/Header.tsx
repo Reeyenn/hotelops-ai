@@ -31,7 +31,7 @@ export function Header() {
   return (
     <header style={{
       position: 'sticky', top: 0, zIndex: 40,
-      background: 'rgba(10, 10, 10, 0.92)',
+      background: 'rgba(255, 255, 255, 0.92)',
       backdropFilter: 'blur(16px) saturate(180%)',
       WebkitBackdropFilter: 'blur(16px) saturate(180%)',
       borderBottom: '1px solid var(--border)',
@@ -49,7 +49,7 @@ export function Header() {
             background: 'var(--amber)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <span style={{ fontSize: '14px', fontWeight: 700, color: '#0A0A0A', fontFamily: 'var(--font-mono)' }}>S</span>
+            <span style={{ fontSize: '14px', fontWeight: 700, color: '#FFFFFF', fontFamily: 'var(--font-mono)' }}>S</span>
           </div>
           <span style={{
             fontFamily: 'var(--font-sans)', fontWeight: 600,
@@ -107,7 +107,7 @@ export function Header() {
                     background: 'var(--bg-elevated)', border: '1px solid var(--border-bright)',
                     borderRadius: 'var(--radius-lg)', minWidth: '200px',
                     overflow: 'hidden', zIndex: 50,
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
                   }}>
                     {properties.map(p => (
                       <button key={p.id}
@@ -172,7 +172,7 @@ export function Header() {
                     background: 'var(--bg-elevated)', border: '1px solid var(--border-bright)',
                     borderRadius: 'var(--radius-lg)', minWidth: '180px',
                     overflow: 'hidden', zIndex: 50,
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
                   }}>
                     <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)' }}>
                       <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>

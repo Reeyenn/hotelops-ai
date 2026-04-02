@@ -103,8 +103,8 @@ function ConfirmContent() {
   return (
     <div style={{
       minHeight: '100dvh',
-      background: '#0A0A0A',
-      color: '#FAFAFA',
+      background: 'var(--bg)',
+      color: 'var(--text-primary)',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       display: 'flex',
       flexDirection: 'column',
@@ -200,7 +200,7 @@ function ConfirmContent() {
             <p style={{
               fontSize: '36px',
               fontWeight: 700,
-              color: '#FAFAFA',
+              color: 'var(--text-primary)',
               lineHeight: 1.1,
               marginBottom: '10px',
             }}>
@@ -226,7 +226,7 @@ function ConfirmContent() {
                 width: '100%',
                 padding: '22px 20px',
                 background: '#22C55E',
-                color: '#0A0A0A',
+                color: 'var(--text-primary)',
                 border: 'none',
                 borderRadius: '18px',
                 fontSize: '22px',
@@ -276,7 +276,7 @@ export default function ConfirmPage() {
     <Suspense fallback={
       <div style={{
         minHeight: '100dvh',
-        background: '#0A0A0A',
+        background: 'var(--bg)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

@@ -166,7 +166,7 @@ export default function StaffPage() {
                           style={{
                             width: '60px',
                             padding: '4px 8px',
-                            background: 'rgba(255,255,255,0.06)',
+                            background: 'rgba(0,0,0,0.05)',
                             border: '1px solid var(--border)',
                             borderRadius: '6px',
                             color: 'var(--text-primary)',
@@ -231,7 +231,7 @@ export default function StaffPage() {
                 <option value="es">Español</option>
               </select>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'rgba(0,0,0,0.03)', border: '1px solid var(--border)', borderRadius: '8px' }}>
               <span style={{ fontSize: '14px' }}>{t('senior', lang)} (gets VIP rooms)</span>
               <label className="toggle" style={{ margin: 0 }}>
                 <input type="checkbox" checked={form.isSenior} onChange={e => setForm(f => ({ ...f, isSenior: e.target.checked }))} />

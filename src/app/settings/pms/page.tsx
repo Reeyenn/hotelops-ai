@@ -200,7 +200,7 @@ export default function PMSPage() {
           </div>
 
           {/* Security note */}
-          <div style={{ display: 'flex', gap: '8px', padding: '10px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', marginTop: '12px' }}>
+          <div style={{ display: 'flex', gap: '8px', padding: '10px 12px', background: 'rgba(0,0,0,0.03)', borderRadius: '8px', marginTop: '12px' }}>
             <Shield size={14} color="var(--text-muted)" style={{ flexShrink: 0, marginTop: '1px' }} />
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
               Your credentials are encrypted and stored securely in Firebase. They are only used by the Staxis sync agent to read occupancy data — never shared or sold.
@@ -256,7 +256,7 @@ export default function PMSPage() {
         </div>
 
         {/* CUA architecture note */}
-        <div style={{ marginTop: '24px', padding: '16px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '12px' }}>
+        <div style={{ marginTop: '24px', padding: '16px', background: 'rgba(0,0,0,0.02)', border: '1px solid var(--border)', borderRadius: '12px' }}>
           <p style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '8px' }}>
             How It Works
           </p>

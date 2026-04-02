@@ -252,7 +252,7 @@ function HousekeeperInner() {
           </p>
           <button onClick={() => setStep('select')} style={{
             marginTop: '20px', padding: '10px 24px',
-            background: 'var(--amber)', color: '#0A0A0A', border: 'none',
+            background: 'var(--amber)', color: 'var(--text-primary)', border: 'none',
             borderRadius: 'var(--radius-md)', fontFamily: 'var(--font-sans)', fontWeight: 600, cursor: 'pointer',
           }}>{t('tryAgain', lang)}</button>
         </div>
@@ -270,7 +270,7 @@ function HousekeeperInner() {
           <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>{errorMsg}</p>
           <button onClick={() => { setStep('loading'); }} style={{
             marginTop: '20px', padding: '10px 24px',
-            background: 'var(--amber)', color: '#0A0A0A', border: 'none',
+            background: 'var(--amber)', color: 'var(--text-primary)', border: 'none',
             borderRadius: 'var(--radius-md)', fontFamily: 'var(--font-sans)', fontWeight: 600, cursor: 'pointer',
           }}>{t('tryAgain', lang)}</button>
         </div>

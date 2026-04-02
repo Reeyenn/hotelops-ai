@@ -350,7 +350,7 @@ export default function SchedulingPage() {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   padding: '10px 12px',
-                  background: 'rgba(255,255,255,0.02)',
+                  background: 'rgba(0,0,0,0.02)',
                   border: '1px solid var(--border)',
                   borderRadius: 'var(--radius-md)',
                 }}>
@@ -459,13 +459,13 @@ export default function SchedulingPage() {
                           inPool    ? 'rgba(34,197,94,0.3)'    :
                           isSelected ? 'rgba(251,191,36,0.5)' :
                           eligible  ? 'var(--border)'          :
-                                      'rgba(255,255,255,0.04)'
+                                      'rgba(0,0,0,0.04)'
                         }`,
                         background: inPool
                           ? 'rgba(34,197,94,0.05)'
                           : isSelected
                           ? 'rgba(251,191,36,0.07)'
-                          : 'rgba(255,255,255,0.02)',
+                          : 'rgba(0,0,0,0.02)',
                         borderRadius: 'var(--radius-md)',
                         cursor: eligible ? 'pointer' : 'default',
                         display: 'flex',
@@ -595,7 +595,7 @@ export default function SchedulingPage() {
                         {hrs}h / {maxHrs}h
                       </span>
                     </div>
-                    <div style={{ height: '3px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden' }}>
+                    <div style={{ height: '3px', background: 'rgba(0,0,0,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
                       <div style={{
                         width: `${pct}%`,
                         height: '100%',

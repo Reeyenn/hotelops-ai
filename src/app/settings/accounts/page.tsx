@@ -227,7 +227,7 @@ export default function AccountsPage() {
           className="animate-in stagger-1"
           style={{
             display: 'inline-flex', alignItems: 'center', gap: '8px',
-            background: 'var(--amber)', color: '#0A0A0A',
+            background: 'var(--amber)', color: 'var(--text-primary)',
             border: 'none', borderRadius: 'var(--radius-md)',
             padding: '10px 16px', fontSize: '14px', fontWeight: 600,
             cursor: 'pointer', fontFamily: 'var(--font-sans)',
@@ -483,7 +483,7 @@ export default function AccountsPage() {
               style={{
                 height: '48px', borderRadius: 'var(--radius-md)',
                 background: saving ? 'rgba(212,144,64,0.5)' : 'var(--amber)',
-                color: '#0A0A0A',
+                color: 'var(--text-primary)',
                 fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '15px',
                 border: 'none', cursor: saving ? 'wait' : 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',

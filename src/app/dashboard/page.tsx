@@ -107,12 +107,12 @@ export default function DashboardPage() {
               <p style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '6px' }}>
                 {t('rooms', lang)}
               </p>
-              <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '48px', lineHeight: 1, letterSpacing: '-0.04em', color: 'var(--amber)' }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '48px', lineHeight: 1, letterSpacing: '-0.04em', color: 'var(--navy)' }}>
                 {total}
               </div>
               {total > 0 && (
                 <>
-                  <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden', margin: '12px 0 8px' }}>
+                  <div style={{ height: '4px', background: 'rgba(0,0,0,0.05)', borderRadius: '2px', overflow: 'hidden', margin: '12px 0 8px' }}>
                     <div style={{ width: `${total > 0 ? Math.round((clean / total) * 100) : 0}%`, height: '100%', background: 'var(--green)', borderRadius: '2px', transition: 'width 400ms' }} />
                   </div>
                   <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
@@ -162,7 +162,7 @@ export default function DashboardPage() {
             <div className="card" style={{ padding: '12px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {tomorrowConfs.map(conf => (
-                  <div key={conf.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
+                  <div key={conf.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', background: 'rgba(0,0,0,0.02)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
                     <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>{conf.staffName}</span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 600, color: STATUS_COLOR[conf.status] }}>
                       {STATUS_ICON[conf.status]}

@@ -63,7 +63,7 @@ export default function SignInPage() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto 16px',
           }}>
-            <span style={{ fontSize: '22px', fontWeight: 700, color: '#0A0A0A', fontFamily: 'var(--font-mono)' }}>S</span>
+            <span style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>S</span>
           </div>
           <h1 style={{
             fontFamily: 'var(--font-sans)', fontWeight: 700,
@@ -160,7 +160,7 @@ export default function SignInPage() {
               background: (signing || !username.trim() || !password)
                 ? 'rgba(212,144,64,0.4)'
                 : 'var(--amber)',
-              color: '#0A0A0A',
+              color: 'var(--text-primary)',
               fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '15px',
               border: 'none',
               cursor: (signing || !username.trim() || !password) ? 'not-allowed' : 'pointer',

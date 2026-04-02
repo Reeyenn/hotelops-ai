@@ -20,7 +20,7 @@ export function BottomNav() {
   return (
     <nav style={{
       position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 40,
-      background: 'rgba(10, 10, 10, 0.95)',
+      background: 'rgba(255, 255, 255, 0.95)',
       backdropFilter: 'blur(20px) saturate(180%)',
       WebkitBackdropFilter: 'blur(20px) saturate(180%)',
       borderTop: '1px solid var(--border)',
@@ -57,14 +57,14 @@ export function BottomNav() {
                   width: '4px',
                   height: '2px',
                   borderRadius: '0 0 2px 2px',
-                  background: 'var(--amber)',
+                  background: 'var(--navy)',
                 }} />
               )}
 
               <Icon
                 size={22}
                 strokeWidth={isActive ? 2.2 : 1.6}
-                color={isActive ? 'var(--amber)' : 'var(--text-muted)'}
+                color={isActive ? 'var(--navy)' : 'var(--text-muted)'}
                 style={{ transition: 'color 150ms, stroke-width 150ms' }}
               />
 

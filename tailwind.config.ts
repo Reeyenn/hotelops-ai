@@ -9,29 +9,29 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        /* Surface hierarchy — M3 tonal elevation (dark-mode only) */
+        /* Surface hierarchy — light theme */
         surface: {
-          0: "#060C14",
-          1: "#0D1623",
-          2: "#132333",
-          3: "#1B3044",
+          0: "#F0F2F5",
+          1: "#F5F7FA",
+          2: "#FFFFFF",
+          3: "#FFFFFF",
         },
-        /* Brand amber */
+        /* Brand amber (warm gold accent) */
         brand: {
           DEFAULT: "#D49040",
           bright:  "#F0A84E",
-          dim:     "rgba(212,144,64,0.12)",
+          dim:     "rgba(212,144,64,0.10)",
         },
-        /* Legacy navy (used by some sub-pages not in scope) */
+        /* Navy — primary UI color */
         navy: {
-          950: "#060C14",
-          900: "#0A0F1A",
-          800: "#0D1520",
-          700: "#111D2E",
-          600: "#162438",
-          500: "#1D3048",
-          400: "#253D5A",
-          300: "#2E4C6E",
+          950: "#0F2640",
+          900: "#132E4F",
+          800: "#1B3A5C",
+          700: "#234B72",
+          600: "#2B5C88",
+          500: "#2563EB",
+          400: "#3B82F6",
+          300: "#60A5FA",
         },
         /* Override Tailwind amber to match brand */
         amber: {
@@ -71,14 +71,14 @@ const config: Config = {
         "3xl":"28px",
       },
       boxShadow: {
-        /* Spec: card.md §Design Tokens dark */
-        "card-1": "0 1px 3px rgba(0,0,0,0.30), 0 1px 2px rgba(0,0,0,0.20)",
-        "card-2": "0 4px 6px rgba(0,0,0,0.30), 0 2px 4px rgba(0,0,0,0.20)",
-        "card-3": "0 10px 15px rgba(0,0,0,0.30), 0 4px 6px rgba(0,0,0,0.20)",
-        "card-4": "0 20px 25px rgba(0,0,0,0.35), 0 10px 10px rgba(0,0,0,0.20)",
-        "amber":       "0 0 24px rgba(212,144,64,0.30), 0 0 64px rgba(212,144,64,0.10)",
-        "amber-strong":"0 0 48px rgba(212,144,64,0.50), 0 0 100px rgba(212,144,64,0.20)",
-        "nav":         "0 -1px 0 rgba(255,255,255,0.06), 0 -8px 32px rgba(0,0,0,0.5)",
+        /* Light theme card shadows */
+        "card-1": "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
+        "card-2": "0 4px 6px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.04)",
+        "card-3": "0 10px 15px rgba(0,0,0,0.06), 0 4px 6px rgba(0,0,0,0.04)",
+        "card-4": "0 20px 25px rgba(0,0,0,0.08), 0 10px 10px rgba(0,0,0,0.04)",
+        "amber":       "0 0 24px rgba(212,144,64,0.15), 0 0 64px rgba(212,144,64,0.05)",
+        "amber-strong":"0 0 48px rgba(212,144,64,0.25), 0 0 100px rgba(212,144,64,0.10)",
+        "nav":         "0 -1px 0 rgba(0,0,0,0.05), 0 -4px 16px rgba(0,0,0,0.04)",
       },
       animation: {
         "fade-in":   "fade-in 200ms cubic-bezier(0.05,0.7,0.1,1) both",
