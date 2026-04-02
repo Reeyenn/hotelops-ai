@@ -51,8 +51,8 @@ function RoomGrid({ rooms }: { rooms: Room[] }) {
                   key={room.id}
                   title={`Room ${room.number} · ${room.type ?? ''} · ${room.status}`}
                   style={{
-                    width: '38px', height: '34px',
-                    borderRadius: '7px',
+                    width: '32px', height: '28px',
+                    borderRadius: '6px',
                     background: bg,
                     border: `1.5px solid ${border}`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -144,54 +144,52 @@ export default function DashboardPage() {
 
   /* ── Stat card helper ── */
   const StatCard = ({ icon, iconBg, label, value, sub }: { icon: React.ReactNode; iconBg: string; label: string; value: string | number; sub?: string }) => (
-    <div className="card" style={{ padding: '18px 16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>{label}</span>
-        <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {icon}
-        </div>
+    <div className="card" style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+      <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        {icon}
       </div>
       <div>
-        <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '28px', lineHeight: 1, letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>
+        <p style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', marginBottom: '2px' }}>{label}</p>
+        <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '22px', lineHeight: 1, letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>
           {value}
         </div>
-        {sub && <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>{sub}</p>}
+        {sub && <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{sub}</p>}
       </div>
     </div>
   );
 
   return (
     <AppLayout>
-      <div style={{ padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ padding: '16px 20px 20px', display: 'flex', flexDirection: 'column', gap: '14px', height: '100%' }}>
 
         {/* ── Page header ── */}
-        <div className="animate-in">
-          <p style={{ color: 'var(--text-muted)', fontSize: '13px', fontWeight: 500, marginBottom: '4px' }}>
-            {format(new Date(), 'EEEE, MMMM d')}
-          </p>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-            <h1 style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: '24px', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+        <div className="animate-in" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <p style={{ color: 'var(--text-muted)', fontSize: '12px', fontWeight: 500, marginBottom: '2px' }}>
+              {format(new Date(), 'EEEE, MMMM d')}
+            </p>
+            <h1 style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: '22px', color: 'var(--text-primary)', letterSpacing: '-0.02em', lineHeight: 1 }}>
               {t('dashboard', lang)}
             </h1>
-            {activeProperty && (
-              <span style={{ color: 'var(--navy-light)', fontSize: '13px', fontWeight: 600 }}>
-                {activeProperty.name}
-              </span>
-            )}
           </div>
+          {activeProperty && (
+            <span style={{ color: 'var(--navy-light)', fontSize: '13px', fontWeight: 600 }}>
+              {activeProperty.name}
+            </span>
+          )}
         </div>
 
-        {/* ── Summary stat cards — 2-column row ── */}
-        <div className="animate-in stagger-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+        {/* ── Stat cards — full-width row ── */}
+        <div className="animate-in stagger-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
           <StatCard
-            icon={<Users size={18} color="#16A34A" />}
+            icon={<Users size={16} color="#16A34A" />}
             iconBg="rgba(22,163,74,0.08)"
             label={lang === 'es' ? 'Equipo Mañana' : 'Staff Tomorrow'}
             value={confirmedCount}
             sub={`${tomorrowConfs.length} ${lang === 'es' ? 'contactados' : 'contacted'}`}
           />
           <StatCard
-            icon={<DollarSign size={18} color="#CA8A04" />}
+            icon={<DollarSign size={16} color="#CA8A04" />}
             iconBg="rgba(202,138,4,0.08)"
             label={lang === 'es' ? 'Costo Estimado' : 'Est. Labor Cost'}
             value={total > 0 ? `$${Math.round(total * 3.2)}` : '—'}
@@ -199,69 +197,58 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* ── Room status card with visual grid ── */}
-        <div className="animate-in stagger-2">
-          <div className="card" style={{ padding: '20px' }}>
-            {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-              <Sparkles size={16} color="var(--navy-light)" />
-              <h2 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)' }}>
+        {/* ── Main content — two columns side by side ── */}
+        <div className="animate-in stagger-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', flex: 1, minHeight: 0 }}>
+
+          {/* LEFT: Room status + grid */}
+          <div className="card" style={{ padding: '18px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+              <Sparkles size={14} color="var(--navy-light)" />
+              <h2 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>
                 {lang === 'es' ? 'Estado de Habitaciones' : 'Room Status'}
               </h2>
-              <span style={{ marginLeft: 'auto', fontSize: '20px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: pct === 100 ? 'var(--green)' : 'var(--navy-light)' }}>
+              <span style={{ marginLeft: 'auto', fontSize: '18px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: pct === 100 ? 'var(--green)' : 'var(--navy-light)' }}>
                 {pct}%
               </span>
             </div>
-
-            {/* Progress bar */}
-            <div style={{ height: '6px', background: '#E5E7EB', borderRadius: '99px', overflow: 'hidden', marginBottom: '14px' }}>
-              <div style={{
-                height: '100%', borderRadius: '99px', transition: 'width 600ms cubic-bezier(0.4,0,0.2,1)',
-                width: `${pct}%`,
-                background: pct === 100 ? 'var(--green)' : 'var(--navy-light)',
-              }} />
+            <div style={{ height: '5px', background: '#E5E7EB', borderRadius: '99px', overflow: 'hidden', marginBottom: '12px', flexShrink: 0 }}>
+              <div style={{ height: '100%', borderRadius: '99px', transition: 'width 600ms cubic-bezier(0.4,0,0.2,1)', width: `${pct}%`, background: pct === 100 ? 'var(--green)' : 'var(--navy-light)' }} />
             </div>
-
             {total === 0 ? (
-              <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-muted)', fontSize: '13px' }}>
+              <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-muted)', fontSize: '13px', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {lang === 'es' ? 'No hay habitaciones asignadas hoy.' : 'No rooms assigned today.'}
               </div>
             ) : (
               <>
-                {/* Visual room grid — grouped by floor */}
-                <RoomGrid rooms={rooms} />
-
-                {/* Legend + counts */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '14px', paddingTop: '12px', borderTop: '1px solid var(--border)' }}>
+                <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+                  <RoomGrid rooms={rooms} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
                   <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                     {[
                       { dot: '#86EFAC', bg: '#DCFCE7', label: lang === 'es' ? 'Limpia' : 'Clean', count: clean },
-                      { dot: '#FCD34D', bg: '#FEF9C3', label: lang === 'es' ? 'En Progreso' : 'Progress', count: inProgress },
+                      { dot: '#FCD34D', bg: '#FEF9C3', label: lang === 'es' ? 'Progreso' : 'Progress', count: inProgress },
                       { dot: '#FCA5A5', bg: '#FEE2E2', label: lang === 'es' ? 'Sucia' : 'Dirty', count: dirty },
                     ].map(({ dot, bg, label, count }) => (
-                      <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        <div style={{ width: '10px', height: '10px', borderRadius: '3px', background: bg, border: `1.5px solid ${dot}`, flexShrink: 0 }} />
+                      <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <div style={{ width: '9px', height: '9px', borderRadius: '2px', background: bg, border: `1.5px solid ${dot}`, flexShrink: 0 }} />
                         <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>
                           <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{count}</span> {label}
                         </span>
                       </div>
                     ))}
                   </div>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500, flexShrink: 0 }}>
-                    {total} {lang === 'es' ? 'total' : 'total'}
-                  </span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500, flexShrink: 0 }}>{total} total</span>
                 </div>
               </>
             )}
           </div>
-        </div>
 
-        {/* ── Tomorrow's crew ── */}
-        <div className="animate-in stagger-3">
-          <div className="card" style={{ padding: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-              <Users size={16} color="var(--navy-light)" />
-              <h2 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)' }}>
+          {/* RIGHT: Tomorrow's crew */}
+          <div className="card" style={{ padding: '18px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', flexShrink: 0 }}>
+              <Users size={14} color="var(--navy-light)" />
+              <h2 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>
                 {lang === 'es' ? 'Equipo de Mañana' : "Tomorrow's Crew"}
               </h2>
               {tomorrowConfs.length > 0 && (
@@ -282,36 +269,34 @@ export default function DashboardPage() {
                 </p>
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {tomorrowConfs.map(conf => {
                   const badge = STATUS_BADGE[conf.status];
                   return (
                     <div key={conf.id} style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      padding: '12px 14px', background: 'rgba(0,0,0,0.02)',
+                      padding: '10px 14px', background: 'rgba(0,0,0,0.02)',
                       border: '1px solid var(--border)', borderRadius: 'var(--radius-md)',
+                      flexShrink: 0,
                     }}>
-                      {/* Left: avatar + name */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <div style={{
-                          width: '32px', height: '32px', borderRadius: '50%',
+                          width: '30px', height: '30px', borderRadius: '50%',
                           background: 'var(--navy)', color: '#fff',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: '12px', fontWeight: 700, flexShrink: 0,
+                          fontSize: '11px', fontWeight: 700, flexShrink: 0,
                         }}>
                           {(conf.staffName || '?')[0].toUpperCase()}
                         </div>
-                        <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>
                           {conf.staffName}
                         </span>
                       </div>
-
-                      {/* Right: status badge */}
                       <span style={{
                         display: 'inline-flex', alignItems: 'center', gap: '5px',
                         padding: '4px 10px', borderRadius: 'var(--radius-full)',
                         background: badge.bg, color: badge.color,
-                        fontSize: '12px', fontWeight: 600,
+                        fontSize: '11px', fontWeight: 600,
                       }}>
                         {badge.icon}
                         {lang === 'es' ? badge.label_es : badge.label_en}
@@ -322,7 +307,8 @@ export default function DashboardPage() {
               </div>
             )}
           </div>
-        </div>
+
+        </div>{/* end two-column grid */}
 
       </div>
     </AppLayout>
