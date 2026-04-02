@@ -140,7 +140,7 @@ function HousekeeperInner() {
           <BedDouble size={28} color="var(--amber)" />
         </div>
         <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-          HotelOps AI
+          Staxis
         </p>
       </div>
 

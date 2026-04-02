@@ -1,0 +1,49 @@
+============================================================
+HotelOps AI — Staffing Model Calibration
+============================================================
+
+[1] Loading data...
+    Occupancy: 91 days (2025-12-25 → 2026-03-25)
+    Fingerprint: 3175 records, 17 unique employees
+    Employees: ASTRI RAVANALES, BRENDA SANDOVAL, BRITTNEY COBBS, ERIKA RIVERA, JULIA JACINTO, KATHERINE WHITE, LUCIA FLORES, MAITE BULUX, MARIA CASTRO, MARIA POSAS, MARISOL PEREZ, MARY MARTINEZ, MATA HERIBERTO, MICHELLE HUMPHREY, SHANEQUA HAMILTON, SYLVIA MATA, YOSELEIN BULUX
+
+[2] Separating fixed vs variable staff...
+    Fixed staff (7): BRITTNEY COBBS, KATHERINE WHITE, MARIA CASTRO, MARY MARTINEZ, MICHELLE HUMPHREY, SHANEQUA HAMILTON, SYLVIA MATA
+    Variable HKs (10): ASTRI RAVANALES, BRENDA SANDOVAL, ERIKA RIVERA, JULIA JACINTO, LUCIA FLORES, MAITE BULUX, MARIA POSAS, MARISOL PEREZ, MATA HERIBERTO, YOSELEIN BULUX
+    ⚠  If fixed staff list looks wrong, update FIXED_STAFF in this script and re-run.
+
+[3] Building daily summary...
+    Matched days: 81 (fingerprint ∩ occupancy data)
+
+[4] Detecting clock-gaming outliers...
+    Outlier threshold: 0.83 hrs/room
+    Outlier days: 0 flagged, 81 clean days kept
+
+[5] Calibrating cleaning times...
+    Calibrated checkout time:  33.3 min/room  (was 30)
+    Calibrated stayover time:  27.2 min/room  (was 20)
+
+    Model fit on 81 clean days:
+    Mean absolute error: 6.46 hrs  (81% of a shift)
+
+[6] Day-of-week patterns...
+     avg_hk_headcount  avg_checkouts  avg_stayovers  avg_total_rooms  days_observed
+Day                                                                                
+Mon               4.7           13.2           54.0             67.2             11
+Tue               5.9           13.4           58.6             72.0             11
+Wed               6.0           19.4           57.7             77.1             11
+Thu               5.7           22.1           48.7             70.8             12
+Fri               6.0           17.7           48.7             66.3             12
+Sat               4.8           14.3           52.2             66.5             12
+Sun               4.9           21.6           45.0             66.6             12
+
+============================================================
+RESULT — Update scheduler.js with these values:
+============================================================
+
+const CLEANING_TIMES = {
+  checkout: 33.3,   // calibrated from 81 days of real data
+  stayover: 27.2,   // calibrated from 81 days of real data
+};
+
+============================================================

@@ -198,7 +198,7 @@ export default function HousekeeperRoomPage({ params }: { params: Promise<{ id: 
           fontSize: '11px', fontWeight: 600, letterSpacing: '0.08em',
           textTransform: 'uppercase', opacity: 0.55, marginBottom: '6px',
         }}>
-          HotelOps AI
+          Staxis
         </p>
 
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>

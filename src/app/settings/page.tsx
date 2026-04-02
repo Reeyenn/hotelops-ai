@@ -80,7 +80,7 @@ export default function SettingsPage() {
           textAlign:'center', fontSize:'11px', color:'var(--text-muted)',
           fontWeight:500, letterSpacing:'0.06em', padding:'8px',
         }}>
-          HotelOps <span style={{ color:'var(--amber)' }}>AI</span>
+          Staxis <span style={{ color:'var(--amber)' }}>AI</span>
         </p>
 
       </div>

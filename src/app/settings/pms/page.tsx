@@ -103,7 +103,7 @@ export default function PMSPage() {
                 Auto-pull data from your PMS
               </p>
               <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                A Computer Use Agent logs into your PMS exactly like a human would — navigating the screens, reading your occupancy and checkout data, and feeding it directly into HotelOps AI. <strong style={{ color: 'var(--amber)' }}>Zero manual entry.</strong>
+                A Computer Use Agent logs into your PMS exactly like a human would — navigating the screens, reading your occupancy and checkout data, and feeding it directly into Staxis. <strong style={{ color: 'var(--amber)' }}>Zero manual entry.</strong>
               </p>
             </div>
           </div>
@@ -203,7 +203,7 @@ export default function PMSPage() {
           <div style={{ display: 'flex', gap: '8px', padding: '10px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', marginTop: '12px' }}>
             <Shield size={14} color="var(--text-muted)" style={{ flexShrink: 0, marginTop: '1px' }} />
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-              Your credentials are encrypted and stored securely in Firebase. They are only used by the HotelOps AI sync agent to read occupancy data — never shared or sold.
+              Your credentials are encrypted and stored securely in Firebase. They are only used by the Staxis sync agent to read occupancy data — never shared or sold.
             </p>
           </div>
         </div>
@@ -264,7 +264,7 @@ export default function PMSPage() {
             { step: '1', text: 'A headless browser opens your PMS at the scheduled sync time' },
             { step: '2', text: 'The agent logs in with your saved credentials' },
             { step: '3', text: 'It navigates to the occupancy/reservations screen and reads the data' },
-            { step: '4', text: 'Extracted data (rooms occupied, checkouts, check-ins) is saved to HotelOps AI' },
+            { step: '4', text: 'Extracted data (rooms occupied, checkouts, check-ins) is saved to Staxis' },
             { step: '5', text: 'If numbers changed significantly, you get a push notification' },
           ].map(({ step, text }) => (
             <div key={step} style={{ display: 'flex', gap: '10px', marginBottom: '8px', alignItems: 'flex-start' }}>

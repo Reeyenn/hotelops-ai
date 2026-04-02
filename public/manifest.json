@@ -1,6 +1,6 @@
 {
-  "name": "HotelOps AI",
-  "short_name": "HotelOps",
+  "name": "Staxis",
+  "short_name": "Staxis",
   "description": "AI-powered hotel operations platform — housekeeping, staffing, and maintenance in one app",
   "start_url": "/dashboard",
   "scope": "/",

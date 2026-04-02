@@ -45,7 +45,7 @@ export default function RootPage() {
             animation: 'spin 0.8s linear infinite',
           }}
         />
-        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Loading HotelOps AI…</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Loading Staxis…</p>
       </div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>

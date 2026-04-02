@@ -55,7 +55,7 @@ export function Header() {
             fontFamily: 'var(--font-sans)', fontWeight: 600,
             fontSize: '15px', color: 'var(--text-primary)', letterSpacing: '-0.01em',
           }}>
-            HotelOps <span style={{ color: 'var(--amber)' }}>AI</span>
+            Staxis <span style={{ color: 'var(--amber)' }}>AI</span>
           </span>
         </div>
 

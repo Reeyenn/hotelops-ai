@@ -70,7 +70,7 @@ export default function SignInPage() {
             fontSize: '26px', letterSpacing: '-0.02em',
             color: 'var(--text-primary)', marginBottom: '6px',
           }}>
-            HotelOps <span style={{ color: 'var(--amber)' }}>AI</span>
+            Staxis <span style={{ color: 'var(--amber)' }}>AI</span>
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Sign in to your account</p>
         </div>

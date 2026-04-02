@@ -296,7 +296,7 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     weeklyBudgetField: 'Weekly Labor Budget (optional)',
     nextStepTitle: 'Next step:',
     nextStepDesc: "Open Morning Setup every day and hit Calculate. You'll see exactly how many housekeepers you need — and how much you're saving.",
-    openApp: 'Open HotelOps AI →',
+    openApp: 'Open Staxis →',
     savingDots: 'Saving...',
     // Dashboard
     todaysSchedule: "Today's Schedule",
@@ -686,7 +686,7 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     weeklyBudgetField: 'Presupuesto Semanal (opcional)',
     nextStepTitle: 'Próximo paso:',
     nextStepDesc: 'Abre Conf. Matutina cada día y toca Calcular. Verás exactamente cuántas camareras necesitas — y cuánto estás ahorrando.',
-    openApp: 'Abrir HotelOps AI →',
+    openApp: 'Abrir Staxis →',
     savingDots: 'Guardando...',
     // Dashboard
     todaysSchedule: 'Horario de Hoy',

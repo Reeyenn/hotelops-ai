@@ -24,7 +24,7 @@ const copy = {
     error: "Something went wrong. Please try again.",
     notFound: "This link isn't valid. Ask your manager to send a new one.",
     submitting: 'Sending…',
-    poweredBy: 'HotelOps AI',
+    poweredBy: 'Staxis',
   },
   es: {
     loading: 'Cargando…',
@@ -37,7 +37,7 @@ const copy = {
     error: 'Algo salió mal. Intenta de nuevo.',
     notFound: 'Este enlace no es válido. Pide a tu gerente que envíe uno nuevo.',
     submitting: 'Enviando…',
-    poweredBy: 'HotelOps AI',
+    poweredBy: 'Staxis',
   },
 };
 
@@ -148,7 +148,7 @@ function ConfirmContent() {
           color: '#FBBF24',
           marginBottom: '48px',
         }}>
-          HotelOps AI
+          Staxis
         </div>
 
         {/* States */}

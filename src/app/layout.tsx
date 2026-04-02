@@ -6,7 +6,7 @@ import { PropertyProvider } from '@/contexts/PropertyContext';
 import { SyncProvider } from '@/contexts/SyncContext';
 
 export const metadata: Metadata = {
-  title: 'HotelOps AI — Hotel Operations Platform',
+  title: 'Staxis — Hotel Operations Platform',
   description: 'AI-powered operations platform for limited-service hotel owners and managers',
 };
 
@@ -27,7 +27,7 @@ export default function RootLayout({
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="HotelOps AI" />
+        <meta name="apple-mobile-web-app-title" content="Staxis" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icons/icon.svg" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
