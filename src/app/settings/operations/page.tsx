@@ -46,8 +46,7 @@ const FLOORS = [
   { value: '2', label: 'Floor 2' },
   { value: '3', label: 'Floor 3' },
   { value: '4', label: 'Floor 4' },
-  { value: 'exterior', label: 'Exterior' },
-  { value: 'all', label: 'All Floors' },
+  { value: 'other', label: 'Other' },
 ];
 
 const FREQ_OPTIONS = [
@@ -166,8 +165,7 @@ const FLOOR_TABS = [
   { value: '2', label: 'Floor 2' },
   { value: '3', label: 'Floor 3' },
   { value: '4', label: 'Floor 4' },
-  { value: 'exterior', label: 'Exterior' },
-  { value: 'all', label: 'All Floors' },
+  { value: 'other', label: 'Other' },
 ];
 
 // ── Main page ──────────────────────────────────────────────────────────────

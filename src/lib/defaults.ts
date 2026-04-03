@@ -48,11 +48,11 @@ export function getDefaultPublicAreas(): Omit<PublicArea, 'id'>[] {
     { name: 'Floor 4 Housekeeping/Staff Rooms', floor: '4', locations: 3, frequencyDays: 7, minutesPerClean: 15, startDate: d3 },
 
     // ── Exterior ──────────────────────────────────────────────────────
-    { name: 'Parking Lot Garbage', floor: 'exterior', locations: 1, frequencyDays: 3, minutesPerClean: 45, startDate: d1 },
-    { name: 'Front + Side Glass (Outside)', floor: 'exterior', locations: 1, frequencyDays: 3, minutesPerClean: 45, startDate: d1 },
+    { name: 'Parking Lot Garbage', floor: 'other', locations: 1, frequencyDays: 3, minutesPerClean: 45, startDate: d1 },
+    { name: 'Front + Side Glass (Outside)', floor: 'other', locations: 1, frequencyDays: 3, minutesPerClean: 45, startDate: d1 },
 
     // ── All Floors ───────────────────────────────────────────────────
-    { name: 'Stairwells (All Floors)', floor: 'all', locations: 8, frequencyDays: 7, minutesPerClean: 30, startDate: d3 },
+    { name: 'Stairwells (All Floors)', floor: 'other', locations: 8, frequencyDays: 7, minutesPerClean: 30, startDate: d3 },
   ];
 }
 
