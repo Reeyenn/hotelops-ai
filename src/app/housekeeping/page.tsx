@@ -446,6 +446,10 @@ function ScheduleSection() {
                   const onVacation = member.vacationDates?.includes(shiftDate);
                   const isAtLimit = !eligible && !inPool && !onVacation && member.isActive !== false && !!member.phone &&
                     ((member.daysWorkedThisWeek ?? 0) >= (member.maxDaysPerWeek ?? 5) || (member.weeklyHours ?? 0) >= (member.maxWeeklyHours ?? 40));
+                  const hrs = member.weeklyHours ?? 0;
+                  const maxHrs = member.maxWeeklyHours ?? 40;
+                  const hrsNearLimit = hrs >= maxHrs - 4;
+                  const hrsAtLimit = hrs >= maxHrs;
                   return (
                     <div key={member.id} onClick={() => eligible && toggleSelected(member)}
                       style={{ padding: '10px 12px', border: `1px solid ${inPool ? 'rgba(34,197,94,0.3)' : isSelected ? 'rgba(251,191,36,0.5)' : eligible ? 'var(--border)' : 'rgba(0,0,0,0.04)'}`, background: inPool ? 'rgba(34,197,94,0.05)' : isSelected ? 'rgba(251,191,36,0.07)' : 'rgba(0,0,0,0.02)', borderRadius: 'var(--radius-md)', cursor: eligible ? 'pointer' : 'default', display: 'flex', alignItems: 'center', gap: '10px', opacity: (!eligible && !inPool) ? 0.45 : 1, transition: 'all 0.15s' }}>
@@ -458,7 +462,10 @@ function ScheduleSection() {
                           {inPool ? t('crewForDate', lang) : onVacation ? t('onVacation', lang) : !member.phone ? t('noPhoneLabel', lang) : isAtLimit ? t('atLimitLabel', lang) : eligible ? `${member.daysWorkedThisWeek ?? 0} ${t('daysWorkedLabel', lang)}` : t('inactiveLabel', lang)}
                         </p>
                       </div>
-                      {member.isSenior && <span style={{ fontSize: '9px', fontWeight: 700, color: 'var(--amber)', background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.2)', borderRadius: '4px', padding: '1px 5px' }}>SR</span>}
+                      {member.isSenior && <span style={{ fontSize: '9px', fontWeight: 700, color: 'var(--amber)', background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.2)', borderRadius: '4px', padding: '1px 5px', flexShrink: 0 }}>SR</span>}
+                      <span style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: hrsAtLimit ? 'var(--red)' : hrsNearLimit ? 'var(--amber)' : 'var(--text-muted)', background: hrsAtLimit ? 'rgba(239,68,68,0.07)' : hrsNearLimit ? 'rgba(251,191,36,0.07)' : 'rgba(0,0,0,0.04)', border: `1px solid ${hrsAtLimit ? 'rgba(239,68,68,0.2)' : hrsNearLimit ? 'rgba(251,191,36,0.2)' : 'var(--border)'}`, borderRadius: '4px', padding: '2px 6px', flexShrink: 0 }}>
+                        {hrs}h
+                      </span>
                     </div>
                   );
                 })}
@@ -475,41 +482,6 @@ function ScheduleSection() {
         )}
       </div>
 
-      {/* Weekly hours tracker */}
-      <div className="card" style={{ padding: '16px' }}>
-        <p style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', marginBottom: '14px' }}>
-          {t('weeklyHoursTracker', lang)}
-        </p>
-        {!staffLoaded ? (
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>{lang === 'es' ? 'Cargando…' : 'Loading…'}</p>
-        ) : activeStaff.length === 0 ? (
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>{t('noStaffYet', lang)}</p>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {activeStaff.map(member => {
-              const maxHrs = member.maxWeeklyHours ?? 40;
-              const hrs = member.weeklyHours ?? 0;
-              const pct = Math.min((hrs / maxHrs) * 100, 100);
-              const atLimit = hrs >= maxHrs;
-              const nearLimit = hrs >= maxHrs - 4;
-              return (
-                <div key={member.id}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-primary)' }}>
-                      {member.name}
-                      {member.vacationDates?.includes(shiftDate) && <span style={{ marginLeft: '6px', fontSize: '10px', color: 'var(--blue)', fontWeight: 600 }}>{t('onVacation', lang)}</span>}
-                    </span>
-                    <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: atLimit ? 'var(--red)' : nearLimit ? 'var(--amber)' : 'var(--text-muted)' }}>{hrs}h / {maxHrs}h</span>
-                  </div>
-                  <div style={{ height: '3px', background: 'rgba(0,0,0,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
-                    <div style={{ width: `${pct}%`, height: '100%', background: atLimit ? 'var(--red)' : nearLimit ? 'var(--amber)' : 'var(--green)', borderRadius: '2px', transition: 'width 0.3s' }} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
     </div>
   );
 }
