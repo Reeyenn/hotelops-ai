@@ -13,8 +13,11 @@ import {
   subscribeToShiftConfirmations, subscribeToManagerNotifications,
   markNotificationRead, markAllNotificationsRead,
   addStaffMember, updateStaffMember, deleteStaffMember,
-  getRoomsForDate,
+  getRoomsForDate, getPublicAreas, setPublicArea,
 } from '@/lib/firestore';
+import { getPublicAreasDueToday, calcPublicAreaMinutes } from '@/lib/calculations';
+import { getDefaultPublicAreas } from '@/lib/defaults';
+import type { PublicArea } from '@/types';
 import { todayStr } from '@/lib/utils';
 import type { Room, RoomStatus, StaffMember, ShiftConfirmation, ManagerNotification, ConfirmationStatus } from '@/types';
 import { format, subDays } from 'date-fns';
@@ -277,12 +280,74 @@ function ScheduleSection() {
   const [sent, setSent] = useState(false);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
 
+  // Prediction model state
+  const [shiftRooms, setShiftRooms] = useState<Room[]>([]);
+  const [publicAreas, setPublicAreas] = useState<PublicArea[]>([]);
+  const [predictionLoading, setPredictionLoading] = useState(true);
+
   const uid = user?.uid ?? '';
   const pid = activePropertyId ?? '';
 
   useEffect(() => {
     if (uid && pid && staff.length === 0) refreshStaff();
   }, [uid, pid]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch rooms for the selected shift date (real scraper data)
+  useEffect(() => {
+    if (!uid || !pid) return;
+    setPredictionLoading(true);
+    getRoomsForDate(uid, pid, shiftDate).then(rooms => {
+      setShiftRooms(rooms);
+      setPredictionLoading(false);
+    });
+  }, [uid, pid, shiftDate]);
+
+  // Fetch public areas (seed defaults if none exist)
+  useEffect(() => {
+    if (!uid || !pid) return;
+    getPublicAreas(uid, pid).then(async (areas) => {
+      if (areas.length > 0) {
+        setPublicAreas(areas);
+      } else {
+        // First time - seed default public areas with staggered start dates
+        const defaults = getDefaultPublicAreas();
+        const seeded: PublicArea[] = [];
+        for (const area of defaults) {
+          const id = crypto.randomUUID();
+          const full = { id, ...area } as PublicArea;
+          await setPublicArea(uid, pid, full);
+          seeded.push(full);
+        }
+        setPublicAreas(seeded);
+      }
+    });
+  }, [uid, pid]);
+
+  // ── Prediction model: 4 separate buckets ──
+  const checkouts = shiftRooms.filter(r => r.type === 'checkout').length;
+  const stayovers = shiftRooms.filter(r => r.type === 'stayover').length;
+  const totalRooms = checkouts + stayovers;
+
+  // 1. Room Minutes = (checkouts x 30) + (stayovers x 20)
+  const roomMinutes = (checkouts * 30) + (stayovers * 20);
+
+  // 2. Public Area Minutes = sum of (minutesPerClean x locations) for areas due that day
+  const [shiftY, shiftM, shiftD] = shiftDate.split('-').map(Number);
+  const shiftDateObj = new Date(shiftY, shiftM - 1, shiftD);
+  const areasDueToday = getPublicAreasDueToday(publicAreas, shiftDateObj);
+  const publicAreaMinutes = calcPublicAreaMinutes(areasDueToday);
+  const totalPublicAreaActivities = areasDueToday.reduce((sum, a) => sum + a.locations, 0);
+
+  // 3. Prep Minutes = (total rooms + total public area activities) x 5 min each
+  const prepMinutes = (totalRooms + totalPublicAreaActivities) * 5;
+
+  // 4. Laundry = 1 fixed person, always added
+  const LAUNDRY_STAFF = 1;
+
+  // Final calculation
+  const workloadMinutes = roomMinutes + prepMinutes + publicAreaMinutes;
+  const cleaningStaff = workloadMinutes > 0 ? Math.ceil(workloadMinutes / 480) : 0;
+  const recommendedStaff = cleaningStaff + LAUNDRY_STAFF;
 
   useEffect(() => {
     if (!uid || !pid) return;
@@ -300,7 +365,13 @@ function ScheduleSection() {
   const alreadyInPool = useMemo(() => new Set(confirmations.filter(c => c.status !== 'declined').map(c => c.staffId)), [confirmations]);
   const eligiblePool  = useMemo(() => autoSelectEligible(staff, shiftDate, alreadyInPool), [staff, shiftDate, alreadyInPool]);
 
-  const handleAutoSelect = useCallback(() => setSelected(eligiblePool), [eligiblePool]);
+  const handleAutoSelect = useCallback(() => {
+    if (recommendedStaff > 0 && totalRooms > 0) {
+      setSelected(eligiblePool.slice(0, recommendedStaff));
+    } else {
+      setSelected(eligiblePool);
+    }
+  }, [eligiblePool, recommendedStaff, totalRooms]);
 
   const toggleSelected = (member: StaffMember) => {
     setSelected(prev => prev.some(s => s.id === member.id) ? prev.filter(s => s.id !== member.id) : [...prev, member]);
@@ -381,6 +452,58 @@ function ScheduleSection() {
         </div>
       )}
 
+
+      {/* Staffing Prediction */}
+      <div className="card animate-in" style={{ padding: '16px' }}>
+        {predictionLoading ? (
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>Loading room data...</p>
+        ) : totalRooms === 0 ? (
+          <div style={{ textAlign: 'center', padding: '12px 0' }}>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>No room data for this date yet</p>
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '4px 0 0', opacity: 0.7 }}>Room data syncs from the PMS every 15 minutes</p>
+          </div>
+        ) : (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>
+                Staffing Prediction
+              </span>
+              <span style={{ fontSize: '22px', fontWeight: 800, color: 'var(--navy-light)', fontFamily: 'var(--font-mono)' }}>
+                {recommendedStaff} staff
+              </span>
+            </div>
+
+            {/* Breakdown */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: 'rgba(0,0,0,0.02)', borderRadius: 'var(--radius-sm)' }}>
+                <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Room Minutes</span>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
+                  {checkouts} CO x 30 + {stayovers} SO x 20 = {roomMinutes}m
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: 'rgba(0,0,0,0.02)', borderRadius: 'var(--radius-sm)' }}>
+                <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Prep Minutes</span>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
+                  ({totalRooms} rooms + {totalPublicAreaActivities} areas) x 5 = {prepMinutes}m
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: 'rgba(0,0,0,0.02)', borderRadius: 'var(--radius-sm)' }}>
+                <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Public Area Minutes</span>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
+                  {areasDueToday.length} areas due = {publicAreaMinutes}m
+                </span>
+              </div>
+              <div style={{ height: '1px', background: 'var(--border)', margin: '2px 0' }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>Total Workload</span>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
+                  {workloadMinutes}m / 480m per shift = {cleaningStaff} cleaners + {LAUNDRY_STAFF} laundry
+                </span>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
 
       {/* Sent banner */}
       {sent && (
