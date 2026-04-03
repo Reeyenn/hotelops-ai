@@ -1162,11 +1162,6 @@ export default function HousekeepingPage() {
       {/* ── Page header ── */}
       <div style={{ padding: '20px 16px 0' }}>
         <div style={{ padding: '0 0 4px' }}>
-          {activeProperty && (
-            <p style={{ color: 'var(--text-muted)', fontSize: '13px', fontWeight: 500, marginBottom: '4px' }}>
-              {activeProperty.name}
-            </p>
-          )}
           <h1 style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: '24px', color: 'var(--text-primary)', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
             {t('housekeeping', lang)}
           </h1>

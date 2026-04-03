@@ -29,11 +29,6 @@ export default function SettingsPage() {
 
         {/* ── Header ── */}
         <div className="animate-in">
-          {activeProperty && (
-            <p style={{ color:'var(--text-muted)', fontSize:'13px', fontWeight:500, marginBottom:'4px' }}>
-              {activeProperty.name}
-            </p>
-          )}
           <h1 style={{ fontFamily:'var(--font-sans)', fontWeight:700, fontSize:'24px', color:'var(--text-primary)', letterSpacing:'-0.02em' }}>
             {t('settings', lang)}
           </h1>
