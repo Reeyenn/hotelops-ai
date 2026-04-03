@@ -65,7 +65,7 @@ export function Header() {
 
           {/* Date */}
           <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', marginRight: '4px' }}>
-            {format(new Date(), 'EEE, MMM d')}
+            {format(new Date(), 'EEEE, MMMM d')}
           </span>
 
           {/* Language toggle — prominent for housekeeper adoption */}
