@@ -637,11 +637,11 @@ function RoomsSection() {
               return (
                 <div key={floor}>
                   {/* Floor label */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
                       Floor {floor}
                     </span>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.04em' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--navy-light)', fontFamily: 'var(--font-mono)' }}>
                       {floorDone}/{floorRooms.length}
                     </span>
                     <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
