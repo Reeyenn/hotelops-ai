@@ -696,7 +696,11 @@ function RoomsSection() {
       ) : (
         <>
 
-          {/* Rooms grouped by floor */}
+          {/* Legend + Rooms */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginBottom: '4px' }}>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>🚪 Checkout</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>🚫 Do Not Disturb</span>
+          </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {floors.map(floor => {
               const floorRooms = sorted.filter(r => getFloor(r.number) === floor);
@@ -765,12 +769,6 @@ function RoomsSection() {
             })}
           </div>
 
-          {/* Legend */}
-          <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', marginTop: '10px' }}>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>🚪 Checkout</span>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>🚫 Do Not Disturb</span>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>⭐ VIP</span>
-          </div>
         </>
       )}
     </div>
