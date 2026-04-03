@@ -322,7 +322,6 @@ function ScheduleSection() {
 
         // Migration 2: consolidate per-floor stairwells into one "other" entry
         const stairwells = migrated.filter(a => a.name.toLowerCase().includes('stairwell'));
-        const hasConsolidated = stairwells.length === 1 && stairwells[0].floor === 'other';
 
         if (stairwells.length > 1) {
           for (const old of stairwells) await deletePublicArea(uid, pid, old.id);
@@ -337,6 +336,21 @@ function ScheduleSection() {
           migrated.push(consolidated);
           changed = true;
         }
+
+        // Migration 3: remove duplicates (same name + floor = duplicate, keep first)
+        const seen = new Set<string>();
+        const deduped: PublicArea[] = [];
+        for (const a of migrated) {
+          const key = `${a.name.trim().toLowerCase()}__${a.floor}`;
+          if (seen.has(key)) {
+            await deletePublicArea(uid, pid, a.id);
+            changed = true;
+          } else {
+            seen.add(key);
+            deduped.push(a);
+          }
+        }
+        migrated = deduped;
 
         setPublicAreas(migrated);
       } else {
@@ -1073,6 +1087,20 @@ function PublicAreasSection() {
           await setPublicArea(uid, pid, consolidated);
           migrated.push(consolidated);
         }
+
+        // Migration 3: remove duplicates (same name + floor = duplicate, keep first)
+        const seen = new Set<string>();
+        const deduped: PublicArea[] = [];
+        for (const a of migrated) {
+          const key = `${a.name.trim().toLowerCase()}__${a.floor}`;
+          if (seen.has(key)) {
+            await deletePublicArea(uid, pid, a.id);
+          } else {
+            seen.add(key);
+            deduped.push(a);
+          }
+        }
+        migrated = deduped;
 
         setAreas(migrated);
       } else {
