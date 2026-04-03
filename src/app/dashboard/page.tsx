@@ -180,7 +180,7 @@ export default function DashboardPage() {
         </div>
 
         {/* ── Stat cards — full-width row ── */}
-        <div className="animate-in stagger-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+        <div className="animate-in stagger-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(160px, 300px))', gap: '10px' }}>
           <StatCard
             icon={<Users size={16} color="#16A34A" />}
             iconBg="rgba(22,163,74,0.08)"
