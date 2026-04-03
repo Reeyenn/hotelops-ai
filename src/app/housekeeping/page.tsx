@@ -558,26 +558,6 @@ function RoomsSection() {
   return (
     <div style={{ padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-      {totalCount > 0 && (
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '14px 16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{t('todaysProgress', lang)}</span>
-            <span style={{ fontSize: '14px', fontWeight: 800, color: '#22C55E', fontFamily: 'var(--font-mono)' }}>
-              {pct}% &nbsp;<span style={{ fontWeight: 500, color: 'var(--text-muted)', fontSize: '12px' }}>({doneCount}/{totalCount})</span>
-            </span>
-          </div>
-          <div style={{ height: '10px', borderRadius: '5px', background: 'var(--border)' }}>
-            <div style={{ height: '100%', borderRadius: '5px', background: pct === 100 ? '#8B5CF6' : '#22C55E', width: `${pct}%`, transition: 'width 400ms ease' }} />
-          </div>
-          <div style={{ display: 'flex', gap: '12px', marginTop: '10px', flexWrap: 'wrap' }}>
-            {(['dirty', 'in_progress', 'clean', 'inspected'] as RoomStatus[]).map(s => {
-              const cnt = rooms.filter(r => r.status === s).length;
-              if (cnt === 0) return null;
-              return <span key={s} style={{ fontSize: '11px', fontWeight: 600, color: STATUS_INFO[s].color }}>{cnt} {STATUS_INFO[s].label}</span>;
-            })}
-          </div>
-        </div>
-      )}
 
 
       {loading ? (
