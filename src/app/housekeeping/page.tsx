@@ -303,66 +303,33 @@ function ScheduleSection() {
     });
   }, [uid, pid, shiftDate]);
 
-  // Fetch public areas (seed defaults if none exist, migrate stairwells)
+  // Fetch public areas (seed defaults if none, or reseed if outdated V3 data)
   useEffect(() => {
     if (!uid || !pid) return;
+    const OLD_NAMES = ['stairwell', 'staff / service', 'floor 2 hallway', 'floor 3 hallway', 'floor 4 hallway', 'restrooms (3', 'elevator area (1st'];
+    const needsReseed = (areas: PublicArea[]) => areas.some(a => OLD_NAMES.some(old => a.name.toLowerCase().includes(old)));
+
+    const seedDefaults = async () => {
+      const defaults = getDefaultPublicAreas();
+      const seeded: PublicArea[] = [];
+      for (const area of defaults) {
+        const id = crypto.randomUUID();
+        const full = { id, ...area } as PublicArea;
+        await setPublicArea(uid, pid, full);
+        seeded.push(full);
+      }
+      return seeded;
+    };
+
     getPublicAreas(uid, pid).then(async (fetched) => {
-      if (fetched.length > 0) {
-        let migrated = [...fetched];
-        let changed = false;
-
-        // Migration 1: rename "exterior" and "all" floors to "other"
-        for (const a of migrated) {
-          if (a.floor === 'exterior' || a.floor === 'all') {
-            a.floor = 'other';
-            await setPublicArea(uid, pid, a);
-            changed = true;
-          }
-        }
-
-        // Migration 2: consolidate per-floor stairwells into one "other" entry
-        const stairwells = migrated.filter(a => a.name.toLowerCase().includes('stairwell'));
-
-        if (stairwells.length > 1) {
-          for (const old of stairwells) await deletePublicArea(uid, pid, old.id);
-          migrated = migrated.filter(a => !a.name.toLowerCase().includes('stairwell'));
-          const totalLocs = stairwells.reduce((s, a) => s + a.locations, 0);
-          const consolidated: PublicArea = {
-            id: crypto.randomUUID(), name: 'Stairwells (All Floors)', floor: 'other',
-            locations: totalLocs, frequencyDays: 7, minutesPerClean: 30,
-            startDate: stairwells[0]?.startDate ?? new Date().toLocaleDateString('en-CA'),
-          };
-          await setPublicArea(uid, pid, consolidated);
-          migrated.push(consolidated);
-          changed = true;
-        }
-
-        // Migration 3: remove duplicates (same name + floor = duplicate, keep first)
-        const seen = new Set<string>();
-        const deduped: PublicArea[] = [];
-        for (const a of migrated) {
-          const key = `${a.name.trim().toLowerCase()}__${a.floor}`;
-          if (seen.has(key)) {
-            await deletePublicArea(uid, pid, a.id);
-            changed = true;
-          } else {
-            seen.add(key);
-            deduped.push(a);
-          }
-        }
-        migrated = deduped;
-
-        setPublicAreas(migrated);
+      if (fetched.length === 0) {
+        setPublicAreas(await seedDefaults());
+      } else if (needsReseed(fetched)) {
+        // V4 migration: wipe old data and reseed with correct list
+        for (const a of fetched) await deletePublicArea(uid, pid, a.id);
+        setPublicAreas(await seedDefaults());
       } else {
-        const defaults = getDefaultPublicAreas();
-        const seeded: PublicArea[] = [];
-        for (const area of defaults) {
-          const id = crypto.randomUUID();
-          const full = { id, ...area } as PublicArea;
-          await setPublicArea(uid, pid, full);
-          seeded.push(full);
-        }
-        setPublicAreas(seeded);
+        setPublicAreas(fetched);
       }
     });
   }, [uid, pid]);
@@ -1061,58 +1028,29 @@ function PublicAreasSection() {
   useEffect(() => {
     if (!uid || !pid) return;
     setLoading(true);
+    const OLD_NAMES = ['stairwell', 'staff / service', 'floor 2 hallway', 'floor 3 hallway', 'floor 4 hallway', 'restrooms (3', 'elevator area (1st'];
+    const needsReseed = (areas: PublicArea[]) => areas.some(a => OLD_NAMES.some(old => a.name.toLowerCase().includes(old)));
+
+    const seedDefaults = async () => {
+      const defaults = getDefaultPublicAreas();
+      const seeded: PublicArea[] = [];
+      for (const area of defaults) {
+        const id = crypto.randomUUID();
+        const full = { id, ...area } as PublicArea;
+        await setPublicArea(uid, pid, full);
+        seeded.push(full);
+      }
+      return seeded;
+    };
+
     getPublicAreas(uid, pid).then(async (fetched) => {
-      if (fetched.length > 0) {
-        let migrated = [...fetched];
-
-        // Migration 1: rename "exterior" and "all" floors to "other"
-        for (const a of migrated) {
-          if (a.floor === 'exterior' || a.floor === 'all') {
-            a.floor = 'other';
-            await setPublicArea(uid, pid, a);
-          }
-        }
-
-        // Migration 2: consolidate per-floor stairwells into one "other" entry
-        const stairwells = migrated.filter(a => a.name.toLowerCase().includes('stairwell'));
-        if (stairwells.length > 1) {
-          for (const old of stairwells) await deletePublicArea(uid, pid, old.id);
-          migrated = migrated.filter(a => !a.name.toLowerCase().includes('stairwell'));
-          const totalLocs = stairwells.reduce((s, a) => s + a.locations, 0);
-          const consolidated: PublicArea = {
-            id: crypto.randomUUID(), name: 'Stairwells (All Floors)', floor: 'other',
-            locations: totalLocs, frequencyDays: 7, minutesPerClean: 30,
-            startDate: stairwells[0]?.startDate ?? new Date().toLocaleDateString('en-CA'),
-          };
-          await setPublicArea(uid, pid, consolidated);
-          migrated.push(consolidated);
-        }
-
-        // Migration 3: remove duplicates (same name + floor = duplicate, keep first)
-        const seen = new Set<string>();
-        const deduped: PublicArea[] = [];
-        for (const a of migrated) {
-          const key = `${a.name.trim().toLowerCase()}__${a.floor}`;
-          if (seen.has(key)) {
-            await deletePublicArea(uid, pid, a.id);
-          } else {
-            seen.add(key);
-            deduped.push(a);
-          }
-        }
-        migrated = deduped;
-
-        setAreas(migrated);
+      if (fetched.length === 0) {
+        setAreas(await seedDefaults());
+      } else if (needsReseed(fetched)) {
+        for (const a of fetched) await deletePublicArea(uid, pid, a.id);
+        setAreas(await seedDefaults());
       } else {
-        const defaults = getDefaultPublicAreas();
-        const seeded: PublicArea[] = [];
-        for (const area of defaults) {
-          const id = crypto.randomUUID();
-          const full = { id, ...area } as PublicArea;
-          await setPublicArea(uid, pid, full);
-          seeded.push(full);
-        }
-        setAreas(seeded);
+        setAreas(fetched);
       }
       setLoading(false);
     });
