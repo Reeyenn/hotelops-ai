@@ -13,7 +13,7 @@ import {
   subscribeToShiftConfirmations, subscribeToManagerNotifications,
   markNotificationRead, markAllNotificationsRead,
   addStaffMember, updateStaffMember, deleteStaffMember,
-  getRoomsForDate, getPublicAreas, setPublicArea,
+  getRoomsForDate, getPublicAreas, setPublicArea, deletePublicArea,
 } from '@/lib/firestore';
 import { getPublicAreasDueToday, calcPublicAreaMinutes } from '@/lib/calculations';
 import { getDefaultPublicAreas } from '@/lib/defaults';
@@ -22,20 +22,21 @@ import { todayStr } from '@/lib/utils';
 import type { Room, RoomStatus, StaffMember, ShiftConfirmation, ManagerNotification, ConfirmationStatus } from '@/types';
 import { format, subDays } from 'date-fns';
 import {
-  Calendar, ChevronLeft, ChevronRight, Bell, CheckCircle2, XCircle, Clock,
-  AlertTriangle, Users, Send, Zap, BedDouble, Plus, Pencil, Trash2, Star,
+  Calendar, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Bell, CheckCircle2, XCircle, Clock,
+  AlertTriangle, Users, Send, Zap, BedDouble, Plus, Pencil, Trash2, Star, Check,
   Trophy, TrendingUp, TrendingDown, Minus, Upload,
 } from 'lucide-react';
 
 // ─── Tab config ──────────────────────────────────────────────────────────────
 
-type TabKey = 'schedule' | 'rooms' | 'performance' | 'import';
+type TabKey = 'schedule' | 'rooms' | 'areas' | 'performance' | 'import';
 
 const TABS: { key: TabKey; label: string; labelEs: string }[] = [
-  { key: 'schedule',    label: 'Schedule',    labelEs: 'Horario'       },
-  { key: 'rooms',       label: 'Rooms',       labelEs: 'Habitaciones'  },
-  { key: 'performance', label: 'Performance', labelEs: 'Rendimiento'   },
-  { key: 'import',      label: 'Import',      labelEs: 'Importar'      },
+  { key: 'schedule',    label: 'Schedule',     labelEs: 'Horario'        },
+  { key: 'rooms',       label: 'Rooms',        labelEs: 'Habitaciones'   },
+  { key: 'areas',       label: 'Public Areas', labelEs: 'Areas Publicas' },
+  { key: 'performance', label: 'Performance',  labelEs: 'Rendimiento'    },
+  { key: 'import',      label: 'Import',       labelEs: 'Importar'       },
 ];
 
 // ─── Schedule helpers ─────────────────────────────────────────────────────────
@@ -983,6 +984,204 @@ function StaffSection() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+// PUBLIC AREAS SECTION
+// ══════════════════════════════════════════════════════════════════════════════
+
+const PA_FLOORS = [
+  { value: '1', label: 'F1' },
+  { value: '2', label: 'F2' },
+  { value: '3', label: 'F3' },
+  { value: '4', label: 'F4' },
+  { value: 'exterior', label: 'Ext' },
+];
+
+const PA_FREQ: { value: number; label: string }[] = [
+  { value: 1, label: 'Daily' },
+  { value: 2, label: 'Every 2 days' },
+  { value: 3, label: 'Every 3 days' },
+  { value: 7, label: 'Weekly' },
+];
+
+function PublicAreasSection() {
+  const { user } = useAuth();
+  const { activePropertyId } = useProperty();
+
+  const [areas, setAreas] = useState<PublicArea[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const [activeFloor, setActiveFloor] = useState('1');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const uid = user?.uid ?? '';
+  const pid = activePropertyId ?? '';
+
+  useEffect(() => {
+    if (!uid || !pid) return;
+    setLoading(true);
+    getPublicAreas(uid, pid).then(async (fetched) => {
+      if (fetched.length > 0) {
+        setAreas(fetched);
+      } else {
+        const defaults = getDefaultPublicAreas();
+        const seeded: PublicArea[] = [];
+        for (const area of defaults) {
+          const id = crypto.randomUUID();
+          const full = { id, ...area } as PublicArea;
+          await setPublicArea(uid, pid, full);
+          seeded.push(full);
+        }
+        setAreas(seeded);
+      }
+      setLoading(false);
+    });
+  }, [uid, pid]);
+
+  const handleUpdate = (id: string, patch: Partial<PublicArea>) => {
+    setAreas(prev => prev.map(a => a.id === id ? { ...a, ...patch } : a));
+    setDirty(true);
+  };
+
+  const handleDelete = (id: string) => {
+    setAreas(prev => prev.filter(a => a.id !== id));
+    if (uid && pid) deletePublicArea(uid, pid, id);
+    setDirty(true);
+    setExpandedId(null);
+  };
+
+  const handleAdd = () => {
+    const id = crypto.randomUUID();
+    const today = new Date().toLocaleDateString('en-CA');
+    const newArea: PublicArea = { id, name: '', floor: activeFloor, locations: 1, frequencyDays: 1, minutesPerClean: 15, startDate: today };
+    setAreas(prev => [...prev, newArea]);
+    setExpandedId(id);
+    setDirty(true);
+  };
+
+  const handleSave = async () => {
+    if (!uid || !pid) return;
+    setSaving(true);
+    try {
+      await Promise.all(areas.map(a => setPublicArea(uid, pid, a)));
+      setSaved(true);
+      setDirty(false);
+      setTimeout(() => setSaved(false), 2500);
+    } finally { setSaving(false); }
+  };
+
+  const floorCounts: Record<string, number> = {};
+  for (const a of areas) floorCounts[a.floor] = (floorCounts[a.floor] || 0) + 1;
+
+  const visible = areas.filter(a => a.floor === activeFloor);
+
+  return (
+    <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+
+      {/* Header + Add */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <p style={{ fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)' }}>Public Areas</p>
+        <button onClick={handleAdd} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', borderRadius: '8px', background: 'rgba(27,58,92,0.08)', border: '1px solid rgba(27,58,92,0.15)', color: 'var(--navy)', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>
+          <Plus size={14} /> Add
+        </button>
+      </div>
+
+      {/* Floor tabs */}
+      <div style={{ display: 'flex', gap: '4px', background: 'rgba(0,0,0,0.03)', borderRadius: '10px', padding: '3px' }}>
+        {PA_FLOORS.map(f => {
+          const active = activeFloor === f.value;
+          const count = floorCounts[f.value] || 0;
+          return (
+            <button key={f.value} onClick={() => setActiveFloor(f.value)} style={{
+              flex: 1, padding: '8px 4px', borderRadius: '8px', border: 'none',
+              background: active ? 'white' : 'transparent',
+              boxShadow: active ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              color: active ? 'var(--navy)' : 'var(--text-muted)',
+              fontWeight: active ? 700 : 500, fontSize: '13px',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', transition: 'all 0.15s',
+            }}>
+              {f.label}
+              {count > 0 && (
+                <span style={{ fontSize: '10px', fontWeight: 700, minWidth: '16px', height: '16px', borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: active ? 'rgba(27,58,92,0.1)' : 'rgba(0,0,0,0.06)', color: active ? 'var(--navy)' : 'var(--text-muted)' }}>
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Area list */}
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>Loading...</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          {visible.map(area => {
+            const isOpen = expandedId === area.id;
+            const freqLabel = PA_FREQ.find(f => f.value === area.frequencyDays)?.label ?? `Every ${area.frequencyDays}d`;
+            return (
+              <div key={area.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                <button onClick={() => setExpandedId(isOpen ? null : area.id)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--text-primary)' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontWeight: 600, fontSize: '14px', lineHeight: 1.3, marginBottom: '2px' }}>{area.name || 'Untitled'}</p>
+                    <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{area.minutesPerClean}min · {area.locations} loc · {freqLabel}</p>
+                  </div>
+                  {isOpen ? <ChevronUp size={16} color="var(--text-muted)" /> : <ChevronDown size={16} color="var(--text-muted)" />}
+                </button>
+
+                {isOpen && (
+                  <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: '12px', borderTop: '1px solid var(--border)' }}>
+                    <div style={{ paddingTop: '12px' }}>
+                      <label className="label">Name</label>
+                      <input className="input" value={area.name} onChange={e => handleUpdate(area.id, { name: e.target.value })} />
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                      <div>
+                        <label className="label">Floor</label>
+                        <select className="input" value={area.floor} onChange={e => handleUpdate(area.id, { floor: e.target.value })} style={{ width: '100%' }}>
+                          {PA_FLOORS.map(f => <option key={f.value} value={f.value}>{f.label === 'Ext' ? 'Exterior' : `Floor ${f.value}`}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="label">Frequency</label>
+                        <select className="input" value={area.frequencyDays} onChange={e => handleUpdate(area.id, { frequencyDays: Number(e.target.value) })} style={{ width: '100%' }}>
+                          {PA_FREQ.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                      <div>
+                        <label className="label">Minutes per clean</label>
+                        <input className="input" type="number" value={area.minutesPerClean} onChange={e => handleUpdate(area.id, { minutesPerClean: Number(e.target.value) || 0 })} />
+                      </div>
+                      <div>
+                        <label className="label">Locations</label>
+                        <input className="input" type="number" value={area.locations} onChange={e => handleUpdate(area.id, { locations: Number(e.target.value) || 1 })} />
+                      </div>
+                    </div>
+                    <button onClick={() => handleDelete(area.id)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '8px', border: '1px solid rgba(220,38,38,0.2)', background: 'rgba(220,38,38,0.06)', color: '#dc2626', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>
+                      <Trash2 size={14} /> Remove Area
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          {visible.length === 0 && (
+            <div className="card" style={{ padding: '28px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>No areas on this floor. Tap Add to create one.</div>
+          )}
+        </div>
+      )}
+
+      {/* Save */}
+      <button onClick={handleSave} disabled={saving || saved || !dirty} className={`btn btn-xl ${saved ? 'btn-green' : 'btn-primary'}`} style={{ width: '100%', justifyContent: 'center', opacity: (!dirty && !saved) ? 0.5 : 1 }}>
+        {saved ? <><Check size={20} /> Saved!</> : saving ? 'Saving...' : 'Save Changes'}
+      </button>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // PERFORMANCE SECTION
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -1335,6 +1534,7 @@ export default function HousekeepingPage() {
       {/* ── Section content ── */}
       {activeTab === 'schedule'    && <ScheduleSection />}
       {activeTab === 'rooms'       && <RoomsSection />}
+      {activeTab === 'areas'       && <PublicAreasSection />}
       {activeTab === 'performance' && <PerformanceSection />}
       {activeTab === 'import'      && <ImportSection />}
     </AppLayout>
