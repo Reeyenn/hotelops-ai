@@ -638,7 +638,7 @@ function RoomsSection() {
             const floorDone  = floorRooms.filter(r => r.status === 'clean' || r.status === 'inspected').length;
             return (
               <option key={floor} value={floor}>
-                {floor === 'all' ? `${t('all', lang)} floors` : `${t('floor', lang)} ${floor}`} — {floorDone}/{floorRooms.length} done
+                {floor === 'all' ? `All floors (${floorDone}/${floorRooms.length} done)` : `Floor ${floor} (${floorDone}/${floorRooms.length} done)`}
               </option>
             );
           })}
@@ -665,51 +665,71 @@ function RoomsSection() {
             <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: 'auto' }}>{lang === 'es' ? 'Toca para cambiar estado' : 'Tap to cycle status'}</span>
           </div>
 
-          {/* Tile grid — every tile is exactly the same fixed size */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, 72px)', gap: '6px' }}>
-            {sorted.map(room => {
-              const info = STATUS_INFO[room.status];
-              const completedTime = room.completedAt
-                ? format(
-                    typeof (room.completedAt as unknown as { toDate?: () => Date })?.toDate === 'function'
-                      ? (room.completedAt as unknown as { toDate: () => Date }).toDate()
-                      : new Date(room.completedAt as unknown as string | number),
-                    'h:mm a'
-                  )
-                : null;
+          {/* Rooms grouped by floor */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {(selectedFloor === 'all' ? floors : [selectedFloor]).map(floor => {
+              const floorRooms = sorted.filter(r => getFloor(r.number) === floor);
+              const floorDone  = floorRooms.filter(r => r.status === 'clean' || r.status === 'inspected').length;
+              if (floorRooms.length === 0) return null;
               return (
-                <button
-                  key={room.id}
-                  onClick={() => handleToggle(room)}
-                  disabled={room.status === 'inspected'}
-                  title={`Room ${room.number} · ${room.type ?? ''} · ${info.label}${completedTime ? ` · Done ${completedTime}` : ''}`}
-                  style={{
-                    width: '72px', height: '72px',
-                    flexShrink: 0,
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                    gap: '4px',
-                    background: info.bgColor, border: `1.5px solid ${info.borderColor}`,
-                    borderRadius: '10px',
-                    cursor: room.status === 'inspected' ? 'default' : 'pointer',
-                    opacity: room.status === 'inspected' ? 0.55 : 1,
-                    transition: 'opacity 0.1s',
-                    fontFamily: 'var(--font-sans)',
-                    position: 'relative',
-                    overflow: 'hidden',
-                  }}
-                >
-                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '14px', color: info.color, lineHeight: 1 }}>
-                    {room.number}
-                  </span>
-                  <span style={{ fontSize: '9px', fontWeight: 600, color: info.color, opacity: 0.85, textAlign: 'center', lineHeight: 1 }}>
-                    {info.label.replace(' ✓', '')}
-                  </span>
-                  {(room.priority === 'vip' || room.isDnd || room.type === 'checkout') && (
-                    <div style={{ position: 'absolute', top: '3px', right: '4px', fontSize: '9px', lineHeight: 1 }}>
-                      {room.priority === 'vip' ? '⭐' : room.isDnd ? '🚫' : '🚪'}
-                    </div>
-                  )}
-                </button>
+                <div key={floor}>
+                  {/* Floor label */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>
+                      Floor {floor}
+                    </span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>
+                      {floorDone}/{floorRooms.length} done
+                    </span>
+                    <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+                  </div>
+                  {/* Tiles */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {floorRooms.map(room => {
+                      const info = STATUS_INFO[room.status];
+                      const completedTime = room.completedAt
+                        ? format(
+                            typeof (room.completedAt as unknown as { toDate?: () => Date })?.toDate === 'function'
+                              ? (room.completedAt as unknown as { toDate: () => Date }).toDate()
+                              : new Date(room.completedAt as unknown as string | number),
+                            'h:mm a'
+                          )
+                        : null;
+                      return (
+                        <button
+                          key={room.id}
+                          onClick={() => handleToggle(room)}
+                          disabled={room.status === 'inspected'}
+                          title={`Room ${room.number} · ${room.type ?? ''} · ${info.label}${completedTime ? ` done at ${completedTime}` : ''}`}
+                          style={{
+                            width: '72px', height: '72px', flexShrink: 0,
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                            gap: '4px',
+                            background: info.bgColor, border: `1.5px solid ${info.borderColor}`,
+                            borderRadius: '10px',
+                            cursor: room.status === 'inspected' ? 'default' : 'pointer',
+                            opacity: room.status === 'inspected' ? 0.55 : 1,
+                            transition: 'opacity 0.1s',
+                            fontFamily: 'var(--font-sans)',
+                            position: 'relative', overflow: 'hidden',
+                          }}
+                        >
+                          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '14px', color: info.color, lineHeight: 1 }}>
+                            {room.number}
+                          </span>
+                          <span style={{ fontSize: '9px', fontWeight: 600, color: info.color, opacity: 0.85, textAlign: 'center', lineHeight: 1 }}>
+                            {info.label.replace(' ✓', '')}
+                          </span>
+                          {(room.priority === 'vip' || room.isDnd || room.type === 'checkout') && (
+                            <div style={{ position: 'absolute', top: '3px', right: '4px', fontSize: '9px', lineHeight: 1 }}>
+                              {room.priority === 'vip' ? '⭐' : room.isDnd ? '🚫' : '🚪'}
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               );
             })}
           </div>
