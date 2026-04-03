@@ -208,7 +208,7 @@ export default function DashboardPage() {
         <div className="animate-in stagger-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', flex: 1, minHeight: 0 }}>
 
           {/* LEFT: Room status + grid */}
-          <div className="card" style={{ padding: '18px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div className="card" onClick={() => { localStorage.setItem('hk-tab', 'rooms'); router.push('/housekeeping'); }} style={{ padding: '18px', display: 'flex', flexDirection: 'column', overflow: 'hidden', cursor: 'pointer', transition: 'box-shadow 150ms', }} onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 0 0 2px var(--navy-light)')} onMouseLeave={e => (e.currentTarget.style.boxShadow = '')}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
               <Sparkles size={14} color="var(--navy-light)" />
               <h2 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>
