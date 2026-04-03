@@ -1004,12 +1004,6 @@ const PA_FLOORS = [
   { value: 'other', label: 'Other' },
 ];
 
-const PA_FREQ: { value: number; label: string }[] = [
-  { value: 1, label: 'Daily' },
-  { value: 2, label: 'Every 2 days' },
-  { value: 3, label: 'Every 3 days' },
-  { value: 7, label: 'Weekly' },
-];
 
 function PublicAreasSection() {
   const { user } = useAuth();
@@ -1159,7 +1153,7 @@ function PublicAreasSection() {
           {visible.map(area => {
             const isOpen = expandedId === area.id;
             const isHighlighted = highlightId === area.id;
-            const freqLabel = PA_FREQ.find(f => f.value === area.frequencyDays)?.label ?? `Every ${area.frequencyDays}d`;
+            const freqLabel = area.frequencyDays === 1 ? 'Daily' : `Every ${area.frequencyDays} days`;
             return (
               <div key={area.id} ref={isHighlighted ? highlightRef : undefined} className="card" style={{ padding: 0, overflow: 'hidden', transition: 'box-shadow 0.3s, border-color 0.3s', ...(isHighlighted ? { boxShadow: '0 0 0 2px var(--amber), 0 4px 16px rgba(251,191,36,0.25)', borderColor: 'var(--amber)' } : {}) }}>
                 <button onClick={() => setExpandedId(isOpen ? null : area.id)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--text-primary)' }}>
@@ -1184,10 +1178,8 @@ function PublicAreasSection() {
                         </select>
                       </div>
                       <div>
-                        <label className="label">Frequency</label>
-                        <select className="input" value={area.frequencyDays} onChange={e => handleUpdate(area.id, { frequencyDays: Number(e.target.value) })} style={{ width: '100%' }}>
-                          {PA_FREQ.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
-                        </select>
+                        <label className="label">Every X days</label>
+                        <input className="input" type="number" min={1} value={area.frequencyDays} onChange={e => handleUpdate(area.id, { frequencyDays: Math.max(1, Number(e.target.value) || 1) })} />
                       </div>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
@@ -1238,10 +1230,8 @@ function PublicAreasSection() {
                 </select>
               </div>
               <div>
-                <label className="label">Frequency</label>
-                <select className="input" value={newArea.frequencyDays} onChange={e => setNewArea(p => ({ ...p, frequencyDays: Number(e.target.value) }))} style={{ width: '100%' }}>
-                  {PA_FREQ.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
-                </select>
+                <label className="label">Every X days</label>
+                <input className="input" type="number" min={1} value={newArea.frequencyDays} onChange={e => setNewArea(p => ({ ...p, frequencyDays: Math.max(1, Number(e.target.value) || 1) }))} />
               </div>
             </div>
 
