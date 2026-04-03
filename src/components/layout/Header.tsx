@@ -37,8 +37,7 @@ export function Header() {
       borderBottom: '1px solid var(--border)',
     }}>
       <div style={{
-        maxWidth: '800px', margin: '0 auto',
-        padding: '0 16px', height: '52px',
+        padding: '0 20px', height: '52px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
       }}>
 
@@ -46,7 +45,7 @@ export function Header() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
           <div style={{
             width: '28px', height: '28px', borderRadius: '7px',
-            background: 'var(--amber)',
+            background: 'var(--navy-light)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             <span style={{ fontSize: '14px', fontWeight: 700, color: '#FFFFFF', fontFamily: 'var(--font-mono)' }}>S</span>
@@ -87,10 +86,10 @@ export function Header() {
                 onClick={() => setShowPropMenu(v => !v)}
                 style={{
                   background: 'var(--bg-card)', border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius-md)', padding: '5px 10px',
-                  color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 500,
+                  borderRadius: 'var(--radius-md)', padding: '5px 12px',
+                  color: 'var(--text-primary)', fontSize: '13px', fontWeight: 500,
                   cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
-                  maxWidth: '140px', fontFamily: 'var(--font-sans)',
+                  maxWidth: '220px', fontFamily: 'var(--font-sans)',
                 }}
               >
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

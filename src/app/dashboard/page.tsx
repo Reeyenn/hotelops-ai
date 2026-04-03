@@ -14,7 +14,7 @@ import { format } from 'date-fns';
 import {
   CheckCircle2, XCircle, Clock, AlertTriangle,
   Users, DollarSign,
-  Sparkles, CircleDot,
+  Sparkles, CircleDot, DoorOpen,
 } from 'lucide-react';
 
 /* ── Room grid helper ── */
@@ -129,6 +129,7 @@ export default function DashboardPage() {
   const clean      = rooms.filter(r => r.status === 'clean' || r.status === 'inspected').length;
   const inProgress = rooms.filter(r => r.status === 'in_progress').length;
   const dirty      = rooms.filter(r => r.status === 'dirty').length;
+  const checkouts  = rooms.filter(r => r.type === 'checkout').length;
   const total      = rooms.length;
   const pct        = total > 0 ? Math.round((clean / total) * 100) : 0;
 
@@ -172,15 +173,10 @@ export default function DashboardPage() {
               {t('dashboard', lang)}
             </h1>
           </div>
-          {activeProperty && (
-            <span style={{ color: 'var(--navy-light)', fontSize: '13px', fontWeight: 600 }}>
-              {activeProperty.name}
-            </span>
-          )}
         </div>
 
         {/* ── Stat cards — full-width row ── */}
-        <div className="animate-in stagger-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(160px, 300px))', gap: '10px' }}>
+        <div className="animate-in stagger-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
           <StatCard
             icon={<Users size={16} color="#16A34A" />}
             iconBg="rgba(22,163,74,0.08)"
@@ -194,6 +190,20 @@ export default function DashboardPage() {
             label={lang === 'es' ? 'Costo Estimado' : 'Est. Labor Cost'}
             value={total > 0 ? `$${Math.round(total * 3.2)}` : '—'}
             sub={lang === 'es' ? 'hoy' : 'today'}
+          />
+          <StatCard
+            icon={<AlertTriangle size={16} color="#DC2626" />}
+            iconBg="rgba(220,38,38,0.08)"
+            label={lang === 'es' ? 'Sucias' : 'Dirty Rooms'}
+            value={dirty}
+            sub={lang === 'es' ? 'pendientes' : 'need cleaning'}
+          />
+          <StatCard
+            icon={<DoorOpen size={16} color="var(--navy)" />}
+            iconBg="rgba(27,58,92,0.08)"
+            label={lang === 'es' ? 'Salidas Hoy' : 'Checkouts Today'}
+            value={checkouts}
+            sub={lang === 'es' ? 'habitaciones' : 'rooms'}
           />
         </div>
 
