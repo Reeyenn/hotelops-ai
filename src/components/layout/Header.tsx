@@ -37,6 +37,7 @@ export function Header() {
       borderBottom: '1px solid var(--border)',
     }}>
       <div style={{
+        maxWidth: '1280px', margin: '0 auto',
         padding: '0 20px', height: '52px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
       }}>
