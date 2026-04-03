@@ -763,6 +763,13 @@ function RoomsSection() {
               );
             })}
           </div>
+
+          {/* Legend */}
+          <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', marginTop: '10px' }}>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>🚪 Checkout</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>🚫 Do Not Disturb</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>⭐ VIP</span>
+          </div>
         </>
       )}
     </div>
