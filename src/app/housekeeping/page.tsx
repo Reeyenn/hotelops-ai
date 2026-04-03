@@ -1519,7 +1519,7 @@ export default function HousekeepingPage() {
   // Restore tab from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem('hk-tab') as TabKey | null;
-    const valid: TabKey[] = ['schedule', 'rooms', 'performance', 'import'];
+    const valid: TabKey[] = ['schedule', 'rooms', 'areas', 'performance', 'import'];
     if (saved && valid.includes(saved)) setActiveTabState(saved);
   }, []);
 
