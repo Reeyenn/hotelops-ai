@@ -471,7 +471,7 @@ function ScheduleSection() {
   const showMoveToast = useCallback((msg: string) => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
     setMoveToast(msg);
-    toastTimer.current = setTimeout(() => setMoveToast(null), 2500);
+    toastTimer.current = setTimeout(() => setMoveToast(null), 4000);
   }, []);
 
   const onPillPointerUp = useCallback((e: React.PointerEvent<HTMLButtonElement>) => {
@@ -681,7 +681,7 @@ function ScheduleSection() {
       {moveToast && (
         <div style={{
           position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)', zIndex: 10000,
-          background: '#1B3A5C', color: '#fff', padding: '10px 20px', borderRadius: '10px',
+          background: 'linear-gradient(135deg, #1B3A5C 0%, #2563EB 100%)', color: '#fff', padding: '10px 20px', borderRadius: '10px',
           fontSize: '13px', fontWeight: 600, boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
           animation: 'toastIn 0.2s ease-out',
           whiteSpace: 'nowrap',
