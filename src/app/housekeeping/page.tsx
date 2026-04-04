@@ -834,8 +834,8 @@ function RoomsSection() {
                           <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '17px', color: 'var(--text-primary)', lineHeight: 1 }}>
                             {room.number}
                           </span>
-                          <span style={{ fontSize: '9px', fontWeight: 700, color: info.color, textAlign: 'center', lineHeight: 1 }}>
-                            {info.label.replace(' ✓', '')}
+                          <span style={{ fontSize: '10px', fontWeight: 800, color: info.color, textAlign: 'center', lineHeight: 1, letterSpacing: '0.02em' }}>
+                            {info.label.replace(' ✓', '').toUpperCase()}
                           </span>
                           {(room.isDnd || room.type === 'checkout' || room.type === 'vacant' || room.type === 'stayover') && (
                             <div style={{ position: 'absolute', top: '2px', right: '3px', fontSize: '12px', lineHeight: 1 }}>
