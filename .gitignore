@@ -35,3 +35,4 @@ next-env.d.ts
 
 # Claude Code
 .claude/worktrees/
+CLAUDE.md
