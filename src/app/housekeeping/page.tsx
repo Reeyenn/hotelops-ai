@@ -14,6 +14,7 @@ import {
   markNotificationRead, markAllNotificationsRead,
   addStaffMember, updateStaffMember, deleteStaffMember,
   getRoomsForDate, getPublicAreas, setPublicArea, deletePublicArea,
+  updateProperty,
 } from '@/lib/firestore';
 import { getPublicAreasDueToday, calcPublicAreaMinutes } from '@/lib/calculations';
 import { getDefaultPublicAreas } from '@/lib/defaults';
@@ -268,7 +269,7 @@ function staffInitials(name: string): string {
 
 function ScheduleSection() {
   const { user } = useAuth();
-  const { activeProperty, activePropertyId, staff, staffLoaded, refreshStaff } = useProperty();
+  const { activeProperty, activePropertyId, staff, staffLoaded, refreshStaff, refreshProperty } = useProperty();
   const { lang } = useLang();
 
   const tomorrow = addDays(schedTodayStr(), 1);
@@ -279,6 +280,9 @@ function ScheduleSection() {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
+  const [showPredictionSettings, setShowPredictionSettings] = useState(false);
+  const [settingsForm, setSettingsForm] = useState({ checkoutMinutes: 30, stayoverMinutes: 20, prepMinutesPerActivity: 5 });
+  const [savingSettings, setSavingSettings] = useState(false);
 
   // Prediction model state
   const [shiftRooms, setShiftRooms] = useState<Room[]>([]);
@@ -332,6 +336,29 @@ function ScheduleSection() {
       }
     });
   }, [uid, pid]);
+
+  // Sync settings form with property data
+  useEffect(() => {
+    if (activeProperty) {
+      setSettingsForm({
+        checkoutMinutes: activeProperty.checkoutMinutes ?? 30,
+        stayoverMinutes: activeProperty.stayoverMinutes ?? 20,
+        prepMinutesPerActivity: activeProperty.prepMinutesPerActivity ?? 5,
+      });
+    }
+  }, [activeProperty]);
+
+  const handleSaveSettings = async () => {
+    if (!uid || !pid) return;
+    setSavingSettings(true);
+    try {
+      await updateProperty(uid, pid, settingsForm);
+      await refreshProperty();
+    } finally {
+      setSavingSettings(false);
+      setShowPredictionSettings(false);
+    }
+  };
 
   // ── Prediction model: 4 separate buckets ──
   const coMins = activeProperty?.checkoutMinutes ?? 30;
@@ -469,13 +496,14 @@ function ScheduleSection() {
 
 
       {/* Staffing Prediction */}
-      <div className="card animate-in" style={{
+      <div className="card animate-in" onClick={() => setShowPredictionSettings(true)} style={{
         padding: '28px 20px 24px',
         textAlign: 'center',
         background: 'linear-gradient(135deg, #1B3A5C 0%, #2563EB 100%)',
         border: 'none',
         borderRadius: 'var(--radius-xl)',
         boxShadow: '0 4px 24px rgba(27, 58, 92, 0.25), 0 1px 4px rgba(0,0,0,0.08)',
+        cursor: 'pointer',
       }}>
         {predictionLoading ? (
           <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', margin: 0 }}>{t('roomDataLoading', lang)}</p>
@@ -490,7 +518,7 @@ function ScheduleSection() {
               fontSize: '10px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase',
               color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '6px',
             }}>
-              {t('aiStaffingRec', lang)}
+              {t('aiStaffingRec', lang)} ⚙️
             </span>
             <div style={{
               fontFamily: 'var(--font-mono)', fontSize: '56px', fontWeight: 800,
@@ -528,6 +556,58 @@ function ScheduleSection() {
           </>
         )}
       </div>
+
+      {/* Prediction Settings Modal */}
+      {showPredictionSettings && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 9998, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }} onClick={() => setShowPredictionSettings(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-card)', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '380px', boxShadow: '0 20px 60px rgba(0,0,0,0.25)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <p style={{ fontWeight: 700, fontSize: '17px', color: 'var(--text-primary)', margin: 0 }}>
+                {lang === 'es' ? 'Ajustes de Predicción' : 'Prediction Settings'}
+              </p>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '4px 0 0' }}>
+                {lang === 'es' ? 'Ajusta los tiempos de limpieza para calibrar la recomendación.' : 'Adjust cleaning times to calibrate the staffing recommendation.'}
+              </p>
+            </div>
+
+            <div>
+              <label className="label">{t('checkoutMinutesField', lang)}</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input className="input" type="number" min={1} value={settingsForm.checkoutMinutes} onChange={e => setSettingsForm(p => ({ ...p, checkoutMinutes: Number(e.target.value) || 0 }))} style={{ flex: 1, textAlign: 'center' }} />
+                <span style={{ fontSize: '13px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{t('minutes', lang)}</span>
+              </div>
+            </div>
+
+            <div>
+              <label className="label">{t('stayoverMinutesField', lang)}</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input className="input" type="number" min={1} value={settingsForm.stayoverMinutes} onChange={e => setSettingsForm(p => ({ ...p, stayoverMinutes: Number(e.target.value) || 0 }))} style={{ flex: 1, textAlign: 'center' }} />
+                <span style={{ fontSize: '13px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{t('minutes', lang)}</span>
+              </div>
+            </div>
+
+            <div>
+              <label className="label">{lang === 'es' ? 'Minutos de Prep por Actividad' : 'Prep Minutes per Activity'}</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input className="input" type="number" min={0} value={settingsForm.prepMinutesPerActivity} onChange={e => setSettingsForm(p => ({ ...p, prepMinutesPerActivity: Number(e.target.value) || 0 }))} style={{ flex: 1, textAlign: 'center' }} />
+                <span style={{ fontSize: '13px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{t('minutes', lang)}</span>
+              </div>
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '4px 0 0' }}>
+                {lang === 'es' ? 'Tiempo de preparación por cada habitación o área pública (traslado, cargar carrito, etc.)' : 'Prep time per room or public area task (travel, cart loading, etc.)'}
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+              <button onClick={() => setShowPredictionSettings(false)} style={{ flex: 1, padding: '12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-muted)', fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>
+                {t('cancel', lang)}
+              </button>
+              <button onClick={handleSaveSettings} disabled={savingSettings} style={{ flex: 1, padding: '12px', borderRadius: '10px', border: 'none', background: 'var(--navy)', color: '#fff', fontWeight: 600, fontSize: '14px', cursor: 'pointer', opacity: savingSettings ? 0.6 : 1 }}>
+                {savingSettings ? t('saving', lang) : t('save', lang)}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Sent banner */}
       {sent && (
