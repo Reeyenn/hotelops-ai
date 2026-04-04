@@ -723,10 +723,10 @@ function RoomsSection() {
                     <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
                     {floorIdx === 0 && (
                       <>
-                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}>🚪 Checkout</span>
-                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}>🚫 DND</span>
-                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}>🔒 {t('roomOccupied', lang)}</span>
-                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}>🔑 {t('available', lang)}</span>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}>🚪 Checkout</span>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}>🚫 DND</span>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}>🔒 {t('roomOccupied', lang)}</span>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}>🔑 {t('available', lang)}</span>
                       </>
                     )}
                   </div>
