@@ -270,6 +270,7 @@ function ScheduleSection() {
   const [showPredictionSettings, setShowPredictionSettings] = useState(false);
   const [showPublicAreas, setShowPublicAreas] = useState(false);
   const [showAddStaff, setShowAddStaff] = useState(false);
+  const [expandedCrew, setExpandedCrew] = useState<string | null>(null);
   const [settingsForm, setSettingsForm] = useState({ checkoutMinutes: 30, stayoverMinutes: 20, prepMinutesPerActivity: 5 });
   const [savingSettings, setSavingSettings] = useState(false);
 
@@ -542,18 +543,23 @@ function ScheduleSection() {
         )}
       </div>
 
-      {/* ── STEP 2: Crew + Room Assignments (combined) ── */}
+      {/* ── STEP 2: Crew list ── */}
       {!predictionLoading && totalRooms > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-
-          {/* Each crew member with their rooms */}
+        <div style={{
+          background: 'var(--bg-card)', border: '1px solid var(--border)',
+          borderRadius: '14px', overflow: 'hidden',
+        }}>
           {selectedCrew.map((member, idx) => {
             const { rooms: memberRooms, mins } = getStaffWorkload(member.id);
             const hrs = Math.floor(mins / 60);
             const remMins = mins % 60;
             const timeLabel = hrs > 0 ? `${hrs}h${remMins > 0 ? ` ${remMins}m` : ''}` : `${mins}m`;
             const color = STAFF_COLORS[idx % STAFF_COLORS.length];
+            const isExpanded = expandedCrew === member.id;
             const isDropHover = dragState?.dropTarget === member.id && dragState?.roomId && assignments[dragState.roomId] !== member.id;
+            const isLast = idx === selectedCrew.length - 1;
+            const coCount = memberRooms.filter(r => r.type === 'checkout').length;
+            const soCount = memberRooms.length - coCount;
 
             return (
               <div
@@ -561,91 +567,94 @@ function ScheduleSection() {
                 ref={el => { crewCardRefs.current[member.id] = el; }}
                 data-crew-id={member.id}
                 style={{
-                  background: isDropHover ? `${color}10` : 'var(--bg-card)',
-                  border: isDropHover ? `2px solid ${color}` : '1px solid var(--border)',
-                  borderLeft: `4px solid ${color}`,
-                  borderRadius: '12px',
-                  transition: 'background 0.15s, border-color 0.15s, box-shadow 0.15s',
-                  boxShadow: isDropHover ? `0 0 0 3px ${color}20` : 'none',
-                  overflow: 'hidden',
+                  borderBottom: isLast ? 'none' : '1px solid var(--border)',
+                  background: isDropHover ? `${color}08` : 'transparent',
+                  transition: 'background 0.15s',
                 }}
               >
-                {/* Header bar */}
-                <div style={{
-                  padding: '12px 14px', display: 'flex', alignItems: 'center', gap: '10px',
-                  borderBottom: memberRooms.length > 0 ? '1px solid var(--border)' : 'none',
-                }}>
+                {/* Row — always visible */}
+                <div
+                  onClick={() => setExpandedCrew(isExpanded ? null : member.id)}
+                  style={{
+                    padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px',
+                    cursor: 'pointer', userSelect: 'none',
+                  }}
+                >
                   <div style={{
-                    width: '36px', height: '36px', borderRadius: '50%', background: color,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: '#fff', fontWeight: 700, fontSize: '13px', flexShrink: 0,
-                    boxShadow: `0 2px 8px ${color}40`,
-                  }}>
-                    {member.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{member.name}</p>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
-                      <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
-                        {memberRooms.length} {lang === 'es' ? 'hab' : 'rooms'}
-                      </span>
-                      <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: 'var(--text-muted)', opacity: 0.4 }} />
-                      <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
-                        {timeLabel}
-                      </span>
-                    </div>
-                  </div>
-                  <button onClick={() => toggleCrewMember(member.id)} style={{
-                    background: 'rgba(0,0,0,0.04)', border: 'none', cursor: 'pointer',
-                    width: '28px', height: '28px', borderRadius: '50%',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'var(--text-muted)', fontSize: '14px',
-                  }}>✕</button>
+                    width: '8px', height: '8px', borderRadius: '50%', background: color, flexShrink: 0,
+                  }} />
+                  <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', flex: 1 }}>
+                    {member.name}
+                  </span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                    {memberRooms.length} {lang === 'es' ? 'hab' : 'rooms'}
+                  </span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                    {timeLabel}
+                  </span>
+                  <ChevronDown size={14} color="var(--text-muted)" style={{
+                    transition: 'transform 0.2s', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                  }} />
                 </div>
 
-                {/* Room pills */}
-                {memberRooms.length > 0 && (
-                  <div style={{ padding: '10px 14px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                    {memberRooms.map(room => (
-                      <button
-                        key={room.id}
-                        onPointerDown={e => onPillPointerDown(e, room)}
-                        onPointerMove={onPillPointerMove}
-                        onPointerUp={e => { onPillPointerUp(e); }}
-                        onClick={() => { if (!dragRef.current.active) setReassignRoom(room); }}
-                        style={{
-                          padding: '5px 10px',
-                          background: room.type === 'checkout' ? `${color}15` : 'var(--bg-elevated)',
-                          border: room.type === 'checkout' ? `1.5px solid ${color}35` : '1.5px solid var(--border)',
-                          borderRadius: '8px', cursor: 'grab',
-                          fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '13px',
-                          color: room.type === 'checkout' ? color : 'var(--text-secondary)',
-                          opacity: dragState?.roomId === room.id ? 0.3 : 1,
-                          touchAction: 'none',
-                          transition: 'opacity 0.1s',
-                        }}
-                      >
-                        {room.number}
-                      </button>
-                    ))}
+                {/* Expanded: room pills + remove button */}
+                {isExpanded && (
+                  <div style={{ padding: '0 16px 14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {coCount > 0 && soCount > 0 && (
+                      <div style={{ display: 'flex', gap: '12px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                        <span>{coCount} checkout{coCount !== 1 ? 's' : ''}</span>
+                        <span>{soCount} stayover{soCount !== 1 ? 's' : ''}</span>
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      {memberRooms.map(room => (
+                        <button
+                          key={room.id}
+                          onPointerDown={e => onPillPointerDown(e, room)}
+                          onPointerMove={onPillPointerMove}
+                          onPointerUp={e => { onPillPointerUp(e); }}
+                          onClick={e => { e.stopPropagation(); if (!dragRef.current.active) setReassignRoom(room); }}
+                          style={{
+                            padding: '4px 10px',
+                            background: room.type === 'checkout' ? `${color}12` : 'var(--bg-elevated)',
+                            border: room.type === 'checkout' ? `1px solid ${color}30` : '1px solid var(--border)',
+                            borderRadius: '6px', cursor: 'grab',
+                            fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '12px',
+                            color: room.type === 'checkout' ? color : 'var(--text-secondary)',
+                            opacity: dragState?.roomId === room.id ? 0.3 : 1,
+                            touchAction: 'none',
+                          }}
+                        >
+                          {room.number}
+                        </button>
+                      ))}
+                    </div>
+                    <button onClick={e => { e.stopPropagation(); toggleCrewMember(member.id); setExpandedCrew(null); }} style={{
+                      background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-sans)',
+                      fontSize: '12px', fontWeight: 600, color: 'var(--red)', padding: '4px 0', alignSelf: 'flex-start',
+                    }}>
+                      {lang === 'es' ? 'Quitar del turno' : 'Remove from shift'}
+                    </button>
                   </div>
                 )}
               </div>
             );
           })}
 
-          {/* Add crew member button */}
+          {/* Add staff row */}
           {eligiblePool.filter(s => !selectedCrew.find(c => c.id === s.id)).length > 0 && (
-            <button onClick={() => setShowAddStaff(true)} style={{
-              padding: '14px', background: 'none', border: '2px dashed var(--border)',
-              borderRadius: '12px', cursor: 'pointer', fontFamily: 'var(--font-sans)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%',
-            }}>
-              <Plus size={16} color="var(--text-muted)" />
-              <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-muted)' }}>
+            <div
+              onClick={() => setShowAddStaff(true)}
+              style={{
+                padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px',
+                cursor: 'pointer', borderTop: '1px solid var(--border)',
+              }}
+            >
+              <Plus size={14} color="var(--text-muted)" />
+              <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)' }}>
                 {lang === 'es' ? 'Agregar personal' : 'Add staff'}
               </span>
-            </button>
+            </div>
           )}
         </div>
       )}
