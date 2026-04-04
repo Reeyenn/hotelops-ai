@@ -451,48 +451,61 @@ function ScheduleSection() {
             <ChevronRight size={14} />
           </button>
         </div>
-        <button
-          onClick={() => setShowNotifPanel(v => !v)}
-          style={{ position: 'relative', background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: unreadCount > 0 ? 'var(--amber)' : 'var(--text-muted)' }}
-        >
-          <Bell size={20} strokeWidth={unreadCount > 0 ? 2.2 : 1.6} />
-          {unreadCount > 0 && (
-            <span style={{ position: 'absolute', top: '2px', right: '2px', width: '16px', height: '16px', background: 'var(--red)', color: '#fff', borderRadius: '50%', fontSize: '9px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
-          )}
-        </button>
-      </div>
-
-      {/* Notification panel */}
-      {showNotifPanel && (
-        <div className="card animate-in" style={{ padding: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{t('notificationsTitle', lang)}</span>
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={() => setShowNotifPanel(v => !v)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: unreadCount > 0 ? 'var(--amber)' : 'var(--text-muted)', position: 'relative' }}
+          >
+            <Bell size={20} strokeWidth={unreadCount > 0 ? 2.2 : 1.6} />
             {unreadCount > 0 && (
-              <button onClick={() => markAllNotificationsRead(uid, pid)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', color: 'var(--amber)', fontWeight: 600, padding: 0 }}>
-                {t('markAllRead', lang)}
-              </button>
+              <span style={{ position: 'absolute', top: '2px', right: '2px', width: '16px', height: '16px', background: 'var(--red)', color: '#fff', borderRadius: '50%', fontSize: '9px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
             )}
-          </div>
-          {notifications.length === 0 ? (
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>{t('noNotifications', lang)}</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {notifications.slice(0, 10).map(n => (
-                <div key={n.id} onClick={() => { if (!n.read && uid && pid) markNotificationRead(uid, pid, n.id); }}
-                  style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '10px 12px', background: n.read ? 'transparent' : 'rgba(251,191,36,0.05)', border: `1px solid ${n.read ? 'var(--border)' : 'rgba(251,191,36,0.2)'}`, borderRadius: 'var(--radius-md)', cursor: n.read ? 'default' : 'pointer' }}>
-                  <span style={{ marginTop: '1px', flexShrink: 0, color: n.type === 'decline' || n.type === 'no_replacement' ? 'var(--red)' : n.type === 'all_confirmed' ? 'var(--green)' : 'var(--amber)' }}>
-                    {n.type === 'all_confirmed' ? <CheckCircle2 size={14} /> : n.type === 'decline' ? <XCircle size={14} /> : n.type === 'no_replacement' ? <AlertTriangle size={14} /> : <Users size={14} />}
-                  </span>
-                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>{n.message}</p>
-                  {!n.read && <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--amber)', flexShrink: 0, marginTop: '4px' }} />}
+          </button>
+
+          {/* Notification dropdown */}
+          {showNotifPanel && (
+            <>
+              <div style={{ position: 'fixed', inset: 0, zIndex: 48 }} onClick={() => setShowNotifPanel(false)} />
+              <div className="animate-in" style={{
+                position: 'absolute', right: 0, top: 'calc(100% + 6px)',
+                background: 'var(--bg-elevated)', border: '1px solid var(--border-bright, var(--border))',
+                borderRadius: 'var(--radius-lg)', width: '300px',
+                zIndex: 50, boxShadow: '0 8px 30px rgba(0,0,0,0.15)',
+                overflow: 'hidden',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', borderBottom: '1px solid var(--border)' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{t('notificationsTitle', lang)}</span>
+                  {unreadCount > 0 && (
+                    <button onClick={() => markAllNotificationsRead(uid, pid)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', color: 'var(--amber)', fontWeight: 600, padding: 0 }}>
+                      {t('markAllRead', lang)}
+                    </button>
+                  )}
                 </div>
-              ))}
-            </div>
+                <div style={{ maxHeight: '320px', overflowY: 'auto' }}>
+                  {notifications.length === 0 ? (
+                    <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0, padding: '16px 14px' }}>{t('noNotifications', lang)}</p>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      {notifications.slice(0, 10).map(n => (
+                        <div key={n.id} onClick={() => { if (!n.read && uid && pid) markNotificationRead(uid, pid, n.id); }}
+                          style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '10px 14px', background: n.read ? 'transparent' : 'rgba(251,191,36,0.05)', borderBottom: '1px solid var(--border)', cursor: n.read ? 'default' : 'pointer' }}>
+                          <span style={{ marginTop: '1px', flexShrink: 0, color: n.type === 'decline' || n.type === 'no_replacement' ? 'var(--red)' : n.type === 'all_confirmed' ? 'var(--green)' : 'var(--amber)' }}>
+                            {n.type === 'all_confirmed' ? <CheckCircle2 size={14} /> : n.type === 'decline' ? <XCircle size={14} /> : n.type === 'no_replacement' ? <AlertTriangle size={14} /> : <Users size={14} />}
+                          </span>
+                          <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.4, flex: 1 }}>{n.message}</p>
+                          {!n.read && <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--amber)', flexShrink: 0, marginTop: '4px' }} />}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
           )}
         </div>
-      )}
+      </div>
 
 
       {/* Staffing Prediction */}
