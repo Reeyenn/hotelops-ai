@@ -1014,7 +1014,13 @@ function PublicAreasSection() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [dirty, setDirty] = useState(false);
-  const [activeFloor, setActiveFloor] = useState('1');
+  const [activeFloor, setActiveFloorRaw] = useState(() => {
+    if (typeof window === 'undefined') return '1';
+    const saved = localStorage.getItem('hk-floor-tab');
+    const valid = ['1', '2', '3', '4', 'other'];
+    return saved && valid.includes(saved) ? saved : '1';
+  });
+  const setActiveFloor = (f: string) => { setActiveFloorRaw(f); localStorage.setItem('hk-floor-tab', f); };
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
