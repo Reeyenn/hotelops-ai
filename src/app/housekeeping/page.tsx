@@ -281,7 +281,6 @@ function ScheduleSection() {
 
   // Crew assignments
   const [assignments, setAssignments] = useState<Record<string, string>>({});
-  const [reassignRoom, setReassignRoom] = useState<Room | null>(null);
   const [crewOverride, setCrewOverride] = useState<string[]>([]); // manually toggled staff IDs
   const [hasAutoSelected, setHasAutoSelected] = useState(false);
 
@@ -406,13 +405,6 @@ function ScheduleSection() {
       const current = prev.length > 0 ? prev : selectedCrew.map(s => s.id);
       return current.includes(memberId) ? current.filter(id => id !== memberId) : [...current, memberId];
     });
-  };
-
-  const handleReassign = (room: Room, newStaffId: string) => {
-    const fromStaffId = assignments[room.id];
-    if (fromStaffId === newStaffId) { setReassignRoom(null); return; }
-    setPendingMove({ roomId: room.id, roomNumber: room.number, fromStaffId, toStaffId: newStaffId });
-    setReassignRoom(null);
   };
 
   const confirmMove = () => {
@@ -616,7 +608,6 @@ function ScheduleSection() {
                       onPointerDown={e => onPillPointerDown(e, room)}
                       onPointerMove={onPillPointerMove}
                       onPointerUp={e => { onPillPointerUp(e); }}
-                      onClick={() => { if (!dragRef.current.active) setReassignRoom(room); }}
                       style={{
                         padding: '6px 10px 4px', lineHeight: 1,
                         background: room.type === 'checkout' ? '#FEF2F2' : '#F0F9FF',
@@ -678,43 +669,6 @@ function ScheduleSection() {
             {sending ? (lang === 'es' ? 'Enviando…' : 'Sending…') : (lang === 'es' ? `Enviar Confirmaciones (${selectedCrew.length})` : `Send Confirmations (${selectedCrew.length})`)}
           </button>
         )
-      )}
-
-      {/* ── Reassign bottom sheet ── */}
-      {reassignRoom && (
-        <>
-          <div style={{ position: 'fixed', inset: 0, zIndex: 9997 }} onClick={() => setReassignRoom(null)} />
-          <div style={{
-            position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 9998,
-            background: 'var(--bg-card)', borderRadius: '16px 16px 0 0',
-            boxShadow: '0 -4px 30px rgba(0,0,0,0.15)',
-            padding: '16px 16px 32px', display: 'flex', flexDirection: 'column', gap: '8px',
-            animation: 'slideUp 0.2s ease-out',
-          }}>
-            <div style={{ width: '40px', height: '4px', borderRadius: '2px', background: 'var(--border)', margin: '0 auto 4px' }} />
-            <p style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>
-              {lang === 'es' ? 'Reasignar' : 'Reassign'} <span style={{ fontFamily: 'var(--font-mono)' }}>{reassignRoom.number}</span>
-            </p>
-            {selectedCrew.map((s, idx) => {
-              const isCurrently = assignments[reassignRoom.id] === s.id;
-              const { rooms: sRooms } = getStaffWorkload(s.id);
-              return (
-                <button key={s.id} onClick={() => handleReassign(reassignRoom, s.id)} style={{
-                  display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px',
-                  background: isCurrently ? `${STAFF_COLORS[idx % STAFF_COLORS.length]}15` : 'var(--bg-elevated)',
-                  border: `1.5px solid ${isCurrently ? STAFF_COLORS[idx % STAFF_COLORS.length] : 'var(--border)'}`,
-                  borderRadius: '10px', cursor: 'pointer', fontFamily: 'var(--font-sans)', width: '100%',
-                }}>
-                  <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: STAFF_COLORS[idx % STAFF_COLORS.length], flexShrink: 0 }} />
-                  <span style={{ flex: 1, fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', textAlign: 'left' }}>{s.name}</span>
-                  <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{sRooms.length} {lang === 'es' ? 'hab.' : 'rooms'}</span>
-                  {isCurrently && <CheckCircle2 size={16} color={STAFF_COLORS[idx % STAFF_COLORS.length]} />}
-                </button>
-              );
-            })}
-          </div>
-          <style>{`@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }`}</style>
-        </>
       )}
 
       {/* ── Move confirmation popup ── */}
