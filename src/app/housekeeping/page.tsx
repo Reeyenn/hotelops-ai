@@ -608,8 +608,8 @@ function ScheduleSection() {
                       onClick={() => { if (!dragRef.current.active) setReassignRoom(room); }}
                       style={{
                         padding: '6px 10px 4px', lineHeight: 1,
-                        background: room.type === 'checkout' ? `${color}12` : 'var(--bg-elevated)',
-                        border: room.type === 'checkout' ? `1.5px solid ${color}30` : '1.5px solid var(--border)',
+                        background: room.type === 'checkout' ? '#FEF2F2' : '#F0F9FF',
+                        border: room.type === 'checkout' ? '1.5px solid #FECACA' : '1.5px solid #BAE6FD',
                         borderRadius: '6px', cursor: 'grab',
                         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1px',
                         opacity: dragState?.roomId === room.id ? 0.3 : 1,
@@ -617,7 +617,7 @@ function ScheduleSection() {
                       }}
                     >
                       <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '13px', color: 'var(--text-primary)' }}>{room.number}</span>
-                      <span style={{ fontSize: '8px', fontWeight: 600, color: room.type === 'checkout' ? color : 'var(--text-muted)', letterSpacing: '0.02em' }}>
+                      <span style={{ fontSize: '8px', fontWeight: 600, color: room.type === 'checkout' ? '#DC2626' : '#0284C7', letterSpacing: '0.02em' }}>
                         {room.type === 'checkout' ? 'C' : 'S'}
                       </span>
                     </button>
