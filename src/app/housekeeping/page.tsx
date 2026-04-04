@@ -544,7 +544,7 @@ function ScheduleSection() {
 
       {/* ── STEP 2: Crew + Room Assignments (combined) ── */}
       {!predictionLoading && totalRooms > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
           {/* Each crew member with their rooms */}
           {selectedCrew.map((member, idx) => {
@@ -561,32 +561,51 @@ function ScheduleSection() {
                 ref={el => { crewCardRefs.current[member.id] = el; }}
                 data-crew-id={member.id}
                 style={{
-                  padding: '14px 12px', background: isDropHover ? `${color}18` : 'var(--bg-card)',
+                  background: isDropHover ? `${color}10` : 'var(--bg-card)',
                   border: isDropHover ? `2px solid ${color}` : '1px solid var(--border)',
-                  borderRadius: 'var(--radius-lg)',
-                  transition: 'background 0.15s, border-color 0.15s',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px',
+                  borderLeft: `4px solid ${color}`,
+                  borderRadius: '12px',
+                  transition: 'background 0.15s, border-color 0.15s, box-shadow 0.15s',
+                  boxShadow: isDropHover ? `0 0 0 3px ${color}20` : 'none',
+                  overflow: 'hidden',
                 }}
               >
-                {/* Staff header */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', position: 'relative' }}>
-                  <button onClick={() => toggleCrewMember(member.id)} style={{
-                    background: 'none', border: 'none', cursor: 'pointer', padding: '2px',
-                    color: 'var(--text-muted)', fontSize: '13px', lineHeight: 1,
-                    position: 'absolute', top: 0, right: 0,
-                  }}>✕</button>
-                  <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: '12px', flexShrink: 0 }}>
+                {/* Header bar */}
+                <div style={{
+                  padding: '12px 14px', display: 'flex', alignItems: 'center', gap: '10px',
+                  borderBottom: memberRooms.length > 0 ? '1px solid var(--border)' : 'none',
+                }}>
+                  <div style={{
+                    width: '36px', height: '36px', borderRadius: '50%', background: color,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#fff', fontWeight: 700, fontSize: '13px', flexShrink: 0,
+                    boxShadow: `0 2px 8px ${color}40`,
+                  }}>
                     {member.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                   </div>
-                  <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', margin: '2px 0 0', textAlign: 'center' }}>{member.name}</p>
-                  <p style={{ fontSize: '10px', color: 'var(--text-muted)', margin: 0 }}>
-                    {memberRooms.length} {lang === 'es' ? 'hab.' : 'rooms'} · {timeLabel}
-                  </p>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{member.name}</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+                      <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
+                        {memberRooms.length} {lang === 'es' ? 'hab' : 'rooms'}
+                      </span>
+                      <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: 'var(--text-muted)', opacity: 0.4 }} />
+                      <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
+                        {timeLabel}
+                      </span>
+                    </div>
+                  </div>
+                  <button onClick={() => toggleCrewMember(member.id)} style={{
+                    background: 'rgba(0,0,0,0.04)', border: 'none', cursor: 'pointer',
+                    width: '28px', height: '28px', borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: 'var(--text-muted)', fontSize: '14px',
+                  }}>✕</button>
                 </div>
 
-                {/* Room pills — just numbers, draggable */}
+                {/* Room pills */}
                 {memberRooms.length > 0 && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'center' }}>
+                  <div style={{ padding: '10px 14px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                     {memberRooms.map(room => (
                       <button
                         key={room.id}
@@ -595,15 +614,18 @@ function ScheduleSection() {
                         onPointerUp={e => { onPillPointerUp(e); }}
                         onClick={() => { if (!dragRef.current.active) setReassignRoom(room); }}
                         style={{
-                          padding: '4px 6px 3px', background: `${color}12`, border: `1px solid ${color}30`,
-                          borderRadius: '5px', cursor: 'grab',
-                          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0px',
-                          opacity: dragState?.roomId === room.id ? 0.35 : 1,
-                          touchAction: 'none', lineHeight: 1,
+                          padding: '5px 10px',
+                          background: room.type === 'checkout' ? `${color}15` : 'var(--bg-elevated)',
+                          border: room.type === 'checkout' ? `1.5px solid ${color}35` : '1.5px solid var(--border)',
+                          borderRadius: '8px', cursor: 'grab',
+                          fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '13px',
+                          color: room.type === 'checkout' ? color : 'var(--text-secondary)',
+                          opacity: dragState?.roomId === room.id ? 0.3 : 1,
+                          touchAction: 'none',
+                          transition: 'opacity 0.1s',
                         }}
                       >
-                        <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '11px', color: 'var(--text-primary)' }}>{room.number}</span>
-                        <span style={{ fontSize: '7px', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>{room.type === 'checkout' ? 'C' : 'S'}</span>
+                        {room.number}
                       </button>
                     ))}
                   </div>
@@ -615,12 +637,12 @@ function ScheduleSection() {
           {/* Add crew member button */}
           {eligiblePool.filter(s => !selectedCrew.find(c => c.id === s.id)).length > 0 && (
             <button onClick={() => setShowAddStaff(true)} style={{
-              padding: '12px 14px', background: 'var(--bg-card)', border: '1px dashed var(--border)',
-              borderRadius: 'var(--radius-lg)', cursor: 'pointer', fontFamily: 'var(--font-sans)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', width: '100%',
+              padding: '14px', background: 'none', border: '2px dashed var(--border)',
+              borderRadius: '12px', cursor: 'pointer', fontFamily: 'var(--font-sans)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%',
             }}>
-              <Plus size={14} color="var(--text-muted)" />
-              <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)' }}>
+              <Plus size={16} color="var(--text-muted)" />
+              <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-muted)' }}>
                 {lang === 'es' ? 'Agregar personal' : 'Add staff'}
               </span>
             </button>
