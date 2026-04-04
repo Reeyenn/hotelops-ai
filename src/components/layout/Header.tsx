@@ -62,7 +62,7 @@ export function Header() {
         </div>
 
         {/* Right controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
 
           {/* Date */}
           <span className="header-date" style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', marginRight: '4px' }}>
@@ -91,13 +91,14 @@ export function Header() {
           {properties.length > 0 && (
             <div style={{ position: 'relative' }}>
               <button
+                className="header-property-btn"
                 onClick={() => setShowPropMenu(v => !v)}
                 style={{
                   background: 'var(--bg-card)', border: '1px solid var(--border)',
                   borderRadius: 'var(--radius-md)', padding: '5px 12px',
                   color: 'var(--text-primary)', fontSize: '13px', fontWeight: 500,
                   cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
-                  maxWidth: '220px', fontFamily: 'var(--font-sans)',
+                  maxWidth: '200px', fontFamily: 'var(--font-sans)', flexShrink: 1, minWidth: 0,
                 }}
               >
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -155,7 +156,7 @@ export function Header() {
 
           {/* User avatar */}
           {user && (
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', flexShrink: 0 }}>
               <button
                 onClick={() => setShowUserMenu(v => !v)}
                 style={{

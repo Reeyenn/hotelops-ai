@@ -356,9 +356,10 @@ body {
 
 /* ── Housekeeping mobile fixes ─────────────────────────────────────────────── */
 
-/* Hide header date on small screens */
+/* Hide header date on small screens, shrink property selector */
 @media (max-width: 480px) {
   .header-date { display: none !important; }
+  .header-property-btn { max-width: 120px !important; }
 }
 
 /* Tab bar: smaller text on mobile */
