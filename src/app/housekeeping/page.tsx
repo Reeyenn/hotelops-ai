@@ -1090,13 +1090,6 @@ function PublicAreasSection() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [dirty, setDirty] = useState(false);
-  const [activeFloor, setActiveFloorRaw] = useState(() => {
-    if (typeof window === 'undefined') return '1';
-    const saved = localStorage.getItem('hk-floor-tab');
-    const valid = ['1', '2', '3', '4', 'other'];
-    return saved && valid.includes(saved) ? saved : '1';
-  });
-  const setActiveFloor = (f: string) => { setActiveFloorRaw(f); localStorage.setItem('hk-floor-tab', f); };
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -1155,7 +1148,7 @@ function PublicAreasSection() {
   };
 
   const openAddModal = () => {
-    setNewArea({ name: '', floor: activeFloor, locations: 1, frequencyDays: 1, minutesPerClean: 15 });
+    setNewArea({ name: '', floor: '1', locations: 1, frequencyDays: 1, minutesPerClean: 15 });
     setShowAddModal(true);
   };
 
@@ -1165,7 +1158,6 @@ function PublicAreasSection() {
     const today = new Date().toLocaleDateString('en-CA');
     const full: PublicArea = { id, name: newArea.name.trim(), floor: newArea.floor, locations: newArea.locations, frequencyDays: newArea.frequencyDays, minutesPerClean: newArea.minutesPerClean, startDate: today };
     setAreas(prev => [...prev, full]);
-    setActiveFloor(newArea.floor);
     setDirty(true);
     setShowAddModal(false);
     setHighlightId(id);
@@ -1186,10 +1178,11 @@ function PublicAreasSection() {
     } finally { setSaving(false); }
   };
 
-  const floorCounts: Record<string, number> = {};
-  for (const a of areas) floorCounts[a.floor] = (floorCounts[a.floor] || 0) + 1;
-
-  const visible = areas.filter(a => a.floor === activeFloor);
+  // Group areas by floor in display order
+  const floorOrder = ['1', '2', '3', '4', 'other'];
+  const grouped = floorOrder
+    .map(f => ({ floor: f, label: PA_FLOORS.find(pf => pf.value === f)?.label ?? f, areas: areas.filter(a => a.floor === f) }))
+    .filter(g => g.areas.length > 0);
 
   return (
     <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -1202,37 +1195,22 @@ function PublicAreasSection() {
         </button>
       </div>
 
-      {/* Floor tabs */}
-      <div style={{ display: 'flex', gap: '4px', background: 'rgba(0,0,0,0.03)', borderRadius: '10px', padding: '3px' }}>
-        {PA_FLOORS.map(f => {
-          const active = activeFloor === f.value;
-          const count = floorCounts[f.value] || 0;
-          return (
-            <button key={f.value} onClick={() => setActiveFloor(f.value)} style={{
-              flex: 1, padding: '8px 4px', borderRadius: '8px', border: 'none',
-              background: active ? 'white' : 'transparent',
-              boxShadow: active ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-              color: active ? 'var(--navy)' : 'var(--text-muted)',
-              fontWeight: active ? 700 : 500, fontSize: '13px',
-              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', transition: 'all 0.15s',
-            }}>
-              {f.label}
-              {count > 0 && (
-                <span style={{ fontSize: '10px', fontWeight: 700, minWidth: '16px', height: '16px', borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: active ? 'rgba(27,58,92,0.1)' : 'rgba(0,0,0,0.06)', color: active ? 'var(--navy)' : 'var(--text-muted)' }}>
-                  {count}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Area list */}
+      {/* Area list grouped by floor */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>{t('loading', lang)}</div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          {visible.map(area => {
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {grouped.map(group => (
+            <div key={group.floor}>
+              {/* Floor header */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--navy)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{group.label}</span>
+                <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', background: 'rgba(0,0,0,0.05)', borderRadius: '6px', padding: '2px 6px' }}>{group.areas.length}</span>
+                <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+              </div>
+              {/* Areas for this floor */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          {group.areas.map(area => {
             const isOpen = expandedId === area.id;
             const isHighlighted = highlightId === area.id;
             const fLabel = freqLabel(area.frequencyDays);
@@ -1277,7 +1255,10 @@ function PublicAreasSection() {
               </div>
             );
           })}
-          {visible.length === 0 && (
+              </div>
+            </div>
+          ))}
+          {areas.length === 0 && (
             <div className="card" style={{ padding: '28px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>{t('noAreasFloor', lang)}</div>
           )}
         </div>
