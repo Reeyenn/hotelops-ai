@@ -283,6 +283,14 @@ function ScheduleSection() {
   const [crewOverride, setCrewOverride] = useState<string[]>([]); // manually toggled staff IDs
   const [hasAutoSelected, setHasAutoSelected] = useState(false);
 
+  // Drag-and-drop state
+  const [dragRoom, setDragRoom] = useState<Room | null>(null);
+  const [dragGhost, setDragGhost] = useState<{ x: number; y: number } | null>(null);
+  const [dropTarget, setDropTarget] = useState<string | null>(null); // staff ID under finger
+  const crewCardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const dragStartPos = useRef<{ x: number; y: number; roomId: string } | null>(null);
+  const isDragging = useRef(false);
+
   const uid = user?.uid ?? '';
   const pid = activePropertyId ?? '';
 
@@ -418,6 +426,55 @@ function ScheduleSection() {
     return { rooms: staffRooms, mins };
   };
 
+  // ── Drag-and-drop handlers ──
+  const DRAG_THRESHOLD = 8; // px before entering drag mode
+
+  const findDropTarget = (x: number, y: number): string | null => {
+    for (const [staffId, el] of Object.entries(crewCardRefs.current)) {
+      if (!el) continue;
+      const r = el.getBoundingClientRect();
+      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return staffId;
+    }
+    return null;
+  };
+
+  const handleDragTouchStart = (room: Room, e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    dragStartPos.current = { x: touch.clientX, y: touch.clientY, roomId: room.id };
+    isDragging.current = false;
+  };
+
+  const handleDragTouchMove = useCallback((room: Room, e: React.TouchEvent) => {
+    if (!dragStartPos.current || dragStartPos.current.roomId !== room.id) return;
+    const touch = e.touches[0];
+    const dx = touch.clientX - dragStartPos.current.x;
+    const dy = touch.clientY - dragStartPos.current.y;
+
+    if (!isDragging.current) {
+      if (Math.abs(dx) + Math.abs(dy) < DRAG_THRESHOLD) return;
+      isDragging.current = true;
+      setDragRoom(room);
+    }
+
+    e.preventDefault(); // prevent scroll while dragging
+    setDragGhost({ x: touch.clientX, y: touch.clientY });
+    setDropTarget(findDropTarget(touch.clientX, touch.clientY));
+  }, []);
+
+  const handleDragTouchEnd = useCallback(() => {
+    if (isDragging.current && dragRoom && dropTarget) {
+      const currentOwner = assignments[dragRoom.id];
+      if (dropTarget !== currentOwner) {
+        setAssignments(prev => ({ ...prev, [dragRoom.id]: dropTarget }));
+      }
+    }
+    dragStartPos.current = null;
+    isDragging.current = false;
+    setDragRoom(null);
+    setDragGhost(null);
+    setDropTarget(null);
+  }, [dragRoom, dropTarget, assignments]);
+
   return (
     <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
@@ -484,12 +541,19 @@ function ScheduleSection() {
             const remMins = mins % 60;
             const timeLabel = hrs > 0 ? `${hrs}h${remMins > 0 ? ` ${remMins}m` : ''}` : `${mins}m`;
             const color = STAFF_COLORS[idx % STAFF_COLORS.length];
+            const isDropHover = dropTarget === member.id && dragRoom && assignments[dragRoom.id] !== member.id;
 
             return (
-              <div key={member.id} style={{
-                padding: '14px', background: 'var(--bg-card)', border: '1px solid var(--border)',
-                borderRadius: 'var(--radius-lg)',
-              }}>
+              <div
+                key={member.id}
+                ref={el => { crewCardRefs.current[member.id] = el; }}
+                style={{
+                  padding: '14px', background: isDropHover ? `${color}18` : 'var(--bg-card)',
+                  border: isDropHover ? `2px solid ${color}` : '1px solid var(--border)',
+                  borderRadius: 'var(--radius-lg)',
+                  transition: 'background 0.15s, border-color 0.15s',
+                }}
+              >
                 {/* Staff header */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: memberRooms.length > 0 ? '10px' : 0 }}>
                   <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: '13px', flexShrink: 0 }}>
@@ -507,15 +571,24 @@ function ScheduleSection() {
                   }}>✕</button>
                 </div>
 
-                {/* Room pills */}
+                {/* Room pills — draggable */}
                 {memberRooms.length > 0 && (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
                     {memberRooms.map(room => (
-                      <button key={room.id} onClick={() => setReassignRoom(room)} style={{
-                        padding: '5px 10px', background: `${color}12`, border: `1.5px solid ${color}40`,
-                        borderRadius: '6px', cursor: 'pointer', fontFamily: 'var(--font-sans)',
-                        display: 'flex', alignItems: 'center', gap: '4px',
-                      }}>
+                      <button
+                        key={room.id}
+                        onClick={() => { if (!isDragging.current) setReassignRoom(room); }}
+                        onTouchStart={e => handleDragTouchStart(room, e)}
+                        onTouchMove={e => handleDragTouchMove(room, e)}
+                        onTouchEnd={handleDragTouchEnd}
+                        style={{
+                          padding: '5px 10px', background: `${color}12`, border: `1.5px solid ${color}40`,
+                          borderRadius: '6px', cursor: 'grab', fontFamily: 'var(--font-sans)',
+                          display: 'flex', alignItems: 'center', gap: '4px',
+                          opacity: dragRoom?.id === room.id ? 0.35 : 1,
+                          touchAction: 'none',
+                        }}
+                      >
                         <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '12px', color: 'var(--text-primary)' }}>{room.number}</span>
                         <span style={{ fontSize: '9px', fontWeight: 600, color: 'var(--text-muted)' }}>{room.type === 'checkout' ? 'CO' : 'SO'}</span>
                       </button>
@@ -655,6 +728,27 @@ function ScheduleSection() {
       )}
 
       <PublicAreasModal show={showPublicAreas} onClose={() => setShowPublicAreas(false)} />
+
+      {/* Drag ghost — floating room pill that follows your finger */}
+      {dragRoom && dragGhost && (
+        <div style={{
+          position: 'fixed',
+          left: dragGhost.x - 28,
+          top: dragGhost.y - 18,
+          zIndex: 10000,
+          pointerEvents: 'none',
+          padding: '6px 12px',
+          background: 'var(--navy)',
+          border: '2px solid rgba(255,255,255,0.5)',
+          borderRadius: '8px',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+          display: 'flex', alignItems: 'center', gap: '4px',
+          transform: 'scale(1.1)',
+        }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '13px', color: '#FFFFFF' }}>{dragRoom.number}</span>
+          <span style={{ fontSize: '9px', fontWeight: 700, color: 'rgba(255,255,255,0.6)' }}>{dragRoom.type === 'checkout' ? 'CO' : 'SO'}</span>
+        </div>
+      )}
 
     </div>
   );
