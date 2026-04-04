@@ -705,29 +705,26 @@ function ScheduleSection() {
             <p style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>
               {lang === 'es' ? 'Agregar Personal' : 'Add Staff'}
             </p>
-            {eligiblePool.filter(s => !selectedCrew.find(c => c.id === s.id)).map(member => (
-              <button key={member.id} onClick={() => { toggleCrewMember(member.id); setShowAddStaff(false); }} style={{
-                display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px',
-                background: 'var(--bg-elevated)', border: '1.5px solid var(--border)',
-                borderRadius: '10px', cursor: 'pointer', fontFamily: 'var(--font-sans)', width: '100%',
-              }}>
-                <div style={{
-                  width: '32px', height: '32px', borderRadius: '8px', background: 'var(--navy)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#fff', fontWeight: 700, fontSize: '12px', flexShrink: 0,
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+              {eligiblePool.filter(s => !selectedCrew.find(c => c.id === s.id)).map(member => (
+                <button key={member.id} onClick={() => { toggleCrewMember(member.id); setShowAddStaff(false); }} style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
+                  padding: '14px 8px', background: 'var(--bg-elevated)', border: '1.5px solid var(--border)',
+                  borderRadius: '12px', cursor: 'pointer', fontFamily: 'var(--font-sans)',
                 }}>
-                  {member.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                </div>
-                <div style={{ flex: 1, textAlign: 'left' }}>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', display: 'block' }}>{member.name}</span>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                    {member.isSenior ? (lang === 'es' ? 'Senior' : 'Senior') + ' · ' : ''}
-                    {member.daysWorkedThisWeek ?? 0}d {lang === 'es' ? 'esta semana' : 'this week'}
+                  <div style={{
+                    width: '40px', height: '40px', borderRadius: '10px', background: 'var(--navy)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#fff', fontWeight: 700, fontSize: '14px',
+                  }}>
+                    {member.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                  </div>
+                  <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', textAlign: 'center', lineHeight: 1.2 }}>
+                    {member.name}
                   </span>
-                </div>
-                <Plus size={16} color="var(--text-muted)" />
-              </button>
-            ))}
+                </button>
+              ))}
+            </div>
           </div>
           <style>{`@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }`}</style>
         </>
