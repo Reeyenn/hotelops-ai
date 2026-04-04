@@ -358,7 +358,7 @@ function ScheduleSection() {
   const coMins = activeProperty?.checkoutMinutes ?? 30;
   const soMins = activeProperty?.stayoverMinutes ?? 20;
   const prepPerRoom = activeProperty?.prepMinutesPerActivity ?? 5;
-  const shiftLen = activeProperty?.shiftMinutes ?? 480;
+  const shiftLen = Math.min(activeProperty?.shiftMinutes ?? 420, 420); // 7h max per housekeeper
 
   const checkouts = shiftRooms.filter(r => r.type === 'checkout').length;
   const stayovers = shiftRooms.filter(r => r.type === 'stayover').length;
