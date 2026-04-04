@@ -573,28 +573,26 @@ function ScheduleSection() {
                   display: 'flex', gap: '12px', alignItems: 'flex-start',
                 }}
               >
-                {/* Left: name + stats inline */}
-                <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                {/* Left: name + 2x2 stats grid */}
+                <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '6px', width: '160px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: color, flexShrink: 0 }} />
                     <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                       {member.name}
                     </span>
-                    <span style={{ fontSize: '12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                      {[
-                        coCount > 0 ? `${coCount} ${lang === 'es' ? 'Salida' : 'Checkout'}${coCount !== 1 ? 's' : ''}` : '',
-                        soCount > 0 ? `${soCount} ${lang === 'es' ? 'Continuación' : 'Stayover'}${soCount !== 1 ? 's' : ''}` : '',
-                        `${lang === 'es' ? 'Estimado' : 'Est'}: ${timeLabel}`,
-                      ].filter(Boolean).join(' · ')}
-                    </span>
                   </div>
-                  <button onClick={() => toggleCrewMember(member.id)} style={{
-                    background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-sans)',
-                    fontSize: '11px', fontWeight: 600, color: 'var(--red)', padding: '0 0 0 14px',
-                    opacity: 0.6, alignSelf: 'flex-start',
-                  }}>
-                    {lang === 'es' ? 'Quitar' : 'Remove'}
-                  </button>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 8px', paddingLeft: '14px', fontSize: '12px', color: 'var(--text-muted)' }}>
+                    <div>{lang === 'es' ? 'Estimado' : 'Est'}: {timeLabel}</div>
+                    <div>{coCount} {lang === 'es' ? 'Salida' : 'Checkout'}{coCount !== 1 ? 's' : ''}</div>
+                    <button onClick={() => toggleCrewMember(member.id)} style={{
+                      background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-sans)',
+                      fontSize: '11px', fontWeight: 600, color: 'var(--red)', padding: '0', textAlign: 'left',
+                      opacity: 0.6,
+                    }}>
+                      {lang === 'es' ? 'Quitar' : 'Remove'}
+                    </button>
+                    <div>{soCount} {lang === 'es' ? 'Continuación' : 'Stayover'}{soCount !== 1 ? 's' : ''}</div>
+                  </div>
                 </div>
 
                 {/* Right: room pills */}
