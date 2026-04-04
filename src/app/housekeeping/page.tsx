@@ -1254,19 +1254,18 @@ function PublicAreasSection() {
     .filter(g => g.areas.length > 0);
 
   return (
-    <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+    <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
 
       {/* Header + Add */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <p style={{ fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)' }}>{t('publicAreas', lang)}</p>
+        <p style={{ fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)', margin: 0 }}>{t('publicAreas', lang)}</p>
         <button onClick={openAddModal} style={{
-          display: 'flex', alignItems: 'center', gap: '6px',
-          padding: '8px 16px', borderRadius: 'var(--radius-full)',
+          display: 'flex', alignItems: 'center', gap: '5px',
+          padding: '6px 12px', borderRadius: 'var(--radius-full)',
           background: 'var(--navy)', border: 'none',
-          color: '#FFFFFF', cursor: 'pointer', fontSize: '13px', fontWeight: 600,
-          boxShadow: '0 2px 8px rgba(27,58,92,0.25)',
+          color: '#FFFFFF', cursor: 'pointer', fontSize: '12px', fontWeight: 600,
         }}>
-          <Plus size={14} /> {t('add', lang)}
+          <Plus size={12} /> {t('add', lang)}
         </button>
       </div>
 
@@ -1274,81 +1273,54 @@ function PublicAreasSection() {
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>{t('loading', lang)}</div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {grouped.map(group => (
             <div key={group.floor}>
               {/* Floor header */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--navy)', letterSpacing: '0.02em' }}>{group.label}</span>
-                <span style={{
-                  fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)',
-                  fontFamily: 'var(--font-mono)',
-                }}>{group.areas.length}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--navy)' }}>{group.label}</span>
+                <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{group.areas.length}</span>
                 <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
               </div>
-              {/* Area cards — full width, tappable, clear info */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {group.areas.map(area => {
+              {/* Area rows — compact, tappable */}
+              <div style={{
+                background: 'var(--bg-card)', border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-lg)', overflow: 'hidden',
+              }}>
+                {group.areas.map((area, i) => {
                   const isHighlighted = highlightId === area.id;
                   const fLabel = freqLabel(area.frequencyDays);
-                  const dueToday = area.frequencyDays === 1 || (() => {
-                    if (!area.startDate) return false;
-                    const start = new Date(area.startDate + 'T00:00:00');
-                    const today = new Date(new Date().toLocaleDateString('en-CA') + 'T00:00:00');
-                    const diff = Math.floor((today.getTime() - start.getTime()) / 86400000);
-                    return diff >= 0 && diff % area.frequencyDays === 0;
-                  })();
                   return (
                     <div
                       key={area.id}
                       ref={isHighlighted ? highlightRef : undefined}
                       onClick={() => setExpandedId(area.id)}
                       style={{
-                        display: 'flex', alignItems: 'center', gap: '12px',
-                        padding: '14px 16px',
-                        background: 'var(--bg-card)',
-                        border: `1px solid ${isHighlighted ? 'var(--amber)' : 'var(--border)'}`,
-                        borderRadius: 'var(--radius-lg)',
+                        display: 'flex', alignItems: 'center', gap: '10px',
+                        padding: '10px 12px',
+                        borderBottom: i < group.areas.length - 1 ? '1px solid var(--border)' : 'none',
                         cursor: 'pointer',
-                        boxShadow: isHighlighted
-                          ? '0 0 0 2px var(--amber), 0 4px 16px rgba(251,191,36,0.25)'
-                          : '0 1px 3px rgba(0,0,0,0.06)',
-                        transition: 'all 0.15s',
+                        background: isHighlighted ? 'var(--amber-dim)' : 'transparent',
+                        transition: 'background 0.15s',
                       }}
                     >
-                      {/* Due indicator */}
-                      <div style={{
-                        width: '40px', height: '40px', borderRadius: '10px', flexShrink: 0,
-                        background: dueToday ? 'var(--navy)' : 'var(--bg-subtle)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-mono)',
-                        color: dueToday ? '#FFFFFF' : 'var(--text-muted)',
+                      {/* Minutes badge */}
+                      <span style={{
+                        fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 700,
+                        color: 'var(--navy)', background: 'rgba(27,58,92,0.08)',
+                        padding: '3px 8px', borderRadius: '6px', flexShrink: 0,
                       }}>
                         {area.minutesPerClean}m
-                      </div>
-                      {/* Info */}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{
-                          fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)',
-                          margin: '0 0 2px',
-                          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                        }}>{area.name || 'Untitled'}</p>
-                        <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
-                          {fLabel}{area.locations > 1 ? ` · ${area.locations} locations` : ''}
-                        </p>
-                      </div>
-                      {/* Due badge */}
-                      {dueToday && (
-                        <span style={{
-                          padding: '4px 10px', borderRadius: 'var(--radius-full)',
-                          background: 'rgba(34,197,94,0.10)', border: '1px solid rgba(34,197,94,0.25)',
-                          fontSize: '11px', fontWeight: 700, color: 'var(--green)',
-                          flexShrink: 0,
-                        }}>
-                          Due Today
-                        </span>
-                      )}
-                      <ChevronDown size={16} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+                      </span>
+                      {/* Name */}
+                      <p style={{
+                        fontWeight: 600, fontSize: '13px', color: 'var(--text-primary)',
+                        margin: 0, flex: 1, minWidth: 0,
+                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                      }}>{area.name || 'Untitled'}</p>
+                      {/* Frequency */}
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)', flexShrink: 0 }}>{fLabel}</span>
+                      <ChevronDown size={14} color="var(--text-muted)" style={{ flexShrink: 0 }} />
                     </div>
                   );
                 })}
