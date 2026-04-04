@@ -430,8 +430,9 @@ function ScheduleSection() {
     return { rooms: staffRooms, mins };
   };
 
-  // ── Drag-and-drop: single container-level touch handler ──
+  // ── Drag-and-drop: callback ref attaches native touch listeners ──
   const DRAG_THRESHOLD = 8;
+  const boundContainerRef = useRef<HTMLDivElement | null>(null);
 
   const findDropTarget = useCallback((x: number, y: number): string | null => {
     for (const [staffId, el] of Object.entries(crewCardRefs.current)) {
@@ -442,13 +443,21 @@ function ScheduleSection() {
     return null;
   }, []);
 
-  // One-time native listener on the crew container
-  useEffect(() => {
-    const container = crewContainerRef.current;
+  const crewContainerCallback = useCallback((container: HTMLDivElement | null) => {
+    // Detach from old container if any
+    if (boundContainerRef.current && boundContainerRef.current !== container) {
+      const old = boundContainerRef.current;
+      old.removeEventListener('touchstart', (old as unknown as Record<string, EventListener>).__onTS!);
+      old.removeEventListener('touchmove', (old as unknown as Record<string, EventListener>).__onTM!);
+      old.removeEventListener('touchend', (old as unknown as Record<string, EventListener>).__onTE!);
+      boundContainerRef.current = null;
+    }
     if (!container) return;
+    if (boundContainerRef.current === container) return; // already bound
+    boundContainerRef.current = container;
+    crewContainerRef.current = container;
 
     const onTouchStart = (e: TouchEvent) => {
-      // Find the closest room-pill button from the touch target
       const target = (e.target as HTMLElement).closest('[data-room-id]') as HTMLElement | null;
       if (!target) return;
       const roomId = target.getAttribute('data-room-id');
@@ -470,10 +479,10 @@ function ScheduleSection() {
         d.active = true;
       }
       e.preventDefault();
-      const dropTarget = findDropTarget(touch.clientX, touch.clientY);
+      const dt = findDropTarget(touch.clientX, touch.clientY);
       setDragState({
         roomId: d.roomId, roomNumber: d.roomNumber, roomType: d.roomType,
-        ghost: { x: touch.clientX, y: touch.clientY }, dropTarget,
+        ghost: { x: touch.clientX, y: touch.clientY }, dropTarget: dt,
       });
     };
 
@@ -495,14 +504,14 @@ function ScheduleSection() {
       dragRef.current = { roomId: null, roomNumber: '', roomType: '', startX: 0, startY: 0, active: false };
     };
 
+    // Store refs for cleanup
+    (container as unknown as Record<string, EventListener>).__onTS = onTouchStart as unknown as EventListener;
+    (container as unknown as Record<string, EventListener>).__onTM = onTouchMove as unknown as EventListener;
+    (container as unknown as Record<string, EventListener>).__onTE = onTouchEnd as unknown as EventListener;
+
     container.addEventListener('touchstart', onTouchStart, { passive: true });
     container.addEventListener('touchmove', onTouchMove, { passive: false });
     container.addEventListener('touchend', onTouchEnd, { passive: true });
-    return () => {
-      container.removeEventListener('touchstart', onTouchStart);
-      container.removeEventListener('touchmove', onTouchMove);
-      container.removeEventListener('touchend', onTouchEnd);
-    };
   }, [findDropTarget]);
 
   return (
@@ -562,7 +571,7 @@ function ScheduleSection() {
 
       {/* ── STEP 2: Crew + Room Assignments (combined) ── */}
       {!predictionLoading && totalRooms > 0 && (
-        <div ref={crewContainerRef} style={{ display: 'flex', flexDirection: 'column', gap: '10px', touchAction: 'pan-y' }}>
+        <div ref={crewContainerCallback} style={{ display: 'flex', flexDirection: 'column', gap: '10px', touchAction: 'pan-y' }}>
 
           {/* Each crew member with their rooms */}
           {selectedCrew.map((member, idx) => {
