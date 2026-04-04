@@ -1199,62 +1199,62 @@ function PublicAreasSection() {
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>{t('loading', lang)}</div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           {grouped.map(group => (
             <div key={group.floor}>
               {/* Floor header */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--navy)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{group.label}</span>
-                <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', background: 'rgba(0,0,0,0.05)', borderRadius: '6px', padding: '2px 6px' }}>{group.areas.length}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--navy)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{group.label}</span>
+                <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', background: 'rgba(0,0,0,0.05)', borderRadius: '6px', padding: '1px 5px' }}>{group.areas.length}</span>
                 <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
               </div>
-              {/* Areas for this floor */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          {group.areas.map(area => {
-            const isOpen = expandedId === area.id;
-            const isHighlighted = highlightId === area.id;
-            const fLabel = freqLabel(area.frequencyDays);
-            return (
-              <div key={area.id} ref={isHighlighted ? highlightRef : undefined} className="card" style={{ padding: 0, overflow: 'hidden', transition: 'box-shadow 0.3s, border-color 0.3s', ...(isHighlighted ? { boxShadow: '0 0 0 2px var(--amber), 0 4px 16px rgba(251,191,36,0.25)', borderColor: 'var(--amber)' } : {}) }}>
-                <button onClick={() => setExpandedId(isOpen ? null : area.id)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--text-primary)' }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontWeight: 600, fontSize: '14px', lineHeight: 1.3, marginBottom: '2px' }}>{area.name || 'Untitled'}</p>
-                    <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{area.minutesPerClean}min · {area.locations} loc · {fLabel}</p>
-                  </div>
-                  {isOpen ? <ChevronUp size={16} color="var(--text-muted)" /> : <ChevronDown size={16} color="var(--text-muted)" />}
-                </button>
+              {/* Areas in 2-col grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
+                {group.areas.map(area => {
+                  const isOpen = expandedId === area.id;
+                  const isHighlighted = highlightId === area.id;
+                  const fLabel = freqLabel(area.frequencyDays);
+                  return (
+                    <div key={area.id} ref={isHighlighted ? highlightRef : undefined} className="card" style={{ padding: 0, overflow: 'hidden', transition: 'box-shadow 0.3s, border-color 0.3s', ...(isOpen ? { gridColumn: '1 / -1' } : {}), ...(isHighlighted ? { boxShadow: '0 0 0 2px var(--amber), 0 4px 16px rgba(251,191,36,0.25)', borderColor: 'var(--amber)' } : {}) }}>
+                      <button onClick={() => setExpandedId(isOpen ? null : area.id)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--text-primary)' }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontWeight: 600, fontSize: '12px', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{area.name || 'Untitled'}</p>
+                          <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '1px' }}>{area.minutesPerClean}min · {fLabel}</p>
+                        </div>
+                        {isOpen ? <ChevronUp size={14} color="var(--text-muted)" /> : <ChevronDown size={14} color="var(--text-muted)" />}
+                      </button>
 
-                {isOpen && (
-                  <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: '12px', borderTop: '1px solid var(--border)' }}>
-                    <div style={{ paddingTop: '12px' }}>
-                      <label className="label">{t('name', lang)}</label>
-                      <input className="input" value={area.name} onChange={e => handleUpdate(area.id, { name: e.target.value })} />
+                      {isOpen && (
+                        <div style={{ padding: '0 12px 12px', display: 'flex', flexDirection: 'column', gap: '10px', borderTop: '1px solid var(--border)' }}>
+                          <div style={{ paddingTop: '10px' }}>
+                            <label className="label">{t('name', lang)}</label>
+                            <input className="input" value={area.name} onChange={e => handleUpdate(area.id, { name: e.target.value })} />
+                          </div>
+                          <div>
+                            <label className="label">{t('floor', lang)}</label>
+                            <select className="input" value={area.floor} onChange={e => handleUpdate(area.id, { floor: e.target.value })} style={{ width: '100%' }}>
+                              {PA_FLOORS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+                            </select>
+                          </div>
+                          <FrequencySlider value={area.frequencyDays} onChange={v => handleUpdate(area.id, { frequencyDays: v })} lang={lang} />
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                            <div>
+                              <label className="label">{t('minutesPerClean', lang)}</label>
+                              <input className="input" type="number" value={area.minutesPerClean} onChange={e => handleUpdate(area.id, { minutesPerClean: Number(e.target.value) || 0 })} />
+                            </div>
+                            <div>
+                              <label className="label">{t('locations', lang)}</label>
+                              <input className="input" type="number" value={area.locations} onChange={e => handleUpdate(area.id, { locations: Number(e.target.value) || 1 })} />
+                            </div>
+                          </div>
+                          <button onClick={() => handleDelete(area.id)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '8px', borderRadius: '8px', border: '1px solid rgba(220,38,38,0.2)', background: 'rgba(220,38,38,0.06)', color: '#dc2626', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}>
+                            <Trash2 size={13} /> {t('removeArea', lang)}
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    <div>
-                      <label className="label">{t('floor', lang)}</label>
-                      <select className="input" value={area.floor} onChange={e => handleUpdate(area.id, { floor: e.target.value })} style={{ width: '100%' }}>
-                        {PA_FLOORS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
-                      </select>
-                    </div>
-                    <FrequencySlider value={area.frequencyDays} onChange={v => handleUpdate(area.id, { frequencyDays: v })} lang={lang} />
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                      <div>
-                        <label className="label">{t('minutesPerClean', lang)}</label>
-                        <input className="input" type="number" value={area.minutesPerClean} onChange={e => handleUpdate(area.id, { minutesPerClean: Number(e.target.value) || 0 })} />
-                      </div>
-                      <div>
-                        <label className="label">{t('locations', lang)}</label>
-                        <input className="input" type="number" value={area.locations} onChange={e => handleUpdate(area.id, { locations: Number(e.target.value) || 1 })} />
-                      </div>
-                    </div>
-                    <button onClick={() => handleDelete(area.id)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '8px', border: '1px solid rgba(220,38,38,0.2)', background: 'rgba(220,38,38,0.06)', color: '#dc2626', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>
-                      <Trash2 size={14} /> {t('removeArea', lang)}
-                    </button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                  );
+                })}
               </div>
             </div>
           ))}
