@@ -479,41 +479,31 @@ function ScheduleSection() {
           </div>
         ) : (
           <>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-              <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>
-                Staffing Prediction
-              </span>
-              <span style={{ fontSize: '22px', fontWeight: 800, color: 'var(--navy-light)', fontFamily: 'var(--font-mono)' }}>
-                {recommendedStaff} staff
-              </span>
-            </div>
+            <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', display: 'block', marginBottom: '14px' }}>
+              Staffing Prediction
+            </span>
 
-            {/* Breakdown */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: 'rgba(0,0,0,0.02)', borderRadius: 'var(--radius-sm)' }}>
-                <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('roomMinutes', lang)}</span>
-                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
-                  {checkouts} CO x {coMins} + {stayovers} SO x {soMins} = {roomMinutes}m
-                </span>
+            <div style={{ display: 'flex', alignItems: 'stretch', gap: '12px' }}>
+              {/* Left: workload breakdown */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: 'rgba(0,0,0,0.02)', borderRadius: 'var(--radius-sm)' }}>
+                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Room Cleaning</span>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>{roomMinutes}m</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: 'rgba(0,0,0,0.02)', borderRadius: 'var(--radius-sm)' }}>
+                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Prep Time</span>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>{prepMinutes}m</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: 'rgba(0,0,0,0.02)', borderRadius: 'var(--radius-sm)' }}>
+                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Public Areas</span>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>{publicAreaMinutes}m</span>
+                </div>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: 'rgba(0,0,0,0.02)', borderRadius: 'var(--radius-sm)' }}>
-                <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('prepMinutes', lang)}</span>
-                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
-                  ({totalRooms} rooms + {totalPublicAreaActivities} areas) x {prepPerActivity} = {prepMinutes}m
-                </span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: 'rgba(0,0,0,0.02)', borderRadius: 'var(--radius-sm)' }}>
-                <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('publicAreaMinutes', lang)}</span>
-                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
-                  {areasDueToday.length} areas due = {publicAreaMinutes}m
-                </span>
-              </div>
-              <div style={{ height: '1px', background: 'var(--border)', margin: '2px 0' }} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>{t('totalWorkload', lang)}</span>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
-                  {workloadMinutes}m / {shiftLen}m per shift = {cleaningStaff} cleaners + {LAUNDRY_STAFF} laundry
-                </span>
+
+              {/* Right: recommended staff */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '12px 16px', background: 'rgba(27,58,92,0.06)', borderRadius: 'var(--radius-md)', minWidth: '90px' }}>
+                <span style={{ fontSize: '38px', fontWeight: 800, color: 'var(--navy)', fontFamily: 'var(--font-mono)', lineHeight: 1 }}>{recommendedStaff}</span>
+                <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginTop: '4px', textAlign: 'center' }}>recommended{'\n'}staff</span>
               </div>
             </div>
           </>
