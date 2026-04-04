@@ -1295,34 +1295,27 @@ function PublicAreasSection() {
                       ref={isHighlighted ? highlightRef : undefined}
                       onClick={() => setExpandedId(area.id)}
                       style={{
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                        gap: '4px',
-                        padding: '12px 8px',
+                        display: 'flex', flexDirection: 'column', justifyContent: 'center',
+                        gap: '2px',
+                        padding: '8px 10px',
                         background: 'var(--bg-card)',
                         border: `1px solid ${isHighlighted ? 'var(--amber)' : 'var(--border)'}`,
-                        borderRadius: 'var(--radius-lg)',
+                        borderRadius: 'var(--radius-md)',
                         cursor: 'pointer',
                         boxShadow: isHighlighted ? '0 0 0 2px var(--amber)' : '0 1px 3px rgba(0,0,0,0.04)',
                         transition: 'all 0.15s',
-                        textAlign: 'center',
                       }}
                     >
-                      {/* Minutes */}
-                      <span style={{
-                        fontFamily: 'var(--font-mono)', fontSize: '16px', fontWeight: 800,
-                        color: 'var(--navy)',
-                      }}>
-                        {area.minutesPerClean}m
-                      </span>
                       {/* Name */}
                       <p style={{
-                        fontWeight: 600, fontSize: '12px', color: 'var(--text-primary)',
+                        fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)',
                         margin: 0, lineHeight: 1.2,
-                        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const,
-                        overflow: 'hidden',
+                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                       }}>{area.name || 'Untitled'}</p>
-                      {/* Frequency */}
-                      <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 500 }}>{fLabel}</span>
+                      {/* Time + Frequency on one line */}
+                      <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>
+                        {area.minutesPerClean}min · {fLabel}
+                      </span>
                     </div>
                   );
                 })}
