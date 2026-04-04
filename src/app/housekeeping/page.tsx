@@ -10,8 +10,6 @@ import { Modal } from '@/components/ui/Modal';
 import { useSyncContext } from '@/contexts/SyncContext';
 import {
   subscribeToRooms, updateRoom, addRoom,
-  subscribeToShiftConfirmations, subscribeToManagerNotifications,
-  markNotificationRead, markAllNotificationsRead,
   addStaffMember, updateStaffMember, deleteStaffMember,
   getRoomsForDate, getPublicAreas, setPublicArea, deletePublicArea,
   updateProperty,
@@ -20,10 +18,10 @@ import { getPublicAreasDueToday, calcPublicAreaMinutes, autoAssignRooms } from '
 import { getDefaultPublicAreas } from '@/lib/defaults';
 import type { PublicArea } from '@/types';
 import { todayStr } from '@/lib/utils';
-import type { Room, RoomStatus, StaffMember, ShiftConfirmation, ManagerNotification, ConfirmationStatus } from '@/types';
+import type { Room, RoomStatus, StaffMember } from '@/types';
 import { format, subDays } from 'date-fns';
 import {
-  Calendar, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Bell, CheckCircle2, XCircle, Clock,
+  Calendar, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, CheckCircle2, Clock,
   AlertTriangle, Users, Send, Zap, BedDouble, Plus, Pencil, Trash2, Star, Check,
   Trophy, TrendingUp, TrendingDown, Minus, Upload,
 } from 'lucide-react';
@@ -78,19 +76,6 @@ function autoSelectEligible(staff: StaffMember[], date: string, alreadyInPool: S
     });
 }
 
-const STATUS_COLOR: Record<ConfirmationStatus, string> = {
-  pending:     'var(--amber)',
-  confirmed:   'var(--green)',
-  declined:    'var(--red)',
-  no_response: 'var(--text-muted)',
-};
-
-const STATUS_ICON: Record<ConfirmationStatus, React.ReactNode> = {
-  pending:     <Clock size={13} />,
-  confirmed:   <CheckCircle2 size={13} />,
-  declined:    <XCircle size={13} />,
-  no_response: <AlertTriangle size={13} />,
-};
 
 // ─── Staff colors for assignment mode ──────────────────────────────────────
 
@@ -276,15 +261,12 @@ function ScheduleSection() {
   const { user } = useAuth();
   const { activeProperty, activePropertyId, staff, staffLoaded, refreshStaff, refreshProperty } = useProperty();
   const { lang } = useLang();
+  const { recordOfflineAction } = useSyncContext();
 
   const tomorrow = addDays(schedTodayStr(), 1);
   const [shiftDate, setShiftDate] = useState(tomorrow);
-  const [selected, setSelected] = useState<StaffMember[]>([]);
-  const [confirmations, setConfirmations] = useState<ShiftConfirmation[]>([]);
-  const [notifications, setNotifications] = useState<ManagerNotification[]>([]);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
-  const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [showPredictionSettings, setShowPredictionSettings] = useState(false);
   const [showPublicAreas, setShowPublicAreas] = useState(false);
   const [settingsForm, setSettingsForm] = useState({ checkoutMinutes: 30, stayoverMinutes: 20, prepMinutesPerActivity: 5 });
@@ -295,6 +277,12 @@ function ScheduleSection() {
   const [publicAreas, setPublicAreas] = useState<PublicArea[]>([]);
   const [predictionLoading, setPredictionLoading] = useState(true);
 
+  // Crew assignments
+  const [assignments, setAssignments] = useState<Record<string, string>>({});
+  const [reassignRoom, setReassignRoom] = useState<Room | null>(null);
+  const [crewOverride, setCrewOverride] = useState<string[]>([]); // manually toggled staff IDs
+  const [hasAutoSelected, setHasAutoSelected] = useState(false);
+
   const uid = user?.uid ?? '';
   const pid = activePropertyId ?? '';
 
@@ -302,7 +290,6 @@ function ScheduleSection() {
     if (uid && pid && staff.length === 0) refreshStaff();
   }, [uid, pid]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch rooms for the selected shift date (real scraper data)
   useEffect(() => {
     if (!uid || !pid) return;
     setPredictionLoading(true);
@@ -312,12 +299,10 @@ function ScheduleSection() {
     });
   }, [uid, pid, shiftDate]);
 
-  // Fetch public areas (seed defaults if none, or reseed if outdated V3 data)
   useEffect(() => {
     if (!uid || !pid) return;
     const OLD_NAMES = ['stairwell', 'staff / service', 'floor 2 hallway', 'floor 3 hallway', 'floor 4 hallway', 'restrooms (3', 'elevator area (1st', '2nd, 3rd, & 4th floor hallways'];
     const needsReseed = (areas: PublicArea[]) => areas.some(a => OLD_NAMES.some(old => a.name.toLowerCase().includes(old)));
-
     const seedDefaults = async () => {
       const defaults = getDefaultPublicAreas();
       const seeded: PublicArea[] = [];
@@ -329,21 +314,13 @@ function ScheduleSection() {
       }
       return seeded;
     };
-
     getPublicAreas(uid, pid).then(async (fetched) => {
-      if (fetched.length === 0) {
-        setPublicAreas(await seedDefaults());
-      } else if (needsReseed(fetched)) {
-        // V5 migration: split upper-floor areas into per-floor entries
-        for (const a of fetched) await deletePublicArea(uid, pid, a.id);
-        setPublicAreas(await seedDefaults());
-      } else {
-        setPublicAreas(fetched);
-      }
+      if (fetched.length === 0) setPublicAreas(await seedDefaults());
+      else if (needsReseed(fetched)) { for (const a of fetched) await deletePublicArea(uid, pid, a.id); setPublicAreas(await seedDefaults()); }
+      else setPublicAreas(fetched);
     });
   }, [uid, pid]);
 
-  // Sync settings form with property data
   useEffect(() => {
     if (activeProperty) {
       setSettingsForm({
@@ -357,768 +334,246 @@ function ScheduleSection() {
   const handleSaveSettings = async () => {
     if (!uid || !pid) return;
     setSavingSettings(true);
-    try {
-      await updateProperty(uid, pid, settingsForm);
-      await refreshProperty();
-    } finally {
-      setSavingSettings(false);
-      setShowPredictionSettings(false);
-    }
+    try { await updateProperty(uid, pid, settingsForm); await refreshProperty(); }
+    finally { setSavingSettings(false); setShowPredictionSettings(false); }
   };
 
-  // ── Prediction model: 4 separate buckets ──
+  // ── Prediction model ──
   const coMins = activeProperty?.checkoutMinutes ?? 30;
   const soMins = activeProperty?.stayoverMinutes ?? 20;
-  const prepPerActivity = activeProperty?.prepMinutesPerActivity ?? 5;
+  const prepPerRoom = activeProperty?.prepMinutesPerActivity ?? 5;
   const shiftLen = activeProperty?.shiftMinutes ?? 480;
 
   const checkouts = shiftRooms.filter(r => r.type === 'checkout').length;
   const stayovers = shiftRooms.filter(r => r.type === 'stayover').length;
   const totalRooms = checkouts + stayovers;
-
-  // 1. Room Minutes
   const roomMinutes = (checkouts * coMins) + (stayovers * soMins);
+  const prepMinutes = totalRooms * prepPerRoom;
 
-  // 2. Public Area Minutes = sum of (minutesPerClean x locations) for areas due that day
   const [shiftY, shiftM, shiftD] = shiftDate.split('-').map(Number);
   const shiftDateObj = new Date(shiftY, shiftM - 1, shiftD);
   const areasDueToday = getPublicAreasDueToday(publicAreas, shiftDateObj);
   const publicAreaMinutes = calcPublicAreaMinutes(areasDueToday);
-  const totalPublicAreaActivities = areasDueToday.reduce((sum, a) => sum + a.locations, 0);
 
-  // 3. Prep Minutes (rooms only — public areas handled by dedicated laundry person)
-  const prepMinutes = totalRooms * prepPerActivity;
-
-  // 4. Laundry/public area person = 1 fixed, always comes in
   const LAUNDRY_STAFF = 1;
-
-  // Final calculation — public areas excluded (laundry person handles them independently)
   const workloadMinutes = roomMinutes + prepMinutes;
   const cleaningStaff = workloadMinutes > 0 ? Math.ceil(workloadMinutes / shiftLen) : 0;
   const recommendedStaff = cleaningStaff + LAUNDRY_STAFF;
 
+  // ── Auto-select crew + auto-assign rooms ──
+  const eligiblePool = useMemo(() => autoSelectEligible(staff, shiftDate, new Set()), [staff, shiftDate]);
+  const assignableRooms = useMemo(() =>
+    [...shiftRooms].filter(r => r.type === 'checkout' || r.type === 'stayover')
+      .sort((a, b) => (parseInt(a.number.replace(/\D/g, '')) || 0) - (parseInt(b.number.replace(/\D/g, '')) || 0)),
+    [shiftRooms]
+  );
+
+  // The selected crew: auto-pick or manual override
+  const selectedCrew = useMemo(() => {
+    if (crewOverride.length > 0) return staff.filter(s => crewOverride.includes(s.id));
+    if (recommendedStaff > 0 && totalRooms > 0) return eligiblePool.slice(0, recommendedStaff);
+    return eligiblePool;
+  }, [crewOverride, eligiblePool, recommendedStaff, totalRooms, staff]);
+
+  // Auto-assign rooms when crew or rooms change
   useEffect(() => {
-    if (!uid || !pid) return;
-    setSent(false);
-    return subscribeToShiftConfirmations(uid, pid, shiftDate, setConfirmations);
-  }, [uid, pid, shiftDate]);
+    if (assignableRooms.length === 0 || selectedCrew.length === 0) { setAssignments({}); return; }
+    const fakeScheduled = selectedCrew.map(s => ({ ...s, scheduledToday: true }));
+    const auto = autoAssignRooms(assignableRooms, fakeScheduled, {
+      checkoutMinutes: coMins, stayoverMinutes: soMins, prepMinutesPerRoom: prepPerRoom, shiftMinutes: shiftLen,
+    });
+    setAssignments(auto);
+  }, [selectedCrew, assignableRooms, coMins, soMins, prepPerRoom, shiftLen]);
 
-  useEffect(() => {
-    if (!uid || !pid) return;
-    return subscribeToManagerNotifications(uid, pid, setNotifications);
-  }, [uid, pid]);
+  const toggleCrewMember = (memberId: string) => {
+    setCrewOverride(prev => {
+      const current = prev.length > 0 ? prev : selectedCrew.map(s => s.id);
+      return current.includes(memberId) ? current.filter(id => id !== memberId) : [...current, memberId];
+    });
+  };
 
-  const unreadCount = notifications.filter(n => !n.read).length;
-
-  const alreadyInPool = useMemo(() => new Set(confirmations.filter(c => c.status !== 'declined').map(c => c.staffId)), [confirmations]);
-  const eligiblePool  = useMemo(() => autoSelectEligible(staff, shiftDate, alreadyInPool), [staff, shiftDate, alreadyInPool]);
-
-  const handleAutoSelect = useCallback(() => {
-    if (recommendedStaff > 0 && totalRooms > 0) {
-      setSelected(eligiblePool.slice(0, recommendedStaff));
-    } else {
-      setSelected(eligiblePool);
-    }
-  }, [eligiblePool, recommendedStaff, totalRooms]);
-
-  const toggleSelected = (member: StaffMember) => {
-    setSelected(prev => prev.some(s => s.id === member.id) ? prev.filter(s => s.id !== member.id) : [...prev, member]);
+  const handleReassign = (room: Room, newStaffId: string) => {
+    setAssignments(prev => ({ ...prev, [room.id]: newStaffId }));
+    setReassignRoom(null);
   };
 
   const handleSend = async () => {
-    if (!uid || !pid || selected.length === 0 || sending) return;
+    if (!uid || !pid || selectedCrew.length === 0 || sending) return;
     setSending(true);
     try {
       const baseUrl = window.location.origin;
-      const staffPayload = selected.filter(s => s.phone).map(s => ({ staffId: s.id, name: s.name, phone: s.phone!, language: s.language }));
+      const staffPayload = selectedCrew.filter(s => s.phone).map(s => ({ staffId: s.id, name: s.name, phone: s.phone!, language: s.language }));
       await fetch('/api/send-shift-confirmations', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ uid, pid, shiftDate, baseUrl, staff: staffPayload }),
       });
-      setSent(true); setSelected([]);
+      setSent(true);
     } finally { setSending(false); }
   };
 
-  const activeStaff = useMemo(() => staff.filter(s => s.isActive !== false).sort((a, b) => (b.weeklyHours ?? 0) - (a.weeklyHours ?? 0)), [staff]);
+  // Room workload per staff member
+  const getStaffWorkload = (staffId: string) => {
+    const staffRooms = assignableRooms.filter(r => assignments[r.id] === staffId);
+    const mins = staffRooms.reduce((sum, r) => sum + (r.type === 'checkout' ? coMins : soMins) + prepPerRoom, 0);
+    return { rooms: staffRooms, mins };
+  };
 
   return (
     <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-      {/* Header row - date picker + bell */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button onClick={() => { setShiftDate(d => addDays(d, -1)); setSent(false); setSelected([]); }} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '4px 8px', cursor: 'pointer', color: 'var(--text-secondary)' }}>
-            <ChevronLeft size={14} />
-          </button>
-          <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
-            {formatDisplayDate(shiftDate, lang)}
-          </span>
-          <button onClick={() => { setShiftDate(d => addDays(d, 1)); setSent(false); setSelected([]); }} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '4px 8px', cursor: 'pointer', color: 'var(--text-secondary)' }}>
-            <ChevronRight size={14} />
-          </button>
-        </div>
-        <div style={{ position: 'relative' }}>
-          <button
-            onClick={() => setShowNotifPanel(v => !v)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: unreadCount > 0 ? 'var(--amber)' : 'var(--text-muted)', position: 'relative' }}
-          >
-            <Bell size={20} strokeWidth={unreadCount > 0 ? 2.2 : 1.6} />
-            {unreadCount > 0 && (
-              <span style={{ position: 'absolute', top: '2px', right: '2px', width: '16px', height: '16px', background: 'var(--red)', color: '#fff', borderRadius: '50%', fontSize: '9px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
-            )}
-          </button>
-
-          {/* Notification dropdown */}
-          {showNotifPanel && (
-            <>
-              <div style={{ position: 'fixed', inset: 0, zIndex: 48 }} onClick={() => setShowNotifPanel(false)} />
-              <div className="animate-in" style={{
-                position: 'absolute', right: 0, top: 'calc(100% + 6px)',
-                background: 'var(--bg-elevated)', border: '1px solid var(--border-bright, var(--border))',
-                borderRadius: 'var(--radius-lg)', width: '300px',
-                zIndex: 50, boxShadow: '0 8px 30px rgba(0,0,0,0.15)',
-                overflow: 'hidden',
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', borderBottom: '1px solid var(--border)' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{t('notificationsTitle', lang)}</span>
-                  {unreadCount > 0 && (
-                    <button onClick={() => markAllNotificationsRead(uid, pid)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', color: 'var(--amber)', fontWeight: 600, padding: 0 }}>
-                      {t('markAllRead', lang)}
-                    </button>
-                  )}
-                </div>
-                <div style={{ maxHeight: '320px', overflowY: 'auto' }}>
-                  {notifications.length === 0 ? (
-                    <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0, padding: '16px 14px' }}>{t('noNotifications', lang)}</p>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      {notifications.slice(0, 10).map(n => (
-                        <div key={n.id} onClick={() => { if (!n.read && uid && pid) markNotificationRead(uid, pid, n.id); }}
-                          style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '10px 14px', background: n.read ? 'transparent' : 'rgba(251,191,36,0.05)', borderBottom: '1px solid var(--border)', cursor: n.read ? 'default' : 'pointer' }}>
-                          <span style={{ marginTop: '1px', flexShrink: 0, color: n.type === 'decline' || n.type === 'no_replacement' ? 'var(--red)' : n.type === 'all_confirmed' ? 'var(--green)' : 'var(--amber)' }}>
-                            {n.type === 'all_confirmed' ? <CheckCircle2 size={14} /> : n.type === 'decline' ? <XCircle size={14} /> : n.type === 'no_replacement' ? <AlertTriangle size={14} /> : <Users size={14} />}
-                          </span>
-                          <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.4, flex: 1 }}>{n.message}</p>
-                          {!n.read && <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--amber)', flexShrink: 0, marginTop: '4px' }} />}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </>
-          )}
-        </div>
+      {/* ── Date picker ── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+        <button onClick={() => { setShiftDate(d => addDays(d, -1)); setSent(false); setCrewOverride([]); }} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '6px 10px', cursor: 'pointer', color: 'var(--text-secondary)' }}>
+          <ChevronLeft size={16} />
+        </button>
+        <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+          {formatDisplayDate(shiftDate, lang)}
+        </span>
+        <button onClick={() => { setShiftDate(d => addDays(d, 1)); setSent(false); setCrewOverride([]); }} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '6px 10px', cursor: 'pointer', color: 'var(--text-secondary)' }}>
+          <ChevronRight size={16} />
+        </button>
       </div>
 
-
-      {/* Staffing Prediction */}
+      {/* ── STEP 1: Prediction ── */}
       <div className="card animate-in" onClick={() => setShowPredictionSettings(true)} style={{
-        padding: '28px 20px 24px',
-        textAlign: 'center',
+        padding: '24px 20px 20px', textAlign: 'center',
         background: 'linear-gradient(135deg, #1B3A5C 0%, #2563EB 100%)',
-        border: 'none',
-        borderRadius: 'var(--radius-xl)',
-        boxShadow: '0 4px 24px rgba(27, 58, 92, 0.25), 0 1px 4px rgba(0,0,0,0.08)',
-        cursor: 'pointer',
+        border: 'none', borderRadius: 'var(--radius-xl)',
+        boxShadow: '0 4px 24px rgba(27, 58, 92, 0.25)', cursor: 'pointer',
       }}>
         {predictionLoading ? (
           <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', margin: 0 }}>{t('roomDataLoading', lang)}</p>
         ) : totalRooms === 0 ? (
-          <div style={{ padding: '4px 0' }}>
+          <div>
             <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', margin: 0 }}>{t('noRoomDataYet', lang)}</p>
             <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', margin: '4px 0 0' }}>{t('pmsSync15Min', lang)}</p>
           </div>
         ) : (
           <>
-            <span style={{
-              fontSize: '10px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase',
-              color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '6px',
-            }}>
-              {t('aiStaffingRec', lang)} ⚙️
-            </span>
-            <div style={{
-              fontFamily: 'var(--font-mono)', fontSize: '56px', fontWeight: 800,
-              color: '#FFFFFF', lineHeight: 1, letterSpacing: '-0.03em',
-              marginBottom: '4px',
-            }}>
-              {recommendedStaff}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '14px' }}>
+              <div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '28px', fontWeight: 800, color: '#FFFFFF' }}>{checkouts}</div>
+                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>{lang === 'es' ? 'Salidas' : 'Checkouts'}</div>
+              </div>
+              <div style={{ width: '1px', background: 'rgba(255,255,255,0.15)' }} />
+              <div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '28px', fontWeight: 800, color: '#FFFFFF' }}>{stayovers}</div>
+                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>{lang === 'es' ? 'Continuación' : 'Stayovers'}</div>
+              </div>
+              <div style={{ width: '1px', background: 'rgba(255,255,255,0.15)' }} />
+              <div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '28px', fontWeight: 800, color: '#FCD34D' }}>{recommendedStaff}</div>
+                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>{lang === 'es' ? 'Personal' : 'Staff needed'}</div>
+              </div>
             </div>
-            <span style={{
-              fontSize: '13px', fontWeight: 500, color: 'rgba(255,255,255,0.7)',
-              display: 'block', marginBottom: '20px',
-            }}>
-              {t('recommendedHousekeepers', lang)}
-            </span>
-            <div className="prediction-pills" style={{
-              display: 'flex', justifyContent: 'center', gap: '6px',
-              flexWrap: 'wrap',
-            }}>
-              {[
-                { label: lang === 'es' ? 'Habitaciones' : 'Rooms', value: `${checkouts} CO · ${stayovers} SO` },
-                { label: t('roomMinutes', lang), value: `${roomMinutes}${t('minutes', lang)}` },
-                { label: t('prepMinutes', lang), value: `${prepMinutes}${t('minutes', lang)}` },
-              ].map(({ label, value }) => (
-                <div key={label} style={{
-                  padding: '5px 12px', borderRadius: 'var(--radius-full)',
-                  background: 'rgba(255,255,255,0.12)',
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  fontSize: '11px', fontWeight: 500, color: 'rgba(255,255,255,0.7)',
-                  display: 'flex', alignItems: 'center', gap: '5px',
-                }}>
-                  {label} <strong style={{ color: '#FFFFFF', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{value}</strong>
-                </div>
-              ))}
+            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
+              {workloadMinutes}{lang === 'es' ? 'min' : 'min'} {lang === 'es' ? 'trabajo' : 'work'} · {coMins}m CO · {soMins}m SO · {prepPerRoom}m {lang === 'es' ? 'entre' : 'between'} · ⚙️
             </div>
           </>
         )}
       </div>
 
-      {/* Prediction Settings Modal */}
-      {showPredictionSettings && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 9998, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }} onClick={() => setShowPredictionSettings(false)}>
-          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-card)', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '380px', boxShadow: '0 20px 60px rgba(0,0,0,0.25)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div>
-              <p style={{ fontWeight: 700, fontSize: '17px', color: 'var(--text-primary)', margin: 0 }}>
-                {lang === 'es' ? 'Ajustes de Predicción' : 'Prediction Settings'}
-              </p>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '4px 0 0' }}>
-                {lang === 'es' ? 'Ajusta los tiempos de limpieza para calibrar la recomendación.' : 'Adjust cleaning times to calibrate the staffing recommendation.'}
-              </p>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>
-                  {lang === 'es' ? 'Habitación de salida' : 'Checkout room'}
-                </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <input className="input" type="number" min={1} value={settingsForm.checkoutMinutes} onChange={e => setSettingsForm(p => ({ ...p, checkoutMinutes: Number(e.target.value) || 0 }))} style={{ width: '64px', textAlign: 'center', padding: '8px 4px' }} />
-                  <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>min</span>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>
-                  {lang === 'es' ? 'Habitación de continuación' : 'Stayover room'}
-                </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <input className="input" type="number" min={1} value={settingsForm.stayoverMinutes} onChange={e => setSettingsForm(p => ({ ...p, stayoverMinutes: Number(e.target.value) || 0 }))} style={{ width: '64px', textAlign: 'center', padding: '8px 4px' }} />
-                  <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>min</span>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>
-                  {lang === 'es' ? 'Entre habitaciones' : 'Between rooms'}
-                </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <input className="input" type="number" min={0} value={settingsForm.prepMinutesPerActivity} onChange={e => setSettingsForm(p => ({ ...p, prepMinutesPerActivity: Number(e.target.value) || 0 }))} style={{ width: '64px', textAlign: 'center', padding: '8px 4px' }} />
-                  <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>min</span>
-                </div>
-              </div>
-              <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0' }}>
-                {lang === 'es' ? 'Traslado, cargar carrito, etc.' : 'Travel, cart loading, etc.'}
-              </p>
-            </div>
-
-            <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-              <button onClick={() => setShowPredictionSettings(false)} style={{ flex: 1, padding: '12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-muted)', fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>
-                {t('cancel', lang)}
-              </button>
-              <button onClick={handleSaveSettings} disabled={savingSettings} style={{ flex: 1, padding: '12px', borderRadius: '10px', border: 'none', background: 'var(--navy)', color: '#fff', fontWeight: 600, fontSize: '14px', cursor: 'pointer', opacity: savingSettings ? 0.6 : 1 }}>
-                {savingSettings ? t('saving', lang) : t('save', lang)}
-              </button>
-            </div>
-
-            {/* Public Areas button inside settings modal */}
-            <button onClick={() => { setShowPredictionSettings(false); setShowPublicAreas(true); }} style={{
-              width: '100%', padding: '14px 16px', marginTop: '4px',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              background: 'rgba(27,58,92,0.06)', border: '1px solid var(--border)',
-              borderRadius: '10px',
-              cursor: 'pointer', fontFamily: 'var(--font-sans)',
-            }}>
-              <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                {lang === 'es' ? 'Áreas Comunes' : 'Public Areas'}
-              </span>
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                {areasDueToday.length} {lang === 'es' ? 'para hoy' : 'due today'} · {publicAreaMinutes}{t('minutes', lang)} →
-              </span>
-            </button>
-          </div>
-        </div>
-      )}
-
-      <PublicAreasModal show={showPublicAreas} onClose={() => setShowPublicAreas(false)} />
-
-      {/* Sent banner */}
-      {sent && (
-        <div className="animate-in" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 'var(--radius-md)' }}>
-          <CheckCircle2 size={16} color="var(--green)" />
-          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--green)' }}>{t('confirmationsSent', lang)}</span>
-        </div>
-      )}
-
-      {/* Existing confirmations */}
-      {confirmations.length > 0 && (
-        <div style={{
-          padding: '20px',
-          background: 'linear-gradient(135deg, #1B3A5C 0%, #234B73 100%)',
-          border: 'none',
-          borderRadius: 'var(--radius-xl)',
-          boxShadow: '0 4px 24px rgba(27, 58, 92, 0.20), 0 1px 4px rgba(0,0,0,0.06)',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-            <Users size={14} color="rgba(255,255,255,0.5)" />
-            <p style={{ fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.5)', margin: 0 }}>
-              {t('crewForDate', lang)} {formatDisplayDate(shiftDate, lang)}
-            </p>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            {confirmations.map(conf => (
-              <div key={conf.id} style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '10px 14px',
-                background: 'rgba(255,255,255,0.08)',
-                border: '1px solid rgba(255,255,255,0.10)',
-                borderRadius: 'var(--radius-md)',
-              }}>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: '#FFFFFF' }}>{conf.staffName}</span>
-                <span style={{
-                  display: 'flex', alignItems: 'center', gap: '5px',
-                  fontSize: '11px', fontWeight: 700,
-                  padding: '3px 10px', borderRadius: 'var(--radius-full)',
-                  background: conf.status === 'confirmed' ? 'rgba(34,197,94,0.20)' : conf.status === 'declined' ? 'rgba(239,68,68,0.20)' : 'rgba(251,191,36,0.20)',
-                  color: conf.status === 'confirmed' ? '#4ADE80' : conf.status === 'declined' ? '#FCA5A5' : '#FCD34D',
-                }}>
-                  {STATUS_ICON[conf.status]}
-                  {t(conf.status === 'pending' ? 'statusPending' : conf.status === 'confirmed' ? 'statusConfirmed' : conf.status === 'declined' ? 'statusDeclined' : 'statusNoResponse', lang)}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Auto-select crew */}
-      <div style={{
-        padding: '20px',
-        background: 'linear-gradient(135deg, #1B3A5C 0%, #234B73 100%)',
-        border: 'none',
-        borderRadius: 'var(--radius-xl)',
-        boxShadow: '0 4px 24px rgba(27, 58, 92, 0.20), 0 1px 4px rgba(0,0,0,0.06)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Users size={14} color="rgba(255,255,255,0.5)" />
-            <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)' }}>
-              Select Crew
-            </span>
-          </div>
-          <button onClick={handleAutoSelect} style={{
-            display: 'flex', alignItems: 'center', gap: '6px',
-            padding: '6px 14px',
-            background: 'rgba(251,191,36,0.15)',
-            border: '1px solid rgba(251,191,36,0.30)',
-            borderRadius: 'var(--radius-full)',
-            color: '#FCD34D', fontSize: '11px', fontWeight: 700,
-            cursor: 'pointer', fontFamily: 'var(--font-sans)',
-          }}>
-            <Zap size={11} />{t('autoSelectCrew', lang)}{selected.length > 0 && <span style={{ marginLeft: '4px', opacity: 0.8 }}>({selected.length})</span>}
-          </button>
-        </div>
-
-        {!staffLoaded ? (
-          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', margin: 0 }}>{lang === 'es' ? 'Cargando…' : 'Loading…'}</p>
-        ) : staff.filter(s => s.isActive !== false).length === 0 ? (
-          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', margin: 0 }}>{t('noEligibleStaff', lang)}</p>
-        ) : (
-          <>
-            {eligiblePool.length === 0 && alreadyInPool.size === 0 && (
-              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', margin: '0 0 12px', lineHeight: 1.5 }}>{t('noEligibleStaff', lang)}</p>
-            )}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '6px' }}>
-              {staff.filter(s => s.isActive !== false)
-                .sort((a, b) => {
-                  const aIn = alreadyInPool.has(a.id); const bIn = alreadyInPool.has(b.id);
-                  if (aIn !== bIn) return aIn ? -1 : 1;
-                  const aSel = selected.some(x => x.id === a.id); const bSel = selected.some(x => x.id === b.id);
-                  if (aSel !== bSel) return aSel ? -1 : 1;
-                  return a.name.localeCompare(b.name);
-                })
-                .map(member => {
-                  const inPool = alreadyInPool.has(member.id);
-                  const isSelected = selected.some(s => s.id === member.id);
-                  const eligible = isEligible(member, shiftDate) && !inPool;
-                  const onVacation = member.vacationDates?.includes(shiftDate);
-                  const isAtLimit = !eligible && !inPool && !onVacation && member.isActive !== false &&
-                    ((member.weeklyHours ?? 0) >= (member.maxWeeklyHours ?? 40));
-                  const hrs = member.weeklyHours ?? 0;
-                  const maxHrs = member.maxWeeklyHours ?? 40;
-                  const hrsNearLimit = hrs >= maxHrs - 4;
-                  const hrsAtLimit = hrs >= maxHrs;
-                  return (
-                    <div key={member.id} onClick={() => eligible && toggleSelected(member)}
-                      style={{
-                        padding: '10px 14px',
-                        border: `1px solid ${inPool ? 'rgba(34,197,94,0.35)' : isSelected ? 'rgba(251,191,36,0.40)' : 'rgba(255,255,255,0.10)'}`,
-                        background: inPool ? 'rgba(34,197,94,0.12)' : isSelected ? 'rgba(251,191,36,0.12)' : 'rgba(255,255,255,0.06)',
-                        borderRadius: 'var(--radius-md)',
-                        cursor: eligible ? 'pointer' : 'default',
-                        display: 'flex', alignItems: 'center', gap: '10px',
-                        opacity: (!eligible && !inPool) ? 0.35 : 1,
-                        transition: 'all 0.15s',
-                      }}>
-                      <div style={{ width: '18px', height: '18px', borderRadius: '5px', border: `2px solid ${inPool ? 'rgba(34,197,94,0.7)' : isSelected ? 'rgba(251,191,36,0.7)' : 'rgba(255,255,255,0.25)'}`, background: inPool ? 'rgba(34,197,94,0.25)' : isSelected ? 'rgba(251,191,36,0.25)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        {(inPool || isSelected) && <CheckCircle2 size={11} color={inPool ? '#4ADE80' : '#FCD34D'} strokeWidth={2.5} />}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontSize: '13px', fontWeight: 600, color: '#FFFFFF', margin: '0 0 2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{member.name}</p>
-                        <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)', margin: 0 }}>
-                          {inPool ? t('crewForDate', lang) : onVacation ? t('onVacation', lang) : isAtLimit ? t('atLimitLabel', lang) : eligible ? `${member.daysWorkedThisWeek ?? 0} ${t('daysWorkedLabel', lang)}` : t('inactiveLabel', lang)}
-                        </p>
-                      </div>
-                      {member.isSenior && <span style={{ fontSize: '9px', fontWeight: 700, color: '#FCD34D', background: 'rgba(251,191,36,0.15)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: '4px', padding: '1px 5px', flexShrink: 0 }}>SR</span>}
-                      <span style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: hrsAtLimit ? '#FCA5A5' : hrsNearLimit ? '#FCD34D' : 'rgba(255,255,255,0.5)', background: hrsAtLimit ? 'rgba(239,68,68,0.15)' : hrsNearLimit ? 'rgba(251,191,36,0.12)' : 'rgba(255,255,255,0.08)', border: `1px solid ${hrsAtLimit ? 'rgba(239,68,68,0.3)' : hrsNearLimit ? 'rgba(251,191,36,0.25)' : 'rgba(255,255,255,0.12)'}`, borderRadius: '4px', padding: '2px 6px', flexShrink: 0 }}>
-                        {hrs}h
-                      </span>
-                    </div>
-                  );
-                })}
-            </div>
-          </>
-        )}
-
-        {selected.length > 0 && (
-          <button onClick={handleSend} disabled={sending} className="animate-in"
-            style={{
-              marginTop: '16px', width: '100%', padding: '14px',
-              background: sending ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.95)',
-              color: sending ? 'rgba(255,255,255,0.5)' : '#1B3A5C',
-              border: 'none', borderRadius: 'var(--radius-md)',
-              fontWeight: 700, fontSize: '14px',
-              cursor: sending ? 'not-allowed' : 'pointer',
-              fontFamily: 'var(--font-sans)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-              boxShadow: sending ? 'none' : '0 2px 12px rgba(0,0,0,0.15)',
-            }}>
-            <Send size={14} />
-            {sending ? t('sendingLabel', lang) : `${t('sendConfirmations', lang)} (${selected.length})`}
-          </button>
-        )}
-      </div>
-
-      {/* ═══ Room Assignment Section ═══ */}
-      <RoomAssignmentSection />
-
-    </div>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// ROOM ASSIGNMENT SECTION (inside Schedule tab)
-// ══════════════════════════════════════════════════════════════════════════════
-
-function RoomAssignmentSection() {
-  const { user } = useAuth();
-  const { activePropertyId, activeProperty, staff } = useProperty();
-  const { lang } = useLang();
-  const { recordOfflineAction } = useSyncContext();
-
-  const [rooms, setRooms] = useState<Room[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [assignments, setAssignments] = useState<Record<string, string>>({}); // roomId → staffId
-  const [hasAutoAssigned, setHasAutoAssigned] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [dirty, setDirty] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [reassignRoom, setReassignRoom] = useState<Room | null>(null); // room being reassigned
-  const [seedingRooms, setSeedingRooms] = useState(false);
-
-  const scheduledStaff = staff.filter(s => s.scheduledToday);
-
-  useEffect(() => {
-    if (!user || !activePropertyId) return;
-    const unsub = subscribeToRooms(user.uid, activePropertyId, todayStr(), (r) => {
-      setRooms(r);
-      // Load existing assignments from Firestore
-      const existing: Record<string, string> = {};
-      r.forEach(room => { if (room.assignedTo) existing[room.id] = room.assignedTo; });
-      setAssignments(existing);
-      setLoading(false);
-    });
-    return unsub;
-  }, [user, activePropertyId]);
-
-  const sorted = [...rooms].sort((a, b) => (parseInt(a.number.replace(/\D/g, '')) || 0) - (parseInt(b.number.replace(/\D/g, '')) || 0));
-  const assignableRooms = sorted.filter(r => r.type === 'checkout' || r.type === 'stayover');
-
-  // Config from property settings
-  const assignConfig = useMemo(() => ({
-    checkoutMinutes: activeProperty?.checkoutMinutes ?? 30,
-    stayoverMinutes: activeProperty?.stayoverMinutes ?? 20,
-    prepMinutesPerRoom: activeProperty?.prepMinutesPerActivity ?? 5,
-    shiftMinutes: activeProperty?.shiftMinutes ?? 480,
-  }), [activeProperty]);
-
-  // Auto-assign once when rooms + staff are both loaded and no assignments exist yet
-  useEffect(() => {
-    if (hasAutoAssigned || loading || assignableRooms.length === 0 || scheduledStaff.length === 0) return;
-    const hasExisting = assignableRooms.some(r => r.assignedTo);
-    if (hasExisting) { setHasAutoAssigned(true); return; }
-    // No existing assignments — auto-assign based on workload minutes
-    const auto = autoAssignRooms(assignableRooms, scheduledStaff, assignConfig);
-    setAssignments(prev => ({ ...prev, ...auto }));
-    setDirty(true);
-    setHasAutoAssigned(true);
-  }, [loading, hasAutoAssigned, assignableRooms.length, scheduledStaff.length]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const getStaffColor = (staffId: string) => {
-    const idx = scheduledStaff.findIndex(s => s.id === staffId);
-    return idx >= 0 ? STAFF_COLORS[idx % STAFF_COLORS.length] : '#6B7280';
-  };
-
-  // Group rooms by assigned staff
-  const staffAssignments = useMemo(() => {
-    const grouped: { staff: StaffMember; color: string; rooms: Room[] }[] = [];
-    const unassigned: Room[] = [];
-
-    scheduledStaff.forEach((s, idx) => {
-      const staffRooms = assignableRooms.filter(r => assignments[r.id] === s.id);
-      grouped.push({ staff: s, color: STAFF_COLORS[idx % STAFF_COLORS.length], rooms: staffRooms });
-    });
-
-    assignableRooms.forEach(r => {
-      if (!assignments[r.id] || !scheduledStaff.find(s => s.id === assignments[r.id])) {
-        unassigned.push(r);
-      }
-    });
-
-    return { grouped, unassigned };
-  }, [assignments, assignableRooms, scheduledStaff]);
-
-  const handleReassign = (room: Room, newStaffId: string) => {
-    setAssignments(prev => ({ ...prev, [room.id]: newStaffId }));
-    setDirty(true);
-    setReassignRoom(null);
-  };
-
-  const handleSave = async () => {
-    if (!user || !activePropertyId) return;
-    setSaving(true);
-    for (const [roomId, staffId] of Object.entries(assignments)) {
-      const room = rooms.find(r => r.id === roomId);
-      const hk = scheduledStaff.find(s => s.id === staffId);
-      if (!room || !hk) continue;
-      if (!navigator.onLine) recordOfflineAction();
-      await updateRoom(user.uid, activePropertyId, roomId, { assignedTo: staffId, assignedName: hk.name });
-    }
-    setSaving(false);
-    setDirty(false);
-    setToastMessage(lang === 'es' ? 'Asignaciones guardadas' : 'Assignments saved');
-    setTimeout(() => setToastMessage(null), 2000);
-  };
-
-  // Seed test rooms
-  const handleSeedTestRooms = async () => {
-    if (!user || !activePropertyId) return;
-    setSeedingRooms(true);
-    const today = todayStr();
-    const pid = activePropertyId;
-    const testRooms: Omit<Room, 'id'>[] = [
-      { number: '201', type: 'checkout', status: 'dirty', date: today, priority: 'standard', propertyId: pid, assignedTo: '', assignedName: '' },
-      { number: '202', type: 'checkout', status: 'dirty', date: today, priority: 'standard', propertyId: pid, assignedTo: '', assignedName: '' },
-      { number: '203', type: 'stayover', status: 'dirty', date: today, priority: 'standard', propertyId: pid, assignedTo: '', assignedName: '' },
-      { number: '204', type: 'checkout', status: 'dirty', date: today, priority: 'standard', propertyId: pid, assignedTo: '', assignedName: '' },
-      { number: '301', type: 'stayover', status: 'dirty', date: today, priority: 'standard', propertyId: pid, assignedTo: '', assignedName: '' },
-      { number: '302', type: 'checkout', status: 'dirty', date: today, priority: 'standard', propertyId: pid, assignedTo: '', assignedName: '' },
-      { number: '303', type: 'stayover', status: 'dirty', date: today, priority: 'standard', propertyId: pid, assignedTo: '', assignedName: '' },
-      { number: '304', type: 'checkout', status: 'dirty', date: today, priority: 'standard', propertyId: pid, assignedTo: '', assignedName: '' },
-      { number: '401', type: 'checkout', status: 'dirty', date: today, priority: 'standard', propertyId: pid, assignedTo: '', assignedName: '' },
-      { number: '402', type: 'stayover', status: 'dirty', date: today, priority: 'standard', propertyId: pid, assignedTo: '', assignedName: '' },
-    ];
-    for (const room of testRooms) {
-      await addRoom(user.uid, activePropertyId, room);
-    }
-    setSeedingRooms(false);
-    setHasAutoAssigned(false); // trigger auto-assign for new rooms
-    setToastMessage(lang === 'es' ? '10 habitaciones creadas' : '10 test rooms created');
-    setTimeout(() => setToastMessage(null), 2500);
-  };
-
-  return (
-    <div style={{
-      padding: '20px',
-      background: 'linear-gradient(135deg, #1B3A5C 0%, #234B73 100%)',
-      border: 'none',
-      borderRadius: 'var(--radius-xl)',
-      boxShadow: '0 4px 24px rgba(27, 58, 92, 0.20), 0 1px 4px rgba(0,0,0,0.06)',
-    }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <BedDouble size={14} color="rgba(255,255,255,0.5)" />
-          <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)' }}>
-            {lang === 'es' ? 'Asignaciones' : 'Room Assignments'}
-          </span>
-        </div>
-        {assignableRooms.length > 0 && (
-          <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>
-            {assignableRooms.length} {lang === 'es' ? 'hab.' : 'rooms'}
-          </span>
-        )}
-      </div>
-
-      {loading ? (
-        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', margin: 0 }}>{lang === 'es' ? 'Cargando…' : 'Loading…'}</p>
-      ) : sorted.length === 0 ? (
-        /* No rooms — offer test seed */
-        <div style={{ textAlign: 'center', padding: '16px 0' }}>
-          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', margin: '0 0 12px' }}>
-            {lang === 'es' ? 'No hay habitaciones para hoy.' : 'No rooms for today.'}
-          </p>
-          <button onClick={handleSeedTestRooms} disabled={seedingRooms} style={{
-            padding: '10px 18px', background: 'rgba(251,191,36,0.15)', border: '1px solid rgba(251,191,36,0.30)',
-            borderRadius: 'var(--radius-full)', color: '#FCD34D', fontSize: '12px', fontWeight: 700,
-            cursor: seedingRooms ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-sans)',
-            opacity: seedingRooms ? 0.5 : 1,
-          }}>
-            {seedingRooms ? (lang === 'es' ? 'Creando…' : 'Creating…') : (lang === 'es' ? 'Crear Habitaciones de Prueba' : 'Create Test Rooms')}
-          </button>
-        </div>
-      ) : scheduledStaff.length === 0 ? (
-        /* Rooms exist but no staff scheduled */
-        <div style={{ textAlign: 'center', padding: '16px 0' }}>
-          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', margin: 0 }}>
-            {lang === 'es' ? 'Marca personal como "Programado Hoy" arriba para asignar.' : 'Mark staff as "Scheduled Today" in the roster to assign rooms.'}
-          </p>
-        </div>
-      ) : (
-        /* ─── Main: staff grouped with their rooms ─── */
+      {/* ── STEP 2: Crew + Room Assignments (combined) ── */}
+      {!predictionLoading && totalRooms > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {staffAssignments.grouped.map(({ staff: s, color, rooms: staffRooms }) => {
-            const estMins = staffRooms.reduce((sum, r) => {
-              return sum + (r.type === 'checkout' ? assignConfig.checkoutMinutes : assignConfig.stayoverMinutes) + assignConfig.prepMinutesPerRoom;
-            }, 0);
-            const estHrs = Math.floor(estMins / 60);
-            const estRemMins = estMins % 60;
-            const estLabel = estHrs > 0 ? `${estHrs}h${estRemMins > 0 ? ` ${estRemMins}m` : ''}` : `${estMins}m`;
+
+          {/* Each crew member with their rooms */}
+          {selectedCrew.map((member, idx) => {
+            const { rooms: memberRooms, mins } = getStaffWorkload(member.id);
+            const hrs = Math.floor(mins / 60);
+            const remMins = mins % 60;
+            const timeLabel = hrs > 0 ? `${hrs}h${remMins > 0 ? ` ${remMins}m` : ''}` : `${mins}m`;
+            const color = STAFF_COLORS[idx % STAFF_COLORS.length];
 
             return (
-            <div key={s.id} style={{
-              padding: '12px 14px',
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.10)',
-              borderRadius: 'var(--radius-md)',
-            }}>
-              {/* Staff name + count + est time */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: staffRooms.length > 0 ? '10px' : 0 }}>
-                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: color, flexShrink: 0 }} />
-                <span style={{ fontSize: '14px', fontWeight: 700, color: '#FFFFFF', flex: 1 }}>
-                  {s.name} {s.isSenior ? '★' : ''}
-                </span>
-                <span style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.35)', fontFamily: 'var(--font-mono)' }}>
-                  {staffRooms.length} {lang === 'es' ? 'hab.' : 'rooms'} · {estLabel}
-                </span>
-              </div>
-
-              {/* Room pills */}
-              {staffRooms.length > 0 && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {staffRooms.map(room => (
-                    <button
-                      key={room.id}
-                      onClick={() => setReassignRoom(room)}
-                      style={{
-                        padding: '6px 12px',
-                        background: `${color}25`,
-                        border: `1.5px solid ${color}60`,
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontFamily: 'var(--font-sans)',
-                        display: 'flex', alignItems: 'center', gap: '5px',
-                      }}
-                    >
-                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '13px', color: '#FFFFFF' }}>
-                        {room.number}
-                      </span>
-                      <span style={{ fontSize: '9px', fontWeight: 700, color: 'rgba(255,255,255,0.4)' }}>
-                        {room.type === 'checkout' ? 'CO' : 'SO'}
-                      </span>
-                    </button>
-                  ))}
+              <div key={member.id} style={{
+                padding: '14px', background: 'var(--bg-card)', border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-lg)',
+              }}>
+                {/* Staff header */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: memberRooms.length > 0 ? '10px' : 0 }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: '13px', flexShrink: 0 }}>
+                    {member.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{member.name}</p>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0' }}>
+                      {memberRooms.length} {lang === 'es' ? 'hab.' : 'rooms'} · {timeLabel}
+                    </p>
+                  </div>
+                  <button onClick={() => toggleCrewMember(member.id)} style={{
+                    background: 'none', border: 'none', cursor: 'pointer', padding: '4px',
+                    color: 'var(--text-muted)', fontSize: '16px',
+                  }}>✕</button>
                 </div>
-              )}
-            </div>
-          ); })}
 
-          {/* Unassigned rooms */}
-          {staffAssignments.unassigned.length > 0 && (
-            <div style={{
-              padding: '12px 14px',
-              background: 'rgba(239,68,68,0.08)',
-              border: '1px solid rgba(239,68,68,0.20)',
-              borderRadius: 'var(--radius-md)',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                <AlertTriangle size={12} color="rgba(252,165,165,0.8)" />
-                <span style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(252,165,165,0.9)' }}>
-                  {lang === 'es' ? 'Sin Asignar' : 'Unassigned'}
-                </span>
-                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)', fontFamily: 'var(--font-mono)' }}>
-                  {staffAssignments.unassigned.length}
-                </span>
+                {/* Room pills */}
+                {memberRooms.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                    {memberRooms.map(room => (
+                      <button key={room.id} onClick={() => setReassignRoom(room)} style={{
+                        padding: '5px 10px', background: `${color}12`, border: `1.5px solid ${color}40`,
+                        borderRadius: '6px', cursor: 'pointer', fontFamily: 'var(--font-sans)',
+                        display: 'flex', alignItems: 'center', gap: '4px',
+                      }}>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '12px', color: 'var(--text-primary)' }}>{room.number}</span>
+                        <span style={{ fontSize: '9px', fontWeight: 600, color: 'var(--text-muted)' }}>{room.type === 'checkout' ? 'CO' : 'SO'}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                {staffAssignments.unassigned.map(room => (
-                  <button
-                    key={room.id}
-                    onClick={() => setReassignRoom(room)}
-                    style={{
-                      padding: '6px 12px',
-                      background: 'rgba(255,255,255,0.06)',
-                      border: '1px solid rgba(255,255,255,0.12)',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontFamily: 'var(--font-sans)',
-                      display: 'flex', alignItems: 'center', gap: '5px',
-                    }}
-                  >
-                    <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '13px', color: '#FFFFFF' }}>
-                      {room.number}
-                    </span>
-                    <span style={{ fontSize: '9px', fontWeight: 700, color: 'rgba(255,255,255,0.4)' }}>
-                      {room.type === 'checkout' ? 'CO' : 'SO'}
-                    </span>
+            );
+          })}
+
+          {/* Add crew member button */}
+          {eligiblePool.filter(s => !selectedCrew.find(c => c.id === s.id)).length > 0 && (
+            <details style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
+              <summary style={{ padding: '12px 14px', fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', listStyle: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Plus size={14} /> {lang === 'es' ? 'Agregar personal' : 'Add staff'}
+              </summary>
+              <div style={{ padding: '0 14px 12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                {eligiblePool.filter(s => !selectedCrew.find(c => c.id === s.id)).map(member => (
+                  <button key={member.id} onClick={() => toggleCrewMember(member.id)} style={{
+                    padding: '10px 12px', background: 'rgba(0,0,0,0.03)', border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-md)', cursor: 'pointer', fontFamily: 'var(--font-sans)',
+                    display: 'flex', alignItems: 'center', gap: '8px', width: '100%', textAlign: 'left',
+                  }}>
+                    <Plus size={12} color="var(--text-muted)" />
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{member.name}</span>
                   </button>
                 ))}
               </div>
-            </div>
-          )}
-
-          {/* Save button — only if changes were made */}
-          {dirty && (
-            <button onClick={handleSave} disabled={saving} style={{
-              width: '100%', padding: '14px', marginTop: '4px',
-              background: saving ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.95)',
-              color: saving ? 'rgba(255,255,255,0.5)' : '#1B3A5C',
-              border: 'none', borderRadius: 'var(--radius-md)',
-              fontWeight: 700, fontSize: '14px', cursor: saving ? 'not-allowed' : 'pointer',
-              fontFamily: 'var(--font-sans)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-              boxShadow: saving ? 'none' : '0 2px 12px rgba(0,0,0,0.15)',
-            }}>
-              <Check size={16} />
-              {saving ? (lang === 'es' ? 'Guardando…' : 'Saving…') : (lang === 'es' ? 'Guardar Asignaciones' : 'Save Assignments')}
-            </button>
+            </details>
           )}
         </div>
       )}
 
-      {/* ─── Reassign bottom sheet ─── */}
+      {/* ── STEP 3: Send confirmations ── */}
+      {!predictionLoading && totalRooms > 0 && selectedCrew.length > 0 && (
+        sent ? (
+          <div className="animate-in" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 'var(--radius-md)' }}>
+            <CheckCircle2 size={16} color="var(--green)" />
+            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--green)' }}>{t('confirmationsSent', lang)}</span>
+          </div>
+        ) : (
+          <button onClick={handleSend} disabled={sending} style={{
+            width: '100%', padding: '16px',
+            background: sending ? 'var(--bg-input)' : 'var(--navy)',
+            color: sending ? 'var(--text-muted)' : '#FFFFFF',
+            border: 'none', borderRadius: 'var(--radius-lg)',
+            fontWeight: 700, fontSize: '15px', cursor: sending ? 'not-allowed' : 'pointer',
+            fontFamily: 'var(--font-sans)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+            boxShadow: '0 2px 12px rgba(27, 58, 92, 0.25)',
+          }}>
+            <Send size={16} />
+            {sending ? (lang === 'es' ? 'Enviando…' : 'Sending…') : (lang === 'es' ? `Enviar Confirmaciones (${selectedCrew.length})` : `Send Confirmations (${selectedCrew.length})`)}
+          </button>
+        )
+      )}
+
+      {/* ── Reassign bottom sheet ── */}
       {reassignRoom && (
         <>
           <div style={{ position: 'fixed', inset: 0, zIndex: 9997 }} onClick={() => setReassignRoom(null)} />
@@ -1132,34 +587,21 @@ function RoomAssignmentSection() {
             <div style={{ width: '40px', height: '4px', borderRadius: '2px', background: 'var(--border)', margin: '0 auto 4px' }} />
             <p style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>
               {lang === 'es' ? 'Reasignar' : 'Reassign'} <span style={{ fontFamily: 'var(--font-mono)' }}>{reassignRoom.number}</span>
-              <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', marginLeft: '8px' }}>
-                {reassignRoom.type === 'checkout' ? 'Checkout' : 'Stayover'}
-              </span>
             </p>
-            {scheduledStaff.map((s, idx) => {
-              const isCurrentlyAssigned = assignments[reassignRoom.id] === s.id;
-              const roomCount = Object.values(assignments).filter(id => id === s.id).length;
+            {selectedCrew.map((s, idx) => {
+              const isCurrently = assignments[reassignRoom.id] === s.id;
+              const { rooms: sRooms } = getStaffWorkload(s.id);
               return (
-                <button
-                  key={s.id}
-                  onClick={() => handleReassign(reassignRoom, s.id)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '10px',
-                    padding: '12px 14px',
-                    background: isCurrentlyAssigned ? `${STAFF_COLORS[idx % STAFF_COLORS.length]}15` : 'var(--bg-elevated)',
-                    border: `1.5px solid ${isCurrentlyAssigned ? STAFF_COLORS[idx % STAFF_COLORS.length] : 'var(--border)'}`,
-                    borderRadius: '10px',
-                    cursor: 'pointer', fontFamily: 'var(--font-sans)', width: '100%',
-                  }}
-                >
+                <button key={s.id} onClick={() => handleReassign(reassignRoom, s.id)} style={{
+                  display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px',
+                  background: isCurrently ? `${STAFF_COLORS[idx % STAFF_COLORS.length]}15` : 'var(--bg-elevated)',
+                  border: `1.5px solid ${isCurrently ? STAFF_COLORS[idx % STAFF_COLORS.length] : 'var(--border)'}`,
+                  borderRadius: '10px', cursor: 'pointer', fontFamily: 'var(--font-sans)', width: '100%',
+                }}>
                   <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: STAFF_COLORS[idx % STAFF_COLORS.length], flexShrink: 0 }} />
-                  <span style={{ flex: 1, fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', textAlign: 'left' }}>
-                    {s.name}
-                  </span>
-                  <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                    {roomCount} {lang === 'es' ? 'hab.' : 'rooms'}
-                  </span>
-                  {isCurrentlyAssigned && <CheckCircle2 size={16} color={STAFF_COLORS[idx % STAFF_COLORS.length]} />}
+                  <span style={{ flex: 1, fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', textAlign: 'left' }}>{s.name}</span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{sRooms.length} {lang === 'es' ? 'hab.' : 'rooms'}</span>
+                  {isCurrently && <CheckCircle2 size={16} color={STAFF_COLORS[idx % STAFF_COLORS.length]} />}
                 </button>
               );
             })}
@@ -1168,17 +610,52 @@ function RoomAssignmentSection() {
         </>
       )}
 
-      {/* Toast */}
-      {toastMessage && (
-        <div style={{
-          position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)',
-          background: '#10B981', color: '#FFFFFF', padding: '10px 20px',
-          borderRadius: 'var(--radius-md)', fontSize: '13px', fontWeight: 600,
-          boxShadow: '0 4px 16px rgba(0,0,0,0.2)', zIndex: 9999,
-        }}>
-          {toastMessage}
+      {/* Prediction Settings Modal */}
+      {showPredictionSettings && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 9998, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }} onClick={() => setShowPredictionSettings(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-card)', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '380px', boxShadow: '0 20px 60px rgba(0,0,0,0.25)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <p style={{ fontWeight: 700, fontSize: '17px', color: 'var(--text-primary)', margin: 0 }}>
+                {lang === 'es' ? 'Ajustes de Predicción' : 'Prediction Settings'}
+              </p>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '4px 0 0' }}>
+                {lang === 'es' ? 'Ajusta los tiempos de limpieza.' : 'Adjust cleaning times.'}
+              </p>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {[
+                { label: lang === 'es' ? 'Habitación de salida' : 'Checkout room', key: 'checkoutMinutes' as const },
+                { label: lang === 'es' ? 'Habitación de continuación' : 'Stayover room', key: 'stayoverMinutes' as const },
+                { label: lang === 'es' ? 'Entre habitaciones' : 'Between rooms', key: 'prepMinutesPerActivity' as const },
+              ].map(({ label, key }) => (
+                <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>{label}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <input className="input" type="number" min={key === 'prepMinutesPerActivity' ? 0 : 1} value={settingsForm[key]} onChange={e => setSettingsForm(p => ({ ...p, [key]: Number(e.target.value) || 0 }))} style={{ width: '64px', textAlign: 'center', padding: '8px 4px' }} />
+                    <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>min</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+              <button onClick={() => setShowPredictionSettings(false)} style={{ flex: 1, padding: '12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-muted)', fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>{t('cancel', lang)}</button>
+              <button onClick={handleSaveSettings} disabled={savingSettings} style={{ flex: 1, padding: '12px', borderRadius: '10px', border: 'none', background: 'var(--navy)', color: '#fff', fontWeight: 600, fontSize: '14px', cursor: 'pointer', opacity: savingSettings ? 0.6 : 1 }}>{savingSettings ? t('saving', lang) : t('save', lang)}</button>
+            </div>
+            <button onClick={() => { setShowPredictionSettings(false); setShowPublicAreas(true); }} style={{
+              width: '100%', padding: '14px 16px', marginTop: '4px',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              background: 'rgba(27,58,92,0.06)', border: '1px solid var(--border)', borderRadius: '10px',
+              cursor: 'pointer', fontFamily: 'var(--font-sans)',
+            }}>
+              <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{lang === 'es' ? 'Áreas Comunes' : 'Public Areas'}</span>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{areasDueToday.length} {lang === 'es' ? 'para hoy' : 'due today'} · {publicAreaMinutes}m →</span>
+            </button>
+          </div>
         </div>
       )}
+
+      <PublicAreasModal show={showPublicAreas} onClose={() => setShowPublicAreas(false)} />
+
     </div>
   );
 }
