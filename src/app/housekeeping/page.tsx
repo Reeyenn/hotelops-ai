@@ -283,13 +283,14 @@ function ScheduleSection() {
   const [crewOverride, setCrewOverride] = useState<string[]>([]); // manually toggled staff IDs
   const [hasAutoSelected, setHasAutoSelected] = useState(false);
 
-  // Drag-and-drop state
-  const [dragRoom, setDragRoom] = useState<Room | null>(null);
-  const [dragGhost, setDragGhost] = useState<{ x: number; y: number } | null>(null);
-  const [dropTarget, setDropTarget] = useState<string | null>(null); // staff ID under finger
+  // Drag-and-drop state — ref-based for performance + to avoid stale closures
+  const [dragState, setDragState] = useState<{
+    room: Room; ghost: { x: number; y: number }; dropTarget: string | null;
+  } | null>(null);
   const crewCardRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const dragStartPos = useRef<{ x: number; y: number; roomId: string } | null>(null);
-  const isDragging = useRef(false);
+  const dragRef = useRef<{
+    room: Room | null; startX: number; startY: number; active: boolean; dropTarget: string | null;
+  }>({ room: null, startX: 0, startY: 0, active: false, dropTarget: null });
 
   const uid = user?.uid ?? '';
   const pid = activePropertyId ?? '';
@@ -427,53 +428,61 @@ function ScheduleSection() {
   };
 
   // ── Drag-and-drop handlers ──
-  const DRAG_THRESHOLD = 8; // px before entering drag mode
+  const DRAG_THRESHOLD = 10;
 
-  const findDropTarget = (x: number, y: number): string | null => {
+  const findDropTarget = useCallback((x: number, y: number): string | null => {
     for (const [staffId, el] of Object.entries(crewCardRefs.current)) {
       if (!el) continue;
       const r = el.getBoundingClientRect();
       if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return staffId;
     }
     return null;
-  };
-
-  const handleDragTouchStart = (room: Room, e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    dragStartPos.current = { x: touch.clientX, y: touch.clientY, roomId: room.id };
-    isDragging.current = false;
-  };
-
-  const handleDragTouchMove = useCallback((room: Room, e: React.TouchEvent) => {
-    if (!dragStartPos.current || dragStartPos.current.roomId !== room.id) return;
-    const touch = e.touches[0];
-    const dx = touch.clientX - dragStartPos.current.x;
-    const dy = touch.clientY - dragStartPos.current.y;
-
-    if (!isDragging.current) {
-      if (Math.abs(dx) + Math.abs(dy) < DRAG_THRESHOLD) return;
-      isDragging.current = true;
-      setDragRoom(room);
-    }
-
-    e.preventDefault(); // prevent scroll while dragging
-    setDragGhost({ x: touch.clientX, y: touch.clientY });
-    setDropTarget(findDropTarget(touch.clientX, touch.clientY));
   }, []);
 
-  const handleDragTouchEnd = useCallback(() => {
-    if (isDragging.current && dragRoom && dropTarget) {
-      const currentOwner = assignments[dragRoom.id];
-      if (dropTarget !== currentOwner) {
-        setAssignments(prev => ({ ...prev, [dragRoom.id]: dropTarget }));
+  // Attach native (non-passive) touch listeners so we can preventDefault to stop scroll
+  const makeDraggable = useCallback((el: HTMLElement | null, room: Room) => {
+    if (!el) return;
+    // Avoid attaching twice
+    if ((el as unknown as Record<string, boolean>).__dragBound) return;
+    (el as unknown as Record<string, boolean>).__dragBound = true;
+
+    el.addEventListener('touchstart', (e: TouchEvent) => {
+      const touch = e.touches[0];
+      dragRef.current = { room, startX: touch.clientX, startY: touch.clientY, active: false, dropTarget: null };
+    }, { passive: true });
+
+    el.addEventListener('touchmove', (e: TouchEvent) => {
+      const d = dragRef.current;
+      if (!d.room || d.room.id !== room.id) return;
+      const touch = e.touches[0];
+      const dx = touch.clientX - d.startX;
+      const dy = touch.clientY - d.startY;
+
+      if (!d.active) {
+        if (Math.abs(dx) + Math.abs(dy) < DRAG_THRESHOLD) return;
+        d.active = true;
       }
-    }
-    dragStartPos.current = null;
-    isDragging.current = false;
-    setDragRoom(null);
-    setDragGhost(null);
-    setDropTarget(null);
-  }, [dragRoom, dropTarget, assignments]);
+
+      e.preventDefault(); // this works because { passive: false }
+      const target = findDropTarget(touch.clientX, touch.clientY);
+      d.dropTarget = target;
+      setDragState({ room, ghost: { x: touch.clientX, y: touch.clientY }, dropTarget: target });
+    }, { passive: false });
+
+    el.addEventListener('touchend', () => {
+      const d = dragRef.current;
+      if (d.active && d.room && d.dropTarget) {
+        const roomId = d.room.id;
+        const newOwner = d.dropTarget;
+        setAssignments(prev => {
+          if (prev[roomId] === newOwner) return prev;
+          return { ...prev, [roomId]: newOwner };
+        });
+      }
+      dragRef.current = { room: null, startX: 0, startY: 0, active: false, dropTarget: null };
+      setDragState(null);
+    }, { passive: true });
+  }, [findDropTarget]);
 
   return (
     <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -541,7 +550,7 @@ function ScheduleSection() {
             const remMins = mins % 60;
             const timeLabel = hrs > 0 ? `${hrs}h${remMins > 0 ? ` ${remMins}m` : ''}` : `${mins}m`;
             const color = STAFF_COLORS[idx % STAFF_COLORS.length];
-            const isDropHover = dropTarget === member.id && dragRoom && assignments[dragRoom.id] !== member.id;
+            const isDropHover = dragState?.dropTarget === member.id && dragState?.room && assignments[dragState.room.id] !== member.id;
 
             return (
               <div
@@ -577,15 +586,13 @@ function ScheduleSection() {
                     {memberRooms.map(room => (
                       <button
                         key={room.id}
-                        onClick={() => { if (!isDragging.current) setReassignRoom(room); }}
-                        onTouchStart={e => handleDragTouchStart(room, e)}
-                        onTouchMove={e => handleDragTouchMove(room, e)}
-                        onTouchEnd={handleDragTouchEnd}
+                        ref={el => { if (el) makeDraggable(el, room); }}
+                        onClick={() => { if (!dragRef.current.active) setReassignRoom(room); }}
                         style={{
                           padding: '5px 10px', background: `${color}12`, border: `1.5px solid ${color}40`,
                           borderRadius: '6px', cursor: 'grab', fontFamily: 'var(--font-sans)',
                           display: 'flex', alignItems: 'center', gap: '4px',
-                          opacity: dragRoom?.id === room.id ? 0.35 : 1,
+                          opacity: dragState?.room?.id === room.id ? 0.35 : 1,
                           touchAction: 'none',
                         }}
                       >
@@ -730,11 +737,11 @@ function ScheduleSection() {
       <PublicAreasModal show={showPublicAreas} onClose={() => setShowPublicAreas(false)} />
 
       {/* Drag ghost — floating room pill that follows your finger */}
-      {dragRoom && dragGhost && (
+      {dragState && (
         <div style={{
           position: 'fixed',
-          left: dragGhost.x - 28,
-          top: dragGhost.y - 18,
+          left: dragState.ghost.x - 28,
+          top: dragState.ghost.y - 40,
           zIndex: 10000,
           pointerEvents: 'none',
           padding: '6px 12px',
@@ -743,10 +750,10 @@ function ScheduleSection() {
           borderRadius: '8px',
           boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
           display: 'flex', alignItems: 'center', gap: '4px',
-          transform: 'scale(1.1)',
+          transform: 'scale(1.15)',
         }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '13px', color: '#FFFFFF' }}>{dragRoom.number}</span>
-          <span style={{ fontSize: '9px', fontWeight: 700, color: 'rgba(255,255,255,0.6)' }}>{dragRoom.type === 'checkout' ? 'CO' : 'SO'}</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '13px', color: '#FFFFFF' }}>{dragState.room.number}</span>
+          <span style={{ fontSize: '9px', fontWeight: 700, color: 'rgba(255,255,255,0.6)' }}>{dragState.room.type === 'checkout' ? 'CO' : 'SO'}</span>
         </div>
       )}
 
