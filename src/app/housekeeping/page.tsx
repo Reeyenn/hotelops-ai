@@ -830,54 +830,77 @@ function RoomAssignmentSection() {
 
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isAssignmentMode, setIsAssignmentMode] = useState(false);
-  const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
-  const [assignments, setAssignments] = useState<Record<string, string>>({});
+  const [assignments, setAssignments] = useState<Record<string, string>>({}); // roomId → staffId
+  const [hasAutoAssigned, setHasAutoAssigned] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [dirty, setDirty] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [reassignRoom, setReassignRoom] = useState<Room | null>(null); // room being reassigned
   const [seedingRooms, setSeedingRooms] = useState(false);
+
+  const scheduledStaff = staff.filter(s => s.scheduledToday);
 
   useEffect(() => {
     if (!user || !activePropertyId) return;
     const unsub = subscribeToRooms(user.uid, activePropertyId, todayStr(), (r) => {
       setRooms(r);
-      const initialAssignments: Record<string, string> = {};
-      r.forEach(room => {
-        if (room.assignedTo) initialAssignments[room.id] = room.assignedTo;
-      });
-      setAssignments(initialAssignments);
+      // Load existing assignments from Firestore
+      const existing: Record<string, string> = {};
+      r.forEach(room => { if (room.assignedTo) existing[room.id] = room.assignedTo; });
+      setAssignments(existing);
       setLoading(false);
     });
     return unsub;
   }, [user, activePropertyId]);
 
-  const scheduledStaff = staff.filter(s => s.scheduledToday);
   const sorted = [...rooms].sort((a, b) => (parseInt(a.number.replace(/\D/g, '')) || 0) - (parseInt(b.number.replace(/\D/g, '')) || 0));
   const assignableRooms = sorted.filter(r => r.type === 'checkout' || r.type === 'stayover');
 
-  const getStaffColor = (staffId: string, index?: number) => {
-    const idx = index ?? scheduledStaff.findIndex(s => s.id === staffId);
-    return idx >= 0 ? STAFF_COLORS[idx % STAFF_COLORS.length] : '#D1D5DB';
+  // Auto-assign once when rooms + staff are both loaded and no assignments exist yet
+  useEffect(() => {
+    if (hasAutoAssigned || loading || assignableRooms.length === 0 || scheduledStaff.length === 0) return;
+    const hasExisting = assignableRooms.some(r => r.assignedTo);
+    if (hasExisting) { setHasAutoAssigned(true); return; }
+    // No existing assignments — auto-assign
+    const auto = autoAssignRooms(assignableRooms, scheduledStaff);
+    setAssignments(prev => ({ ...prev, ...auto }));
+    setDirty(true);
+    setHasAutoAssigned(true);
+  }, [loading, hasAutoAssigned, assignableRooms.length, scheduledStaff.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const getStaffColor = (staffId: string) => {
+    const idx = scheduledStaff.findIndex(s => s.id === staffId);
+    return idx >= 0 ? STAFF_COLORS[idx % STAFF_COLORS.length] : '#6B7280';
   };
 
-  const handleRoomClick = (room: Room) => {
-    if (!isAssignmentMode) return;
-    const newAssignments = { ...assignments };
-    if (assignments[room.id] === selectedStaffId) {
-      delete newAssignments[room.id];
-    } else if (selectedStaffId) {
-      newAssignments[room.id] = selectedStaffId;
-    }
-    setAssignments(newAssignments);
+  // Group rooms by assigned staff
+  const staffAssignments = useMemo(() => {
+    const grouped: { staff: StaffMember; color: string; rooms: Room[] }[] = [];
+    const unassigned: Room[] = [];
+
+    scheduledStaff.forEach((s, idx) => {
+      const staffRooms = assignableRooms.filter(r => assignments[r.id] === s.id);
+      grouped.push({ staff: s, color: STAFF_COLORS[idx % STAFF_COLORS.length], rooms: staffRooms });
+    });
+
+    assignableRooms.forEach(r => {
+      if (!assignments[r.id] || !scheduledStaff.find(s => s.id === assignments[r.id])) {
+        unassigned.push(r);
+      }
+    });
+
+    return { grouped, unassigned };
+  }, [assignments, assignableRooms, scheduledStaff]);
+
+  const handleReassign = (room: Room, newStaffId: string) => {
+    setAssignments(prev => ({ ...prev, [room.id]: newStaffId }));
+    setDirty(true);
+    setReassignRoom(null);
   };
 
-  const handleAutoAssign = () => {
-    if (!user || !activePropertyId || scheduledStaff.length === 0) return;
-    const newAssignments = autoAssignRooms(assignableRooms, scheduledStaff);
-    setAssignments(prev => ({ ...prev, ...newAssignments }));
-  };
-
-  const handleDoneAssigning = async () => {
+  const handleSave = async () => {
     if (!user || !activePropertyId) return;
+    setSaving(true);
     for (const [roomId, staffId] of Object.entries(assignments)) {
       const room = rooms.find(r => r.id === roomId);
       const hk = scheduledStaff.find(s => s.id === staffId);
@@ -885,13 +908,20 @@ function RoomAssignmentSection() {
       if (!navigator.onLine) recordOfflineAction();
       await updateRoom(user.uid, activePropertyId, roomId, { assignedTo: staffId, assignedName: hk.name });
     }
-    setIsAssignmentMode(false);
-    setSelectedStaffId(null);
+    setSaving(false);
+    setDirty(false);
     setToastMessage(lang === 'es' ? 'Asignaciones guardadas' : 'Assignments saved');
     setTimeout(() => setToastMessage(null), 2000);
   };
 
-  // Seed test rooms for development
+  const handleReshuffle = () => {
+    if (scheduledStaff.length === 0 || assignableRooms.length === 0) return;
+    const auto = autoAssignRooms(assignableRooms, scheduledStaff);
+    setAssignments(prev => ({ ...prev, ...auto }));
+    setDirty(true);
+  };
+
+  // Seed test rooms
   const handleSeedTestRooms = async () => {
     if (!user || !activePropertyId) return;
     setSeedingRooms(true);
@@ -913,26 +943,9 @@ function RoomAssignmentSection() {
       await addRoom(user.uid, activePropertyId, room);
     }
     setSeedingRooms(false);
-    setToastMessage(lang === 'es' ? '10 habitaciones de prueba creadas' : '10 test rooms created');
+    setHasAutoAssigned(false); // trigger auto-assign for new rooms
+    setToastMessage(lang === 'es' ? '10 habitaciones creadas' : '10 test rooms created');
     setTimeout(() => setToastMessage(null), 2500);
-  };
-
-  // Group rooms by floor for display
-  const floors = [...new Set(sorted.map(r => {
-    const cleaned = r.number.replace(/\D/g, '');
-    const num = parseInt(cleaned);
-    if (isNaN(num) || num < 100) return 'G';
-    return String(Math.floor(num / 100));
-  }))].sort((a, b) => {
-    if (a === 'G') return -1; if (b === 'G') return 1;
-    return parseInt(a) - parseInt(b);
-  });
-
-  const getRoomFloor = (roomNumber: string) => {
-    const cleaned = roomNumber.replace(/\D/g, '');
-    const num = parseInt(cleaned);
-    if (isNaN(num) || num < 100) return 'G';
-    return String(Math.floor(num / 100));
   };
 
   return (
@@ -943,22 +956,31 @@ function RoomAssignmentSection() {
       borderRadius: 'var(--radius-xl)',
       boxShadow: '0 4px 24px rgba(27, 58, 92, 0.20), 0 1px 4px rgba(0,0,0,0.06)',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <BedDouble size={14} color="rgba(255,255,255,0.5)" />
           <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)' }}>
-            {lang === 'es' ? 'Asignar Habitaciones' : 'Room Assignments'}
+            {lang === 'es' ? 'Asignaciones' : 'Room Assignments'}
           </span>
         </div>
-        <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>
-          {assignableRooms.length} {lang === 'es' ? 'habitaciones' : 'rooms'}
-        </span>
+        {assignableRooms.length > 0 && scheduledStaff.length > 0 && (
+          <button onClick={handleReshuffle} style={{
+            display: 'flex', alignItems: 'center', gap: '5px',
+            padding: '5px 12px', background: 'rgba(251,191,36,0.15)', border: '1px solid rgba(251,191,36,0.30)',
+            borderRadius: 'var(--radius-full)', color: '#FCD34D', fontSize: '11px', fontWeight: 700,
+            cursor: 'pointer', fontFamily: 'var(--font-sans)',
+          }}>
+            <Zap size={11} /> {lang === 'es' ? 'Reasignar' : 'Reshuffle'}
+          </button>
+        )}
       </div>
 
       {loading ? (
         <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', margin: 0 }}>{lang === 'es' ? 'Cargando…' : 'Loading…'}</p>
       ) : sorted.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '20px' }}>
+        /* No rooms — offer test seed */
+        <div style={{ textAlign: 'center', padding: '16px 0' }}>
           <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', margin: '0 0 12px' }}>
             {lang === 'es' ? 'No hay habitaciones para hoy.' : 'No rooms for today.'}
           </p>
@@ -971,135 +993,174 @@ function RoomAssignmentSection() {
             {seedingRooms ? (lang === 'es' ? 'Creando…' : 'Creating…') : (lang === 'es' ? 'Crear Habitaciones de Prueba' : 'Create Test Rooms')}
           </button>
         </div>
+      ) : scheduledStaff.length === 0 ? (
+        /* Rooms exist but no staff scheduled */
+        <div style={{ textAlign: 'center', padding: '16px 0' }}>
+          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', margin: 0 }}>
+            {lang === 'es' ? 'Marca personal como "Programado Hoy" arriba para asignar.' : 'Mark staff as "Scheduled Today" in the roster to assign rooms.'}
+          </p>
+        </div>
       ) : (
-        <>
-          {/* Assignment mode toggle */}
-          <button
-            onClick={() => {
-              if (isAssignmentMode) {
-                handleDoneAssigning();
-              } else {
-                setIsAssignmentMode(true);
-                if (scheduledStaff.length > 0) setSelectedStaffId(scheduledStaff[0].id);
-              }
-            }}
-            style={{
-              width: '100%', padding: '12px 14px', marginBottom: '12px',
-              background: isAssignmentMode ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.10)',
-              color: isAssignmentMode ? '#1B3A5C' : '#FFFFFF',
-              border: isAssignmentMode ? 'none' : '1px solid rgba(255,255,255,0.15)',
-              borderRadius: 'var(--radius-md)', fontSize: '14px', fontWeight: 700,
-              cursor: 'pointer', fontFamily: 'var(--font-sans)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-              boxShadow: isAssignmentMode ? '0 2px 12px rgba(0,0,0,0.15)' : 'none',
-            }}
-          >
-            <BedDouble size={16} />
-            {isAssignmentMode
-              ? (lang === 'es' ? '✓ Guardar Asignaciones' : '✓ Save Assignments')
-              : (lang === 'es' ? 'Asignar Habitaciones' : 'Assign Rooms')}
-          </button>
+        /* ─── Main: staff grouped with their rooms ─── */
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {staffAssignments.grouped.map(({ staff: s, color, rooms: staffRooms }) => (
+            <div key={s.id} style={{
+              padding: '12px 14px',
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.10)',
+              borderRadius: 'var(--radius-md)',
+            }}>
+              {/* Staff name + count */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: staffRooms.length > 0 ? '10px' : 0 }}>
+                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: color, flexShrink: 0 }} />
+                <span style={{ fontSize: '14px', fontWeight: 700, color: '#FFFFFF', flex: 1 }}>
+                  {s.name} {s.isSenior ? '★' : ''}
+                </span>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: 'rgba(255,255,255,0.45)', fontFamily: 'var(--font-mono)' }}>
+                  {staffRooms.length} {lang === 'es' ? 'hab.' : 'rooms'}
+                </span>
+              </div>
 
-          {/* Staff pills + Auto-assign (in assignment mode) */}
-          {isAssignmentMode && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '14px' }}>
-              <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px', WebkitOverflowScrolling: 'touch' }}>
-                {scheduledStaff.map((s, idx) => (
-                  <button key={s.id} onClick={() => setSelectedStaffId(s.id)} style={{
-                    padding: '7px 12px',
-                    background: selectedStaffId === s.id ? STAFF_COLORS[idx % STAFF_COLORS.length] : 'rgba(255,255,255,0.10)',
-                    color: '#FFFFFF',
-                    border: selectedStaffId === s.id ? `2px solid ${STAFF_COLORS[idx % STAFF_COLORS.length]}` : '1px solid rgba(255,255,255,0.15)',
-                    borderRadius: '999px', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                    whiteSpace: 'nowrap', flexShrink: 0, fontFamily: 'var(--font-sans)',
-                    boxShadow: selectedStaffId === s.id ? `0 0 0 2px ${STAFF_COLORS[idx % STAFF_COLORS.length]}40` : 'none',
-                  }}>
-                    {s.name} {s.isSenior ? '★' : ''}
+              {/* Room pills */}
+              {staffRooms.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {staffRooms.map(room => (
+                    <button
+                      key={room.id}
+                      onClick={() => setReassignRoom(room)}
+                      style={{
+                        padding: '6px 12px',
+                        background: `${color}25`,
+                        border: `1.5px solid ${color}60`,
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontFamily: 'var(--font-sans)',
+                        display: 'flex', alignItems: 'center', gap: '5px',
+                      }}
+                    >
+                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '13px', color: '#FFFFFF' }}>
+                        {room.number}
+                      </span>
+                      <span style={{ fontSize: '9px', fontWeight: 700, color: 'rgba(255,255,255,0.4)' }}>
+                        {room.type === 'checkout' ? 'CO' : 'SO'}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* Unassigned rooms */}
+          {staffAssignments.unassigned.length > 0 && (
+            <div style={{
+              padding: '12px 14px',
+              background: 'rgba(239,68,68,0.08)',
+              border: '1px solid rgba(239,68,68,0.20)',
+              borderRadius: 'var(--radius-md)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                <AlertTriangle size={12} color="rgba(252,165,165,0.8)" />
+                <span style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(252,165,165,0.9)' }}>
+                  {lang === 'es' ? 'Sin Asignar' : 'Unassigned'}
+                </span>
+                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)', fontFamily: 'var(--font-mono)' }}>
+                  {staffAssignments.unassigned.length}
+                </span>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {staffAssignments.unassigned.map(room => (
+                  <button
+                    key={room.id}
+                    onClick={() => setReassignRoom(room)}
+                    style={{
+                      padding: '6px 12px',
+                      background: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontFamily: 'var(--font-sans)',
+                      display: 'flex', alignItems: 'center', gap: '5px',
+                    }}
+                  >
+                    <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '13px', color: '#FFFFFF' }}>
+                      {room.number}
+                    </span>
+                    <span style={{ fontSize: '9px', fontWeight: 700, color: 'rgba(255,255,255,0.4)' }}>
+                      {room.type === 'checkout' ? 'CO' : 'SO'}
+                    </span>
                   </button>
                 ))}
               </div>
-              <button onClick={handleAutoAssign} style={{
-                padding: '9px 14px', background: 'rgba(251,191,36,0.15)', border: '1px solid rgba(251,191,36,0.30)',
-                borderRadius: 'var(--radius-md)', color: '#FCD34D', fontSize: '12px', fontWeight: 700,
-                cursor: 'pointer', fontFamily: 'var(--font-sans)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-              }}>
-                <Zap size={14} /> {lang === 'es' ? 'Auto-Asignar' : 'Auto-Assign'}
-              </button>
             </div>
           )}
 
-          {/* Compact room grid */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {floors.map(floor => {
-              const floorRooms = sorted.filter(r => getRoomFloor(r.number) === floor);
-              if (floorRooms.length === 0) return null;
-              return (
-                <div key={floor}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.6)' }}>
-                      {lang === 'es' ? 'Piso' : 'Floor'} {floor}
-                    </span>
-                    <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.10)' }} />
-                  </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
-                    {floorRooms.map(room => {
-                      const assignedId = assignments[room.id];
-                      const assignedStaff = assignedId ? scheduledStaff.find(s => s.id === assignedId) : null;
-                      const staffIdx = assignedId ? scheduledStaff.findIndex(s => s.id === assignedId) : -1;
-                      const color = assignedStaff ? getStaffColor(assignedId, staffIdx) : null;
-                      const isCheckout = room.type === 'checkout';
+          {/* Save button — only if changes were made */}
+          {dirty && (
+            <button onClick={handleSave} disabled={saving} style={{
+              width: '100%', padding: '14px', marginTop: '4px',
+              background: saving ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.95)',
+              color: saving ? 'rgba(255,255,255,0.5)' : '#1B3A5C',
+              border: 'none', borderRadius: 'var(--radius-md)',
+              fontWeight: 700, fontSize: '14px', cursor: saving ? 'not-allowed' : 'pointer',
+              fontFamily: 'var(--font-sans)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+              boxShadow: saving ? 'none' : '0 2px 12px rgba(0,0,0,0.15)',
+            }}>
+              <Check size={16} />
+              {saving ? (lang === 'es' ? 'Guardando…' : 'Saving…') : (lang === 'es' ? 'Guardar Asignaciones' : 'Save Assignments')}
+            </button>
+          )}
+        </div>
+      )}
 
-                      return (
-                        <button
-                          key={room.id}
-                          onClick={() => isAssignmentMode && handleRoomClick(room)}
-                          style={{
-                            width: '58px', height: '54px', flexShrink: 0,
-                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3px',
-                            background: assignedStaff ? `${color}22` : 'rgba(255,255,255,0.06)',
-                            border: assignedStaff ? `2px solid ${color}` : '1px solid rgba(255,255,255,0.12)',
-                            borderRadius: '8px',
-                            cursor: isAssignmentMode ? 'pointer' : 'default',
-                            fontFamily: 'var(--font-sans)',
-                          }}
-                        >
-                          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '14px', color: '#FFFFFF', lineHeight: 1 }}>
-                            {room.number}
-                          </span>
-                          <span style={{ fontSize: '9px', fontWeight: 700, color: assignedStaff ? color! : 'rgba(255,255,255,0.35)', lineHeight: 1 }}>
-                            {assignedStaff ? assignedStaff.name.split(' ')[0] : (isCheckout ? 'CO' : 'SO')}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+      {/* ─── Reassign bottom sheet ─── */}
+      {reassignRoom && (
+        <>
+          <div style={{ position: 'fixed', inset: 0, zIndex: 9997 }} onClick={() => setReassignRoom(null)} />
+          <div style={{
+            position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 9998,
+            background: 'var(--bg-card)', borderRadius: '16px 16px 0 0',
+            boxShadow: '0 -4px 30px rgba(0,0,0,0.15)',
+            padding: '16px 16px 32px', display: 'flex', flexDirection: 'column', gap: '8px',
+            animation: 'slideUp 0.2s ease-out',
+          }}>
+            <div style={{ width: '40px', height: '4px', borderRadius: '2px', background: 'var(--border)', margin: '0 auto 4px' }} />
+            <p style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>
+              {lang === 'es' ? 'Reasignar' : 'Reassign'} <span style={{ fontFamily: 'var(--font-mono)' }}>{reassignRoom.number}</span>
+              <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', marginLeft: '8px' }}>
+                {reassignRoom.type === 'checkout' ? 'Checkout' : 'Stayover'}
+              </span>
+            </p>
+            {scheduledStaff.map((s, idx) => {
+              const isCurrentlyAssigned = assignments[reassignRoom.id] === s.id;
+              const roomCount = Object.values(assignments).filter(id => id === s.id).length;
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => handleReassign(reassignRoom, s.id)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '10px',
+                    padding: '12px 14px',
+                    background: isCurrentlyAssigned ? `${STAFF_COLORS[idx % STAFF_COLORS.length]}15` : 'var(--bg-elevated)',
+                    border: `1.5px solid ${isCurrentlyAssigned ? STAFF_COLORS[idx % STAFF_COLORS.length] : 'var(--border)'}`,
+                    borderRadius: '10px',
+                    cursor: 'pointer', fontFamily: 'var(--font-sans)', width: '100%',
+                  }}
+                >
+                  <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: STAFF_COLORS[idx % STAFF_COLORS.length], flexShrink: 0 }} />
+                  <span style={{ flex: 1, fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', textAlign: 'left' }}>
+                    {s.name}
+                  </span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                    {roomCount} {lang === 'es' ? 'hab.' : 'rooms'}
+                  </span>
+                  {isCurrentlyAssigned && <CheckCircle2 size={16} color={STAFF_COLORS[idx % STAFF_COLORS.length]} />}
+                </button>
               );
             })}
           </div>
-
-          {/* Assignment summary */}
-          {Object.keys(assignments).length > 0 && !isAssignmentMode && (
-            <div style={{ marginTop: '12px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-              {scheduledStaff.map((s, idx) => {
-                const count = Object.values(assignments).filter(id => id === s.id).length;
-                if (count === 0) return null;
-                return (
-                  <div key={s.id} style={{
-                    padding: '5px 10px', borderRadius: '999px',
-                    background: `${STAFF_COLORS[idx % STAFF_COLORS.length]}22`,
-                    border: `1px solid ${STAFF_COLORS[idx % STAFF_COLORS.length]}55`,
-                    fontSize: '11px', fontWeight: 600, color: '#FFFFFF',
-                    display: 'flex', alignItems: 'center', gap: '4px',
-                  }}>
-                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: STAFF_COLORS[idx % STAFF_COLORS.length] }} />
-                    {s.name.split(' ')[0]}: {count}
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          <style>{`@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }`}</style>
         </>
       )}
 
