@@ -605,25 +605,25 @@ function ScheduleSection() {
                 {savingSettings ? t('saving', lang) : t('save', lang)}
               </button>
             </div>
+
+            {/* Public Areas button inside settings modal */}
+            <button onClick={() => { setShowPredictionSettings(false); setShowPublicAreas(true); }} style={{
+              width: '100%', padding: '14px 16px', marginTop: '4px',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              background: 'rgba(27,58,92,0.06)', border: '1px solid var(--border)',
+              borderRadius: '10px',
+              cursor: 'pointer', fontFamily: 'var(--font-sans)',
+            }}>
+              <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                {lang === 'es' ? 'Áreas Comunes' : 'Public Areas'}
+              </span>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                {areasDueToday.length} {lang === 'es' ? 'para hoy' : 'due today'} · {publicAreaMinutes}{t('minutes', lang)} →
+              </span>
+            </button>
           </div>
         </div>
       )}
-
-      {/* Public Areas button */}
-      <button onClick={() => setShowPublicAreas(true)} style={{
-        width: '100%', padding: '14px 16px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        background: 'var(--bg-card)', border: '1px solid var(--border)',
-        borderRadius: 'var(--radius-lg)',
-        cursor: 'pointer', fontFamily: 'var(--font-sans)',
-      }}>
-        <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
-          {lang === 'es' ? 'Áreas Comunes' : 'Public Areas'}
-        </span>
-        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-          {areasDueToday.length} {lang === 'es' ? 'para hoy' : 'due today'} · {publicAreaMinutes}{t('minutes', lang)}
-        </span>
-      </button>
 
       <PublicAreasModal show={showPublicAreas} onClose={() => setShowPublicAreas(false)} />
 
