@@ -745,20 +745,18 @@ function ScheduleSection() {
       )}
       <style>{`@keyframes toastIn { from { transform: translateX(-50%) translateY(10px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }`}</style>
 
-      {/* ── Add Staff bottom sheet ── */}
+      {/* ── Add Staff popup ── */}
       {showAddStaff && (
         <>
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 9997 }} onClick={() => setShowAddStaff(false)} />
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 9997 }} onClick={() => setShowAddStaff(false)} />
           <div style={{
-            position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 9998,
-            background: 'var(--bg-card)', borderRadius: '16px 16px 0 0',
-            boxShadow: '0 -4px 30px rgba(0,0,0,0.15)',
-            padding: '16px 16px 32px', display: 'flex', flexDirection: 'column', gap: '8px',
-            maxHeight: '60vh', overflowY: 'auto',
-            animation: 'slideUp 0.2s ease-out',
+            position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 9998,
+            background: 'var(--bg-card)', borderRadius: '16px',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.2)',
+            padding: '20px', width: '320px', maxHeight: '70vh', overflowY: 'auto',
+            animation: 'popIn 0.15s ease-out',
           }}>
-            <div style={{ width: '40px', height: '4px', borderRadius: '2px', background: 'var(--border)', margin: '0 auto 4px' }} />
-            <p style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>
+            <p style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 12px' }}>
               {lang === 'es' ? 'Agregar Personal' : 'Add Staff'}
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
@@ -769,7 +767,8 @@ function ScheduleSection() {
                   borderRadius: '12px', cursor: 'pointer', fontFamily: 'var(--font-sans)',
                 }}>
                   <div style={{
-                    width: '40px', height: '40px', borderRadius: '10px', background: 'var(--navy)',
+                    width: '40px', height: '40px', borderRadius: '10px',
+                    background: 'linear-gradient(135deg, #1B3A5C 0%, #2563EB 100%)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     color: '#fff', fontWeight: 700, fontSize: '14px',
                   }}>
@@ -782,7 +781,7 @@ function ScheduleSection() {
               ))}
             </div>
           </div>
-          <style>{`@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }`}</style>
+          <style>{`@keyframes popIn { from { transform: translate(-50%, -50%) scale(0.9); opacity: 0; } to { transform: translate(-50%, -50%) scale(1); opacity: 1; } }`}</style>
         </>
       )}
 
