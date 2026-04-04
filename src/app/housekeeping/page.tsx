@@ -661,19 +661,21 @@ function ScheduleSection() {
             <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--green)' }}>{t('confirmationsSent', lang)}</span>
           </div>
         ) : (
-          <button onClick={handleSend} disabled={sending} style={{
-            width: '100%', padding: '16px',
-            background: sending ? 'var(--bg-input)' : 'var(--navy)',
-            color: sending ? 'var(--text-muted)' : '#FFFFFF',
-            border: 'none', borderRadius: 'var(--radius-lg)',
-            fontWeight: 700, fontSize: '15px', cursor: sending ? 'not-allowed' : 'pointer',
-            fontFamily: 'var(--font-sans)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-            boxShadow: '0 2px 12px rgba(27, 58, 92, 0.25)',
-          }}>
-            <Send size={16} />
-            {sending ? (lang === 'es' ? 'Enviando…' : 'Sending…') : (lang === 'es' ? `Enviar Confirmaciones (${selectedCrew.length})` : `Send Confirmations (${selectedCrew.length})`)}
-          </button>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <button onClick={handleSend} disabled={sending} style={{
+              padding: '12px 28px',
+              background: sending ? 'var(--bg-input)' : 'linear-gradient(135deg, #1B3A5C 0%, #2563EB 100%)',
+              color: sending ? 'var(--text-muted)' : '#FFFFFF',
+              border: 'none', borderRadius: '12px',
+              fontWeight: 700, fontSize: '15px', cursor: sending ? 'not-allowed' : 'pointer',
+              fontFamily: 'var(--font-sans)',
+              display: 'flex', alignItems: 'center', gap: '8px',
+              boxShadow: '0 2px 12px rgba(27, 58, 92, 0.25)',
+            }}>
+              <Send size={16} />
+              {sending ? (lang === 'es' ? 'Enviando…' : 'Sending…') : (lang === 'es' ? `Enviar Confirmaciones (${selectedCrew.length})` : `Send Confirmations (${selectedCrew.length})`)}
+            </button>
+          </div>
         )
       )}
 
