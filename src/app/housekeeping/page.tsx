@@ -573,23 +573,25 @@ function ScheduleSection() {
                   display: 'flex', gap: '12px', alignItems: 'flex-start',
                 }}
               >
-                {/* Left: name + stats */}
-                <div style={{ width: '140px', flexShrink: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                {/* Left: name + stats inline */}
+                <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                     <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: color, flexShrink: 0 }} />
-                    <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                       {member.name}
                     </span>
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', paddingLeft: '14px', lineHeight: 1.6 }}>
-                    {coCount > 0 && <div>{coCount} {lang === 'es' ? 'Salida' : 'Checkout'}{coCount !== 1 ? 's' : ''}</div>}
-                    {soCount > 0 && <div>{soCount} {lang === 'es' ? 'Continuación' : 'Stayover'}{soCount !== 1 ? 's' : ''}</div>}
-                    <div style={{ marginTop: '2px' }}>{lang === 'es' ? 'Estimado' : 'Estimated'}: {timeLabel}</div>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                      {[
+                        coCount > 0 ? `${coCount} ${lang === 'es' ? 'Salida' : 'Checkout'}${coCount !== 1 ? 's' : ''}` : '',
+                        soCount > 0 ? `${soCount} ${lang === 'es' ? 'Continuación' : 'Stayover'}${soCount !== 1 ? 's' : ''}` : '',
+                        `${lang === 'es' ? 'Estimado' : 'Est'}: ${timeLabel}`,
+                      ].filter(Boolean).join(' · ')}
+                    </span>
                   </div>
                   <button onClick={() => toggleCrewMember(member.id)} style={{
                     background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-sans)',
-                    fontSize: '11px', fontWeight: 600, color: 'var(--red)', padding: '6px 0 0 14px',
-                    opacity: 0.6,
+                    fontSize: '11px', fontWeight: 600, color: 'var(--red)', padding: '0 0 0 14px',
+                    opacity: 0.6, alignSelf: 'flex-start',
                   }}>
                     {lang === 'es' ? 'Quitar' : 'Remove'}
                   </button>
