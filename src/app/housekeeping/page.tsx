@@ -570,18 +570,20 @@ function ScheduleSection() {
                   background: isDropHover ? `${color}08` : 'transparent',
                   transition: 'background 0.15s',
                   padding: '12px 16px',
-                  display: 'flex', gap: '12px', alignItems: 'flex-start',
+                  display: 'flex', gap: '12px', alignItems: 'center',
                 }}
               >
-                {/* Left: name + 2x2 stats grid */}
-                <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '6px', width: '160px' }}>
+                {/* Left: name + stats 2x2 grid side by side */}
+                <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  {/* Name */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: color, flexShrink: 0 }} />
                     <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                       {member.name}
                     </span>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 8px', paddingLeft: '14px', fontSize: '12px', color: 'var(--text-muted)' }}>
+                  {/* 2x2 stats grid to the right of name */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'auto auto', gap: '1px 10px', fontSize: '12px', color: 'var(--text-muted)' }}>
                     <div>{lang === 'es' ? 'Estimado' : 'Est'}: {timeLabel}</div>
                     <div>{coCount} {lang === 'es' ? 'Salida' : 'Checkout'}{coCount !== 1 ? 's' : ''}</div>
                     <button onClick={() => toggleCrewMember(member.id)} style={{
