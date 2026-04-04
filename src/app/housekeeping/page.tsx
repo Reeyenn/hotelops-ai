@@ -1282,12 +1282,11 @@ function PublicAreasSection() {
                 <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{group.areas.length}</span>
                 <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
               </div>
-              {/* Area rows — compact, tappable */}
+              {/* Area cards — 3 column grid */}
               <div style={{
-                background: 'var(--bg-card)', border: '1px solid var(--border)',
-                borderRadius: 'var(--radius-lg)', overflow: 'hidden',
+                display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px',
               }}>
-                {group.areas.map((area, i) => {
+                {group.areas.map((area) => {
                   const isHighlighted = highlightId === area.id;
                   const fLabel = freqLabel(area.frequencyDays);
                   return (
@@ -1296,31 +1295,34 @@ function PublicAreasSection() {
                       ref={isHighlighted ? highlightRef : undefined}
                       onClick={() => setExpandedId(area.id)}
                       style={{
-                        display: 'flex', alignItems: 'center', gap: '10px',
-                        padding: '10px 12px',
-                        borderBottom: i < group.areas.length - 1 ? '1px solid var(--border)' : 'none',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        gap: '4px',
+                        padding: '12px 8px',
+                        background: 'var(--bg-card)',
+                        border: `1px solid ${isHighlighted ? 'var(--amber)' : 'var(--border)'}`,
+                        borderRadius: 'var(--radius-lg)',
                         cursor: 'pointer',
-                        background: isHighlighted ? 'var(--amber-dim)' : 'transparent',
-                        transition: 'background 0.15s',
+                        boxShadow: isHighlighted ? '0 0 0 2px var(--amber)' : '0 1px 3px rgba(0,0,0,0.04)',
+                        transition: 'all 0.15s',
+                        textAlign: 'center',
                       }}
                     >
-                      {/* Minutes badge */}
+                      {/* Minutes */}
                       <span style={{
-                        fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 700,
-                        color: 'var(--navy)', background: 'rgba(27,58,92,0.08)',
-                        padding: '3px 8px', borderRadius: '6px', flexShrink: 0,
+                        fontFamily: 'var(--font-mono)', fontSize: '16px', fontWeight: 800,
+                        color: 'var(--navy)',
                       }}>
                         {area.minutesPerClean}m
                       </span>
                       {/* Name */}
                       <p style={{
-                        fontWeight: 600, fontSize: '13px', color: 'var(--text-primary)',
-                        margin: 0, flex: 1, minWidth: 0,
-                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                        fontWeight: 600, fontSize: '12px', color: 'var(--text-primary)',
+                        margin: 0, lineHeight: 1.2,
+                        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const,
+                        overflow: 'hidden',
                       }}>{area.name || 'Untitled'}</p>
                       {/* Frequency */}
-                      <span style={{ fontSize: '11px', color: 'var(--text-muted)', flexShrink: 0 }}>{fLabel}</span>
-                      <ChevronDown size={14} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+                      <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 500 }}>{fLabel}</span>
                     </div>
                   );
                 })}
