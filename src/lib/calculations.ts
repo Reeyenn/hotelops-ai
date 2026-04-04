@@ -193,30 +193,41 @@ export function getRoomMinutes(room: { type: string; priority: string }): number
 
 // ─── Auto-assign rooms to staff ────────────────────────────────────────────
 
+export interface AssignConfig {
+  checkoutMinutes?: number;
+  stayoverMinutes?: number;
+  prepMinutesPerRoom?: number;
+  shiftMinutes?: number;
+}
+
 export function autoAssignRooms(
   rooms: Array<{ id: string; number: string; type: string; priority: string }>,
-  staff: StaffMember[]
+  staff: StaffMember[],
+  config?: AssignConfig,
 ): Record<string, string> {
-  // Filter available staff
+  const coMins = config?.checkoutMinutes ?? 30;
+  const soMins = config?.stayoverMinutes ?? 20;
+  const prepMins = config?.prepMinutesPerRoom ?? 5;
+  const shiftCap = config?.shiftMinutes ?? 480; // 8 hours
+
   const available = staff.filter(s => s.scheduledToday);
   if (available.length === 0) return {};
 
   const assignments: Record<string, string> = {};
-  const staffLoad: Record<string, { staffId: string; name: string; minutes: number; floor: string }> = {};
-  available.forEach(s => { staffLoad[s.id] = { staffId: s.id, name: s.name, minutes: 0, floor: '' }; });
+  const staffLoad: Record<string, { minutes: number; floor: string }> = {};
+  available.forEach(s => { staffLoad[s.id] = { minutes: 0, floor: '' }; });
 
-  // Sort VIP rooms to senior staff
-  const seniorStaff = available.filter(s => s.isSenior);
-
+  // Sort: checkouts first (heavier), then stayovers
   const sortedRooms = [...rooms].sort((a, b) => getRoomSortKey(a.type, a.priority) - getRoomSortKey(b.type, b.priority));
 
   for (const room of sortedRooms) {
     const floor = room.number.length >= 3 ? room.number[0] : '1';
-    const isVIP = room.priority === 'vip';
-    const minutes = getRoomMinutes(room);
+    const roomTime = (room.type === 'checkout' ? coMins : soMins) + prepMins;
 
-    // Prefer same-floor assignment, then least-loaded staff
-    const pool = isVIP && seniorStaff.length > 0 ? seniorStaff : available;
+    // Find least-loaded staff who still has capacity, prefer same floor
+    const withCapacity = available.filter(s => staffLoad[s.id].minutes + roomTime <= shiftCap);
+    const pool = withCapacity.length > 0 ? withCapacity : available; // if everyone is full, still assign
+
     const sameFloor = pool.filter(s => staffLoad[s.id].floor === floor);
     const candidates = sameFloor.length > 0 ? sameFloor : pool;
 
@@ -225,7 +236,7 @@ export function autoAssignRooms(
     );
 
     assignments[room.id] = leastLoaded.id;
-    staffLoad[leastLoaded.id].minutes += minutes;
+    staffLoad[leastLoaded.id].minutes += roomTime;
     if (!staffLoad[leastLoaded.id].floor) staffLoad[leastLoaded.id].floor = floor;
   }
 

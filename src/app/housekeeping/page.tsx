@@ -824,7 +824,7 @@ function ScheduleSection() {
 
 function RoomAssignmentSection() {
   const { user } = useAuth();
-  const { activePropertyId, staff } = useProperty();
+  const { activePropertyId, activeProperty, staff } = useProperty();
   const { lang } = useLang();
   const { recordOfflineAction } = useSyncContext();
 
@@ -856,13 +856,21 @@ function RoomAssignmentSection() {
   const sorted = [...rooms].sort((a, b) => (parseInt(a.number.replace(/\D/g, '')) || 0) - (parseInt(b.number.replace(/\D/g, '')) || 0));
   const assignableRooms = sorted.filter(r => r.type === 'checkout' || r.type === 'stayover');
 
+  // Config from property settings
+  const assignConfig = useMemo(() => ({
+    checkoutMinutes: activeProperty?.checkoutMinutes ?? 30,
+    stayoverMinutes: activeProperty?.stayoverMinutes ?? 20,
+    prepMinutesPerRoom: activeProperty?.prepMinutesPerActivity ?? 5,
+    shiftMinutes: activeProperty?.shiftMinutes ?? 480,
+  }), [activeProperty]);
+
   // Auto-assign once when rooms + staff are both loaded and no assignments exist yet
   useEffect(() => {
     if (hasAutoAssigned || loading || assignableRooms.length === 0 || scheduledStaff.length === 0) return;
     const hasExisting = assignableRooms.some(r => r.assignedTo);
     if (hasExisting) { setHasAutoAssigned(true); return; }
-    // No existing assignments — auto-assign
-    const auto = autoAssignRooms(assignableRooms, scheduledStaff);
+    // No existing assignments — auto-assign based on workload minutes
+    const auto = autoAssignRooms(assignableRooms, scheduledStaff, assignConfig);
     setAssignments(prev => ({ ...prev, ...auto }));
     setDirty(true);
     setHasAutoAssigned(true);
@@ -914,13 +922,6 @@ function RoomAssignmentSection() {
     setTimeout(() => setToastMessage(null), 2000);
   };
 
-  const handleReshuffle = () => {
-    if (scheduledStaff.length === 0 || assignableRooms.length === 0) return;
-    const auto = autoAssignRooms(assignableRooms, scheduledStaff);
-    setAssignments(prev => ({ ...prev, ...auto }));
-    setDirty(true);
-  };
-
   // Seed test rooms
   const handleSeedTestRooms = async () => {
     if (!user || !activePropertyId) return;
@@ -964,15 +965,10 @@ function RoomAssignmentSection() {
             {lang === 'es' ? 'Asignaciones' : 'Room Assignments'}
           </span>
         </div>
-        {assignableRooms.length > 0 && scheduledStaff.length > 0 && (
-          <button onClick={handleReshuffle} style={{
-            display: 'flex', alignItems: 'center', gap: '5px',
-            padding: '5px 12px', background: 'rgba(251,191,36,0.15)', border: '1px solid rgba(251,191,36,0.30)',
-            borderRadius: 'var(--radius-full)', color: '#FCD34D', fontSize: '11px', fontWeight: 700,
-            cursor: 'pointer', fontFamily: 'var(--font-sans)',
-          }}>
-            <Zap size={11} /> {lang === 'es' ? 'Reasignar' : 'Reshuffle'}
-          </button>
+        {assignableRooms.length > 0 && (
+          <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>
+            {assignableRooms.length} {lang === 'es' ? 'hab.' : 'rooms'}
+          </span>
         )}
       </div>
 
@@ -1003,21 +999,29 @@ function RoomAssignmentSection() {
       ) : (
         /* ─── Main: staff grouped with their rooms ─── */
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {staffAssignments.grouped.map(({ staff: s, color, rooms: staffRooms }) => (
+          {staffAssignments.grouped.map(({ staff: s, color, rooms: staffRooms }) => {
+            const estMins = staffRooms.reduce((sum, r) => {
+              return sum + (r.type === 'checkout' ? assignConfig.checkoutMinutes : assignConfig.stayoverMinutes) + assignConfig.prepMinutesPerRoom;
+            }, 0);
+            const estHrs = Math.floor(estMins / 60);
+            const estRemMins = estMins % 60;
+            const estLabel = estHrs > 0 ? `${estHrs}h${estRemMins > 0 ? ` ${estRemMins}m` : ''}` : `${estMins}m`;
+
+            return (
             <div key={s.id} style={{
               padding: '12px 14px',
               background: 'rgba(255,255,255,0.06)',
               border: '1px solid rgba(255,255,255,0.10)',
               borderRadius: 'var(--radius-md)',
             }}>
-              {/* Staff name + count */}
+              {/* Staff name + count + est time */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: staffRooms.length > 0 ? '10px' : 0 }}>
                 <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: color, flexShrink: 0 }} />
                 <span style={{ fontSize: '14px', fontWeight: 700, color: '#FFFFFF', flex: 1 }}>
                   {s.name} {s.isSenior ? '★' : ''}
                 </span>
-                <span style={{ fontSize: '12px', fontWeight: 600, color: 'rgba(255,255,255,0.45)', fontFamily: 'var(--font-mono)' }}>
-                  {staffRooms.length} {lang === 'es' ? 'hab.' : 'rooms'}
+                <span style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.35)', fontFamily: 'var(--font-mono)' }}>
+                  {staffRooms.length} {lang === 'es' ? 'hab.' : 'rooms'} · {estLabel}
                 </span>
               </div>
 
@@ -1049,7 +1053,7 @@ function RoomAssignmentSection() {
                 </div>
               )}
             </div>
-          ))}
+          ); })}
 
           {/* Unassigned rooms */}
           {staffAssignments.unassigned.length > 0 && (
