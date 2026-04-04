@@ -726,6 +726,7 @@ function RoomsSection() {
                       <>
                         <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}>🚪 Checkout</span>
                         <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}>🚫 DND</span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}>🔑 {t('available', lang)}</span>
                       </>
                     )}
                   </div>
@@ -768,7 +769,7 @@ function RoomsSection() {
                           </span>
                           {(room.isDnd || room.type === 'checkout' || room.type === 'vacant') && (
                             <div style={{ position: 'absolute', top: '3px', right: '4px', fontSize: '9px', lineHeight: 1 }}>
-                              {room.isDnd ? '🚫' : room.type === 'vacant' ? '✅' : '🚪'}
+                              {room.isDnd ? '🚫' : room.type === 'vacant' ? '🔑' : '🚪'}
                             </div>
                           )}
                         </button>
