@@ -570,30 +570,38 @@ function ScheduleSection() {
               </p>
             </div>
 
-            <div>
-              <label className="label">{t('checkoutMinutesField', lang)}</label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <input className="input" type="number" min={1} value={settingsForm.checkoutMinutes} onChange={e => setSettingsForm(p => ({ ...p, checkoutMinutes: Number(e.target.value) || 0 }))} style={{ flex: 1, textAlign: 'center' }} />
-                <span style={{ fontSize: '13px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{t('minutes', lang)}</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>
+                  {lang === 'es' ? 'Habitación de salida' : 'Checkout room'}
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <input className="input" type="number" min={1} value={settingsForm.checkoutMinutes} onChange={e => setSettingsForm(p => ({ ...p, checkoutMinutes: Number(e.target.value) || 0 }))} style={{ width: '64px', textAlign: 'center', padding: '8px 4px' }} />
+                  <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>min</span>
+                </div>
               </div>
-            </div>
 
-            <div>
-              <label className="label">{t('stayoverMinutesField', lang)}</label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <input className="input" type="number" min={1} value={settingsForm.stayoverMinutes} onChange={e => setSettingsForm(p => ({ ...p, stayoverMinutes: Number(e.target.value) || 0 }))} style={{ flex: 1, textAlign: 'center' }} />
-                <span style={{ fontSize: '13px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{t('minutes', lang)}</span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>
+                  {lang === 'es' ? 'Habitación de continuación' : 'Stayover room'}
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <input className="input" type="number" min={1} value={settingsForm.stayoverMinutes} onChange={e => setSettingsForm(p => ({ ...p, stayoverMinutes: Number(e.target.value) || 0 }))} style={{ width: '64px', textAlign: 'center', padding: '8px 4px' }} />
+                  <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>min</span>
+                </div>
               </div>
-            </div>
 
-            <div>
-              <label className="label">{lang === 'es' ? 'Tiempo Entre Habitaciones' : 'Time Between Rooms'}</label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <input className="input" type="number" min={0} value={settingsForm.prepMinutesPerActivity} onChange={e => setSettingsForm(p => ({ ...p, prepMinutesPerActivity: Number(e.target.value) || 0 }))} style={{ flex: 1, textAlign: 'center' }} />
-                <span style={{ fontSize: '13px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{t('minutes', lang)}</span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>
+                  {lang === 'es' ? 'Entre habitaciones' : 'Between rooms'}
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <input className="input" type="number" min={0} value={settingsForm.prepMinutesPerActivity} onChange={e => setSettingsForm(p => ({ ...p, prepMinutesPerActivity: Number(e.target.value) || 0 }))} style={{ width: '64px', textAlign: 'center', padding: '8px 4px' }} />
+                  <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>min</span>
+                </div>
               </div>
-              <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '4px 0 0' }}>
-                {lang === 'es' ? 'Tiempo de traslado entre cada habitación o área (cargar carrito, caminar, etc.)' : 'Travel and setup time between each room or area (cart loading, walking, etc.)'}
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0' }}>
+                {lang === 'es' ? 'Traslado, cargar carrito, etc.' : 'Travel, cart loading, etc.'}
               </p>
             </div>
 
