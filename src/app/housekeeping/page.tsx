@@ -709,14 +709,6 @@ const ROOM_ACTION_COLOR: Record<RoomStatus, { bg: string; border: string; color:
   inspected:   { bg: 'rgba(139,92,246,0.10)',  border: 'rgba(139,92,246,0.3)',  color: '#7C3AED' },
 };
 
-// Dark-theme room tile colors for the navy gradient rooms view
-const ROOM_TILE_DARK: Record<RoomStatus, { bg: string; border: string; color: string; glow: string }> = {
-  dirty:       { bg: 'rgba(239,68,68,0.12)',   border: 'rgba(239,68,68,0.30)',   color: '#FCA5A5', glow: '0 0 12px rgba(239,68,68,0.15)' },
-  in_progress: { bg: 'rgba(251,191,36,0.14)',  border: 'rgba(251,191,36,0.35)',  color: '#FCD34D', glow: '0 0 12px rgba(251,191,36,0.15)' },
-  clean:       { bg: 'rgba(34,197,94,0.14)',   border: 'rgba(34,197,94,0.35)',   color: '#4ADE80', glow: '0 0 12px rgba(34,197,94,0.15)' },
-  inspected:   { bg: 'rgba(139,92,246,0.14)',  border: 'rgba(139,92,246,0.30)',  color: '#A78BFA', glow: '0 0 12px rgba(139,92,246,0.15)' },
-};
-
 function RoomsSection() {
   const { user }                               = useAuth();
   const { activePropertyId, activeProperty }   = useProperty();
@@ -767,158 +759,88 @@ function RoomsSection() {
     await updateRoom(user.uid, activePropertyId, room.id, updates);
   };
 
-  // Solid tile colors — bold, unmistakable, no translucency
-  const TILE_SOLID: Record<RoomStatus, { bg: string; color: string }> = {
-    dirty:       { bg: '#DC2626', color: '#FFFFFF' },
-    in_progress: { bg: '#F59E0B', color: '#FFFFFF' },
-    clean:       { bg: '#16A34A', color: '#FFFFFF' },
-    inspected:   { bg: '#7C3AED', color: '#FFFFFF' },
-  };
-
   return (
     <div style={{ padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-      {/* ── Hero progress card ── */}
-      {!loading && sorted.length > 0 && (
-        <div style={{
-          padding: '24px 20px 20px',
-          background: 'linear-gradient(135deg, #1B3A5C 0%, #2563EB 100%)',
-          borderRadius: 'var(--radius-xl)',
-          boxShadow: '0 4px 24px rgba(27, 58, 92, 0.25), 0 1px 4px rgba(0,0,0,0.08)',
-          textAlign: 'center',
-        }}>
-          <span style={{
-            fontSize: '10px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase',
-            color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '8px',
-          }}>
-            Live Room Status
-          </span>
-          <div style={{
-            fontFamily: 'var(--font-mono)', fontSize: '48px', fontWeight: 800,
-            color: '#FFFFFF', lineHeight: 1, letterSpacing: '-0.03em',
-          }}>
-            {pct}%
-          </div>
-          <span style={{ fontSize: '13px', fontWeight: 500, color: 'rgba(255,255,255,0.6)', display: 'block', margin: '4px 0 16px' }}>
-            {doneCount} / {totalCount} Rooms Complete
-          </span>
-          {/* Progress bar */}
-          <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.12)', overflow: 'hidden' }}>
-            <div style={{
-              height: '100%', borderRadius: '3px',
-              width: `${pct}%`,
-              background: pct === 100 ? '#4ADE80' : 'linear-gradient(90deg, #60A5FA, #A78BFA)',
-              boxShadow: pct === 100 ? '0 0 12px rgba(74,222,128,0.4)' : '0 0 12px rgba(96,165,250,0.3)',
-              transition: 'width 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
-            }} />
-          </div>
-        </div>
-      )}
+
 
       {loading ? (
         <p style={{ color: 'var(--text-muted)', fontSize: '14px', textAlign: 'center', padding: '48px 0' }}>{t('loading', lang)}</p>
       ) : sorted.length === 0 ? (
-        <div style={{
-          textAlign: 'center', padding: '52px 20px',
-          background: 'var(--bg-card)', border: '1px solid var(--border)',
-          borderRadius: 'var(--radius-xl)',
-        }}>
+        <div style={{ textAlign: 'center', padding: '52px 20px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
           <p style={{ fontSize: '32px', marginBottom: '12px' }}>🛏️</p>
           <p style={{ color: 'var(--text-secondary)', fontSize: '15px', fontWeight: 500 }}>{rooms.length === 0 ? t('noRoomsTodayHkp', lang) : t('noRoomsFloor', lang)}</p>
         </div>
       ) : (
         <>
-          {/* Color key — big, bold, impossible to misunderstand */}
-          <div style={{
-            display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px',
-          }}>
-            {([
-              { status: 'dirty' as RoomStatus, label: t('dirty', lang), count: rooms.filter(r => r.status === 'dirty').length },
-              { status: 'in_progress' as RoomStatus, label: t('cleaning', lang), count: rooms.filter(r => r.status === 'in_progress').length },
-              { status: 'clean' as RoomStatus, label: t('clean', lang), count: rooms.filter(r => r.status === 'clean').length },
-              { status: 'inspected' as RoomStatus, label: t('approved', lang), count: rooms.filter(r => r.status === 'inspected').length },
-            ]).map(({ status, label, count }) => (
-              <div key={status} style={{
-                display: 'flex', alignItems: 'center', gap: '10px',
-                padding: '10px 14px', borderRadius: 'var(--radius-md)',
-                background: 'var(--bg-card)', border: '1px solid var(--border)',
-              }}>
-                <div style={{
-                  width: '28px', height: '28px', borderRadius: '8px', flexShrink: 0,
-                  background: TILE_SOLID[status].bg,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 800, color: '#FFFFFF',
-                }}>
-                  {count}
-                </div>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{label}</span>
-              </div>
-            ))}
-          </div>
 
-          {/* Floor sections — clean, open, no box around each floor */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {floors.map((floor) => {
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {floors.map((floor, floorIdx) => {
               const floorRooms = sorted.filter(r => getFloor(r.number) === floor);
               const floorDone  = floorRooms.filter(r => r.status === 'clean' || r.status === 'inspected').length;
               if (floorRooms.length === 0) return null;
               return (
                 <div key={floor}>
-                  {/* Floor label — simple line */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                    <span style={{
-                      fontSize: '13px', fontWeight: 700, color: 'var(--navy)',
-                      letterSpacing: '0.02em',
-                    }}>
+                  {/* Legend — centered, shown once above first floor */}
+                  {floorIdx === 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '14px' }}>
+                      <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>🚪 Checkout</span>
+                      <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>🚫 DND</span>
+                      <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>🔒 {t('roomOccupied', lang)}</span>
+                      <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>💎 {t('available', lang)}</span>
+                    </div>
+                  )}
+                  {/* Floor label */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
                       Floor {floor}
                     </span>
-                    <span style={{
-                      fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 700,
-                      color: 'var(--text-muted)',
-                    }}>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
                       {floorDone}/{floorRooms.length}
                     </span>
                     <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
                   </div>
-                  {/* Tiles — big, solid color, white text, tap to cycle */}
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {/* Tiles */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                     {floorRooms.map(room => {
-                      const solid = TILE_SOLID[room.status];
+                      const info = STATUS_INFO[room.status];
+                      const completedTime = room.completedAt
+                        ? format(
+                            typeof (room.completedAt as unknown as { toDate?: () => Date })?.toDate === 'function'
+                              ? (room.completedAt as unknown as { toDate: () => Date }).toDate()
+                              : new Date(room.completedAt as unknown as string | number),
+                            'h:mm a'
+                          )
+                        : null;
                       return (
                         <button
                           key={room.id}
                           onClick={() => handleToggle(room)}
                           disabled={room.status === 'inspected'}
+                          title={`Room ${room.number} · ${room.type ?? ''} · ${info.label}${completedTime ? ` done at ${completedTime}` : ''}`}
                           style={{
-                            width: '80px', height: '80px', flexShrink: 0,
+                            width: '72px', height: '72px', flexShrink: 0,
                             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                            gap: '2px',
-                            background: solid.bg,
-                            border: 'none',
-                            borderRadius: '14px',
+                            gap: '4px',
+                            background: info.bgColor, border: `1.5px solid ${info.borderColor}`,
+                            borderRadius: '10px',
                             cursor: room.status === 'inspected' ? 'default' : 'pointer',
-                            opacity: room.status === 'inspected' ? 0.5 : 1,
-                            transition: 'transform 0.1s, opacity 0.1s',
+                            opacity: room.status === 'inspected' ? 0.55 : 1,
+                            transition: 'opacity 0.1s',
                             fontFamily: 'var(--font-sans)',
                             position: 'relative', overflow: 'hidden',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
                           }}
-                          onPointerDown={(e) => { if (room.status !== 'inspected') (e.currentTarget as HTMLElement).style.transform = 'scale(0.93)'; }}
-                          onPointerUp={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; }}
-                          onPointerLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; }}
                         >
-                          {/* Room number — big and bold */}
-                          <span style={{
-                            fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '20px',
-                            color: solid.color, lineHeight: 1,
-                          }}>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '14px', color: info.color, lineHeight: 1 }}>
                             {room.number}
                           </span>
-                          {/* Room type icon */}
+                          <span style={{ fontSize: '9px', fontWeight: 600, color: info.color, opacity: 0.85, textAlign: 'center', lineHeight: 1 }}>
+                            {info.label.replace(' ✓', '')}
+                          </span>
                           {(room.isDnd || room.type === 'checkout' || room.type === 'vacant' || room.type === 'stayover') && (
-                            <span style={{ fontSize: '14px', lineHeight: 1, marginTop: '2px' }}>
+                            <div style={{ position: 'absolute', top: '2px', right: '3px', fontSize: '12px', lineHeight: 1 }}>
                               {room.isDnd ? '🚫' : room.type === 'vacant' ? '💎' : room.type === 'stayover' ? '🔒' : '🚪'}
-                            </span>
+                            </div>
                           )}
                         </button>
                       );
@@ -928,6 +850,7 @@ function RoomsSection() {
               );
             })}
           </div>
+
         </>
       )}
     </div>
