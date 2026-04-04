@@ -1256,52 +1256,9 @@ function PublicAreasSection() {
   return (
     <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
-      {/* Summary hero */}
-      {!loading && areas.length > 0 && (
-        <div style={{
-          padding: '24px 20px 20px',
-          background: 'linear-gradient(135deg, #1B3A5C 0%, #2563EB 100%)',
-          borderRadius: 'var(--radius-xl)',
-          boxShadow: '0 4px 24px rgba(27, 58, 92, 0.25), 0 1px 4px rgba(0,0,0,0.08)',
-          textAlign: 'center',
-        }}>
-          <span style={{
-            fontSize: '10px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase',
-            color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: '8px',
-          }}>
-            Public Areas
-          </span>
-          <div style={{
-            fontFamily: 'var(--font-mono)', fontSize: '48px', fontWeight: 800,
-            color: '#FFFFFF', lineHeight: 1, letterSpacing: '-0.03em',
-          }}>
-            {areas.length}
-          </div>
-          <span style={{ fontSize: '13px', fontWeight: 500, color: 'rgba(255,255,255,0.6)', display: 'block', margin: '4px 0 14px' }}>
-            Areas Tracked
-          </span>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', flexWrap: 'wrap' }}>
-            {[
-              { label: 'Daily', value: areas.filter(a => a.frequencyDays === 1).length },
-              { label: 'Weekly', value: areas.filter(a => a.frequencyDays === 7).length },
-              { label: 'Other', value: areas.filter(a => a.frequencyDays !== 1 && a.frequencyDays !== 7).length },
-            ].filter(s => s.value > 0).map(({ label, value }) => (
-              <div key={label} style={{
-                padding: '5px 12px', borderRadius: 'var(--radius-full)',
-                background: 'rgba(255,255,255,0.12)',
-                border: '1px solid rgba(255,255,255,0.15)',
-                fontSize: '11px', fontWeight: 500, color: 'rgba(255,255,255,0.7)',
-                display: 'flex', alignItems: 'center', gap: '5px',
-              }}>
-                {label} <strong style={{ color: '#FFFFFF', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{value}</strong>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Header + Add */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <p style={{ fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)' }}>{t('publicAreas', lang)}</p>
         <button onClick={openAddModal} style={{
           display: 'flex', alignItems: 'center', gap: '6px',
           padding: '8px 16px', borderRadius: 'var(--radius-full)',
