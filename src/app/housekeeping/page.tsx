@@ -284,6 +284,9 @@ function ScheduleSection() {
   const [crewOverride, setCrewOverride] = useState<string[]>([]); // manually toggled staff IDs
   const [hasAutoSelected, setHasAutoSelected] = useState(false);
 
+  // Swap dropdown
+  const [swapOpenFor, setSwapOpenFor] = useState<string | null>(null); // staff ID whose dropdown is open
+
   // Move toast notification
   const [moveToast, setMoveToast] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -391,7 +394,7 @@ function ScheduleSection() {
     return eligiblePool;
   }, [crewOverride, eligiblePool, recommendedStaff, totalRooms, staff]);
 
-  // Auto-assign rooms when crew or rooms change
+  // Auto-assign rooms when crew or rooms change, then remove empty staff
   useEffect(() => {
     if (assignableRooms.length === 0 || selectedCrew.length === 0) { setAssignments({}); return; }
     const fakeScheduled = selectedCrew.map(s => ({ ...s, scheduledToday: true }));
@@ -399,6 +402,16 @@ function ScheduleSection() {
       checkoutMinutes: coMins, stayoverMinutes: soMins, prepMinutesPerRoom: prepPerRoom, shiftMinutes: shiftLen,
     });
     setAssignments(auto);
+
+    // Remove staff who ended up with 0 rooms (they don't need to come in)
+    const assignedStaffIds = new Set(Object.values(auto));
+    const emptyStaff = selectedCrew.filter(s => !assignedStaffIds.has(s.id));
+    if (emptyStaff.length > 0) {
+      setCrewOverride(prev => {
+        const current = prev.length > 0 ? prev : selectedCrew.map(s => s.id);
+        return current.filter(id => assignedStaffIds.has(id));
+      });
+    }
   }, [selectedCrew, assignableRooms, coMins, soMins, prepPerRoom, shiftLen]);
 
   const toggleCrewMember = (memberId: string) => {
@@ -581,12 +594,54 @@ function ScheduleSection() {
               >
                 {/* Left: name + stats 2x2 grid side by side */}
                 <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  {/* Name — fixed width so stats columns align across rows */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '120px', flexShrink: 0 }}>
+                  {/* Name — fixed width, clickable to swap */}
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '6px', width: '120px', flexShrink: 0 }}>
                     <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: color, flexShrink: 0 }} />
-                    <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {member.name}
-                    </span>
+                    <button
+                      onClick={() => setSwapOpenFor(prev => prev === member.id ? null : member.id)}
+                      style={{
+                        background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--font-sans)',
+                        fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap',
+                        overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left',
+                      }}
+                    >
+                      {member.name} <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>▾</span>
+                    </button>
+                    {swapOpenFor === member.id && (
+                      <>
+                        <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setSwapOpenFor(null)} />
+                        <div style={{
+                          position: 'absolute', top: '100%', left: 0, zIndex: 100, marginTop: '4px',
+                          background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '10px',
+                          boxShadow: '0 4px 20px rgba(0,0,0,0.15)', padding: '4px', minWidth: '160px',
+                        }}>
+                          {eligiblePool.filter(s => !selectedCrew.find(c => c.id === s.id)).map(s => (
+                            <button key={s.id} onClick={() => {
+                              // Swap: replace this member with s in crewOverride
+                              setCrewOverride(prev => {
+                                const current = prev.length > 0 ? prev : selectedCrew.map(c => c.id);
+                                return current.map(id => id === member.id ? s.id : id);
+                              });
+                              setSwapOpenFor(null);
+                            }} style={{
+                              display: 'block', width: '100%', padding: '8px 12px', border: 'none', borderRadius: '8px',
+                              background: 'transparent', cursor: 'pointer', fontFamily: 'var(--font-sans)',
+                              fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', textAlign: 'left',
+                            }}
+                              onMouseEnter={e => { (e.target as HTMLElement).style.background = 'var(--bg-elevated)'; }}
+                              onMouseLeave={e => { (e.target as HTMLElement).style.background = 'transparent'; }}
+                            >
+                              {s.name}
+                            </button>
+                          ))}
+                          {eligiblePool.filter(s => !selectedCrew.find(c => c.id === s.id)).length === 0 && (
+                            <div style={{ padding: '8px 12px', fontSize: '12px', color: 'var(--text-muted)' }}>
+                              {lang === 'es' ? 'Sin personal disponible' : 'No available staff'}
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
                   </div>
                   {/* 2x2 stats grid to the right of name */}
                   <div style={{ display: 'grid', gridTemplateColumns: '80px 100px', gap: '1px 10px', fontSize: '12px', color: 'var(--text-secondary)', width: '190px', flexShrink: 0 }}>
