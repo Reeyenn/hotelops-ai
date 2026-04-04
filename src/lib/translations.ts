@@ -175,7 +175,9 @@ type TranslationKey =
   | 'describeIssue' | 'submit'
   | 'keepHolding' | 'holdToFinish'
   // ── Header ────────────────────────────────────────────────────────────────
-  | 'allProperties';
+  | 'allProperties'
+  // ── Room availability ─────────────────────────────────────────────────────
+  | 'availableRooms' | 'available' | 'occupied';
 
 const translations: Record<Language, Record<TranslationKey, string>> = {
   en: {
@@ -646,6 +648,10 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     holdToFinish: 'Hold to Finish',
     // ── Header ──
     allProperties: 'All properties…',
+    // ── Room availability ──
+    availableRooms: 'Available Rooms',
+    available: 'Available',
+    occupied: 'Occupied',
   },
 
   es: {
@@ -1116,6 +1122,10 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     holdToFinish: 'Mantén para terminar',
     // ── Header ──
     allProperties: 'Todas las propiedades…',
+    // ── Room availability ──
+    availableRooms: 'Hab. Disponibles',
+    available: 'Disponible',
+    occupied: 'Ocupada',
   },
 };
 
