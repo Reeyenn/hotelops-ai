@@ -1275,6 +1275,35 @@ function FrequencySlider({ value, onChange, lang }: { value: number; onChange: (
 }
 
 
+// ─── Spanish translations for public area names ──────────────────────────────
+const AREA_NAME_ES: Record<string, string> = {
+  'Elevator Area - 1st Floor': 'Área del Elevador - Piso 1',
+  '1st Floor Hallway': 'Pasillo del Piso 1',
+  'Front Entrance + Breakfast Area + Pantry + Lobby': 'Entrada + Área de Desayuno + Despensa + Vestíbulo',
+  'Front Desk + Behind Front Desk': 'Recepción + Detrás de Recepción',
+  'Restrooms': 'Baños',
+  'Pool area + Pool bathroom': 'Área de Piscina + Baño de Piscina',
+  'Meeting Room': 'Sala de Reuniones',
+  'Business Center': 'Centro de Negocios',
+  'Fitness Center': 'Gimnasio',
+  'Laundry + Linen Room': 'Lavandería + Cuarto de Ropa',
+  'Laundry Break Room': 'Sala de Descanso de Lavandería',
+  '2nd Floor Hallway + Side Hallway': 'Pasillo del Piso 2 + Pasillo Lateral',
+  '3rd Floor Hallway + Side Hallway': 'Pasillo del Piso 3 + Pasillo Lateral',
+  '4th Floor Hallway + Side Hallway': 'Pasillo del Piso 4 + Pasillo Lateral',
+  'Guest Laundry Room': 'Lavandería de Huéspedes',
+  'Soda Ice Room': 'Cuarto de Hielo y Refrescos',
+  'Housekeeping Room': 'Cuarto de Limpieza',
+  'Stairs': 'Escaleras',
+  'Parking Lot Garbage': 'Basura del Estacionamiento',
+  'Front + Side Glass (Outside)': 'Vidrios Frontales + Laterales (Exterior)',
+};
+
+function areaDisplayName(name: string, lang: 'en' | 'es'): string {
+  if (lang === 'es' && AREA_NAME_ES[name]) return AREA_NAME_ES[name];
+  return name;
+}
+
 function PublicAreasModal({ show, onClose }: { show: boolean; onClose: () => void }) {
   const { user } = useAuth();
   const { activePropertyId } = useProperty();
@@ -1337,7 +1366,7 @@ function PublicAreasModal({ show, onClose }: { show: boolean; onClose: () => voi
     if (uid && pid) deletePublicArea(uid, pid, id);
     setDirty(true);
     setExpandedId(null);
-    const label = deleted?.name || 'Area';
+    const label = deleted ? areaDisplayName(deleted.name, lang) : 'Area';
     setToast(`"${label}" ${t('deleted', lang)}`);
     setTimeout(() => setToast(null), 2500);
   };
@@ -1445,7 +1474,7 @@ function PublicAreasModal({ show, onClose }: { show: boolean; onClose: () => voi
                         margin: 0, lineHeight: 1.3,
                         display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const,
                         overflow: 'hidden',
-                      }}>{area.name || 'Untitled'}</p>
+                      }}>{areaDisplayName(area.name, lang) || 'Untitled'}</p>
                       {/* Time + Frequency on one line */}
                       <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>
                         {area.minutesPerClean}{t('minutes', lang)} · {fLabel}
@@ -1521,7 +1550,7 @@ function PublicAreasModal({ show, onClose }: { show: boolean; onClose: () => voi
         return (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 9998, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }} onClick={() => setExpandedId(null)}>
             <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-card)', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '400px', boxShadow: '0 20px 60px rgba(0,0,0,0.25)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <p style={{ fontWeight: 700, fontSize: '17px', color: 'var(--text-primary)' }}>{area.name || 'Untitled'}</p>
+              <p style={{ fontWeight: 700, fontSize: '17px', color: 'var(--text-primary)' }}>{areaDisplayName(area.name, lang) || 'Untitled'}</p>
 
               <div>
                 <label className="label">{t('name', lang)}</label>
