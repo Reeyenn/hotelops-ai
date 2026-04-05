@@ -46,9 +46,18 @@ const DEFAULTS: Omit<InventoryItem, 'id' | 'updatedAt' | 'propertyId'>[] = [
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function timeAgo(date: Date | null | undefined): string {
+function timeAgo(date: Date | null | undefined | { seconds?: number; toDate?: () => Date }): string {
   if (!date) return 'Never';
-  const ms = Date.now() - new Date(date).getTime();
+  let d: Date;
+  if (typeof (date as { toDate?: () => Date }).toDate === 'function') {
+    d = (date as { toDate: () => Date }).toDate();
+  } else if (typeof (date as { seconds?: number }).seconds === 'number') {
+    d = new Date((date as { seconds: number }).seconds * 1000);
+  } else {
+    d = new Date(date as Date);
+  }
+  if (isNaN(d.getTime())) return 'Never';
+  const ms = Date.now() - d.getTime();
   const mins = Math.floor(ms / 60000);
   if (mins < 1) return 'Just now';
   if (mins < 60) return `${mins}m ago`;
@@ -154,9 +163,16 @@ export default function InventoryPage() {
   const lowCount = useMemo(() => items.filter(i => stockStatus(i.currentStock, i.parLevel) !== 'good').length, [items]);
 
   const lastCounted = useMemo(() => {
-    const dates = items.map(i => i.updatedAt).filter(Boolean) as Date[];
-    if (dates.length === 0) return null;
-    return new Date(Math.max(...dates.map(d => new Date(d).getTime())));
+    const timestamps = items.map(i => {
+      const d = i.updatedAt as unknown;
+      if (!d) return 0;
+      if (typeof (d as { toDate?: () => Date }).toDate === 'function') return (d as { toDate: () => Date }).toDate().getTime();
+      if (typeof (d as { seconds?: number }).seconds === 'number') return (d as { seconds: number }).seconds * 1000;
+      const t = new Date(d as Date).getTime();
+      return isNaN(t) ? 0 : t;
+    }).filter(t => t > 0);
+    if (timestamps.length === 0) return null;
+    return new Date(Math.max(...timestamps));
   }, [items]);
 
   // Loading guard
