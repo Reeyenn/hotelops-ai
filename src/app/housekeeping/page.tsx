@@ -616,7 +616,6 @@ function ScheduleSection() {
                 <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
                   {/* Name — fixed width, clickable to swap */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '120px', flexShrink: 0 }}>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: color, flexShrink: 0 }} />
                     <button
                       onClick={(e) => {
                         const rect = e.currentTarget.getBoundingClientRect();
