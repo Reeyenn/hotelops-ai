@@ -143,6 +143,7 @@ function ItemCard({
       style={{
         display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px',
         borderBottom: '1px solid var(--border)',
+        borderRight: '1px solid var(--border)',
         minHeight: '48px',
       }}
     >
@@ -546,10 +547,10 @@ export default function InventoryPage() {
               ))}
             </div>
 
-            {/* Item cards */}
-            <div className="animate-in stagger-2" style={{ display: 'flex', flexDirection: 'column', gap: 0, borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflow: 'hidden' }}>
+            {/* Item cards — 2-column grid */}
+            <div className="animate-in stagger-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflow: 'hidden' }}>
               {sortedPredictions.length === 0 ? (
-                <div className="card" style={{ padding: '32px', textAlign: 'center' }}>
+                <div className="card" style={{ padding: '32px', textAlign: 'center', gridColumn: '1 / -1' }}>
                   <Package size={28} color="var(--text-muted)" style={{ margin: '0 auto 8px' }} />
                   <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
                     {t('noInventoryItems', lang)}
@@ -585,9 +586,9 @@ export default function InventoryPage() {
                 {t('copyReorderList', lang)}
               </button>
             )}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 0, borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflow: 'hidden' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflow: 'hidden' }}>
               {reorderItems.length === 0 ? (
-                <div className="card" style={{ padding: '40px 20px', textAlign: 'center' }}>
+                <div className="card" style={{ padding: '40px 20px', textAlign: 'center', gridColumn: '1 / -1' }}>
                   <Check size={32} color="var(--green)" style={{ margin: '0 auto 12px' }} />
                   <p style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
                     {t('allStockedUp', lang)}
@@ -608,6 +609,7 @@ export default function InventoryPage() {
                       style={{
                         display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px',
                         borderBottom: '1px solid var(--border)',
+                        borderRight: '1px solid var(--border)',
                         borderLeft: `3px solid ${color}`,
                         minHeight: '52px',
                       }}
