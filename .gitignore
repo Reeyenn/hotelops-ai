@@ -1,3 +1,6 @@
+# filesystem artifacts
+.fuse_hidden*
+
 # dependencies
 /node_modules
 /.pnp
