@@ -139,6 +139,20 @@ export interface InventoryItem {
   lastOrderedAt?: Date | null;  // when last ordered
 }
 
+// ─── Inspections ──────────────────────────────────────────────────────────
+
+export interface Inspection {
+  id: string;
+  propertyId: string;
+  name: string;                   // e.g. "Fire Extinguisher Inspection"
+  dueMonth: string;               // "YYYY-MM" — month the inspection is due
+  frequencyMonths: number;        // how many months between inspections (e.g. 12 = annual)
+  lastInspectedDate?: string;     // ISO date YYYY-MM-DD of last completed inspection
+  notes?: string;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
+
 // ─── Shift Handoff Log ─────────────────────────────────────────────────────
 
 export interface HandoffEntry {

@@ -28,6 +28,7 @@ import type {
   WorkOrder,
   PreventiveTask,
   InventoryItem,
+  Inspection,
   HandoffEntry,
   GuestRequest,
   ShiftConfirmation,
@@ -376,6 +377,43 @@ export async function updateInventoryItem(
 
 export async function deleteInventoryItem(uid: string, pid: string, iid: string) {
   await deleteDoc(inventoryDocRef(uid, pid, iid));
+}
+
+// ─── Inspections ──────────────────────────────────────────────────────────
+
+export const inspectionsRef = (uid: string, pid: string) =>
+  collection(db, 'users', uid, 'properties', pid, 'inspections');
+export const inspectionDocRef = (uid: string, pid: string, iid: string) =>
+  doc(db, 'users', uid, 'properties', pid, 'inspections', iid);
+
+export function subscribeToInspections(
+  uid: string, pid: string,
+  callback: (items: Inspection[]) => void
+) {
+  return onSnapshot(inspectionsRef(uid, pid), snap => {
+    callback(snap.docs.map(d => ({ id: d.id, ...d.data() } as Inspection)));
+  });
+}
+
+export async function addInspection(
+  uid: string, pid: string,
+  item: Omit<Inspection, 'id' | 'createdAt' | 'updatedAt'>
+): Promise<string> {
+  const clean = Object.fromEntries(Object.entries(item).filter(([, v]) => v !== undefined));
+  const ref = await addDoc(inspectionsRef(uid, pid), { ...clean, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+  return ref.id;
+}
+
+export async function updateInspection(
+  uid: string, pid: string, iid: string,
+  data: Partial<Inspection>
+) {
+  const clean = Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined));
+  await updateDoc(inspectionDocRef(uid, pid, iid), { ...clean, updatedAt: serverTimestamp() });
+}
+
+export async function deleteInspection(uid: string, pid: string, iid: string) {
+  await deleteDoc(inspectionDocRef(uid, pid, iid));
 }
 
 // ─── Shift Handoff Log ─────────────────────────────────────────────────────

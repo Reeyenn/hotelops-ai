@@ -5,13 +5,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useLang } from '@/contexts/LanguageContext';
 import { t } from '@/lib/translations';
-import { LayoutDashboard, BedDouble, Wrench, Package, Settings } from 'lucide-react';
+import { LayoutDashboard, BedDouble, Wrench, Package, ClipboardCheck, Settings } from 'lucide-react';
 
 const navItems = [
   { href: '/dashboard',    icon: LayoutDashboard, key: 'dashboard'        as const },
   { href: '/housekeeping', icon: BedDouble,        key: 'housekeeping'     as const },
   { href: '/maintenance',  icon: Wrench,           key: 'maintenance'      as const },
   { href: '/inventory',    icon: Package,           key: 'inventoryTracking' as const },
+  { href: '/inspections',  icon: ClipboardCheck,    key: 'inspections'      as const },
   { href: '/settings',     icon: Settings,         key: 'settings'         as const },
 ];
 
@@ -51,7 +52,7 @@ export function BottomNav() {
             >
 
               <Icon
-                size={22}
+                size={20}
                 strokeWidth={isActive ? 2.2 : 1.6}
                 color={isActive ? 'var(--navy)' : 'var(--text-muted)'}
                 style={{ transition: 'color 150ms, stroke-width 150ms' }}

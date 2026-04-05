@@ -180,6 +180,7 @@ type TranslationKey =
   // ── Room availability ─────────────────────────────────────────────────────
   | 'availableRooms' | 'available' | 'roomOccupied'
   // ── Inventory tracking ────────────────────────────────────────────────────
+  | 'inspections'
   | 'inventoryTracking' | 'parLevel' | 'currentStock' | 'belowPar' | 'atPar'
   | 'criticallyLow' | 'addItem' | 'itemAdded' | 'noInventoryItems'
   | 'allCategories' | 'housekeepingCategory' | 'maintenanceCategory' | 'breakfastFbCategory'
@@ -685,6 +686,7 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     roomOccupied: 'Occupied',
     // ── Inventory tracking ──
     inventoryTracking: 'Inventory',
+    inspections: 'Inspections',
     parLevel: 'Par Level',
     currentStock: 'Current Stock',
     belowPar: 'Below Par',
@@ -1252,6 +1254,7 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     roomOccupied: 'Ocupada',
     // ── Inventory tracking ──
     inventoryTracking: 'Inventario',
+    inspections: 'Inspecciones',
     parLevel: 'Nivel Mínimo',
     currentStock: 'Stock Actual',
     belowPar: 'Bajo Mínimo',
