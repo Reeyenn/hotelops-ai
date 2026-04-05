@@ -73,7 +73,7 @@ export default function InspectionsPage() {
 
   const [inspections, setInspections] = useState<Inspection[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [completeModal, setCompleteModal] = useState<Inspection | null>(null);
+  const [editModal, setEditModal] = useState<Inspection | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [seeded, setSeeded] = useState(false);
 
@@ -136,12 +136,19 @@ export default function InspectionsPage() {
       lastInspectedDate: today,
       dueMonth: nextDue,
     });
-    setCompleteModal(null);
+    setEditModal(null);
     showToast(`${inspection.name} marked complete — next due ${formatMonth(nextDue)}`);
+  };
+
+  const handleSaveEdit = async (id: string, updates: Partial<Inspection>) => {
+    await updateInspection(user.uid, activePropertyId, id, updates);
+    setEditModal(null);
+    showToast('Inspection updated');
   };
 
   const handleDelete = async (id: string) => {
     await deleteInspection(user.uid, activePropertyId, id);
+    setEditModal(null);
     showToast('Inspection removed');
   };
 
@@ -196,7 +203,7 @@ export default function InspectionsPage() {
               return (
                 <div
                   key={item.id}
-                  onClick={() => setCompleteModal(item)}
+                  onClick={() => setEditModal(item)}
                   style={{
                     display: 'flex', alignItems: 'center', gap: '12px',
                     padding: '12px 16px', borderBottom: '1px solid var(--border)',
@@ -268,81 +275,15 @@ export default function InspectionsPage() {
         onAdded={() => showToast('Inspection added')}
       />
 
-      {/* Complete / Detail Modal */}
-      {completeModal && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 100,
-          background: 'rgba(0,0,0,0.5)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: '20px',
-        }}
-          onClick={() => setCompleteModal(null)}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{
-              background: 'var(--surface, #fff)', borderRadius: 'var(--radius-lg)',
-              width: '100%', maxWidth: '380px', overflow: 'hidden',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-            }}
-          >
-            {/* Header */}
-            <div style={{ padding: '20px 20px 12px' }}>
-              <div style={{ fontWeight: 700, fontSize: '17px', color: 'var(--text-primary)' }}>
-                {completeModal.name}
-              </div>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                Due: <strong style={{ color: STATUS_CONFIG[getStatus(completeModal.dueMonth)].color }}>
-                  {formatMonth(completeModal.dueMonth)}
-                </strong>
-                {' · '}Every {completeModal.frequencyMonths} months
-              </div>
-              {completeModal.lastInspectedDate && (
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                  Last inspected: {completeModal.lastInspectedDate}
-                </div>
-              )}
-            </div>
-
-            {/* Actions */}
-            <div style={{ padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <button
-                onClick={() => handleMarkComplete(completeModal)}
-                style={{
-                  width: '100%', padding: '12px', borderRadius: 'var(--radius-md)',
-                  background: 'var(--navy, #1b3a5c)', color: '#fff', border: 'none',
-                  fontSize: '14px', fontWeight: 700, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                }}
-              >
-                <Check size={16} />
-                Mark as Inspected
-              </button>
-              <button
-                onClick={() => { handleDelete(completeModal.id); setCompleteModal(null); }}
-                style={{
-                  width: '100%', padding: '10px', borderRadius: 'var(--radius-md)',
-                  background: 'rgba(220,38,38,0.06)', color: '#dc2626', border: '1px solid rgba(220,38,38,0.2)',
-                  fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                }}
-              >
-                <Trash2 size={14} />
-                Remove Inspection
-              </button>
-              <button
-                onClick={() => setCompleteModal(null)}
-                style={{
-                  width: '100%', padding: '10px', borderRadius: 'var(--radius-md)',
-                  background: 'transparent', color: 'var(--text-muted)', border: 'none',
-                  fontSize: '13px', fontWeight: 500, cursor: 'pointer',
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Edit Inspection Modal */}
+      {editModal && (
+        <EditInspectionModal
+          inspection={editModal}
+          onClose={() => setEditModal(null)}
+          onSave={(updates) => handleSaveEdit(editModal.id, updates)}
+          onMarkComplete={() => handleMarkComplete(editModal)}
+          onDelete={() => handleDelete(editModal.id)}
+        />
       )}
 
       {/* Toast */}
@@ -361,6 +302,227 @@ export default function InspectionsPage() {
   );
 }
 
+// ─── Frequency Slider ────────────────────────────────────────────────────────
+
+const FREQ_STOPS = [1, 2, 3, 6, 12, 24];
+
+function freqLabel(months: number): string {
+  if (months === 1) return 'Monthly';
+  if (months === 2) return 'Every 2 months';
+  if (months === 3) return 'Quarterly';
+  if (months === 6) return 'Every 6 months';
+  if (months === 12) return 'Annual';
+  if (months === 24) return 'Every 2 years';
+  return `Every ${months}mo`;
+}
+
+function FrequencySlider({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const idx = FREQ_STOPS.indexOf(value);
+  const sliderIdx = idx >= 0 ? idx : 4; // default to 12 if not found
+
+  return (
+    <div>
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px',
+      }}>
+        <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
+          Frequency
+        </span>
+        <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--navy, #1b3a5c)' }}>
+          {freqLabel(value)}
+        </span>
+      </div>
+      <input
+        type="range"
+        min={0}
+        max={FREQ_STOPS.length - 1}
+        step={1}
+        value={sliderIdx}
+        onChange={e => onChange(FREQ_STOPS[parseInt(e.target.value)])}
+        style={{
+          width: '100%', height: '6px', borderRadius: '99px',
+          appearance: 'none', WebkitAppearance: 'none',
+          background: `linear-gradient(to right, var(--navy, #1b3a5c) ${(sliderIdx / (FREQ_STOPS.length - 1)) * 100}%, rgba(0,0,0,0.1) ${(sliderIdx / (FREQ_STOPS.length - 1)) * 100}%)`,
+          outline: 'none', cursor: 'pointer',
+        }}
+      />
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
+        {FREQ_STOPS.map(s => (
+          <span
+            key={s}
+            onClick={() => onChange(s)}
+            style={{
+              fontSize: '10px', color: s === value ? 'var(--navy, #1b3a5c)' : 'var(--text-muted)',
+              fontWeight: s === value ? 700 : 400, cursor: 'pointer', minWidth: '20px', textAlign: 'center',
+            }}
+          >
+            {s}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Edit Inspection Modal ──────────────────────────────────────────────────
+
+function EditInspectionModal({ inspection, onClose, onSave, onMarkComplete, onDelete }: {
+  inspection: Inspection;
+  onClose: () => void;
+  onSave: (updates: Partial<Inspection>) => void;
+  onMarkComplete: () => void;
+  onDelete: () => void;
+}) {
+  const [name, setName] = useState(inspection.name);
+  const [dueMonth, setDueMonth] = useState(inspection.dueMonth || currentYM());
+  const [freq, setFreq] = useState(inspection.frequencyMonths);
+  const [notes, setNotes] = useState(inspection.notes || '');
+
+  const hasChanges = name !== inspection.name || dueMonth !== (inspection.dueMonth || currentYM())
+    || freq !== inspection.frequencyMonths || notes !== (inspection.notes || '');
+
+  const status = getStatus(inspection.dueMonth);
+  const cfg = STATUS_CONFIG[status];
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', padding: '10px 12px', borderRadius: 'var(--radius-md)',
+    border: '1.5px solid var(--border)', background: 'var(--bg)',
+    fontSize: '14px', color: 'var(--text-primary)',
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 100,
+      background: 'rgba(0,0,0,0.5)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '20px',
+    }}
+      onClick={onClose}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: 'var(--surface, #fff)', borderRadius: 'var(--radius-lg)',
+          width: '100%', maxWidth: '420px', overflow: 'hidden',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+        }}
+      >
+        {/* Status bar */}
+        <div style={{
+          padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: cfg.bg, borderBottom: '1px solid var(--border)',
+        }}>
+          <span style={{ fontSize: '12px', fontWeight: 600, color: cfg.color, display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {React.createElement(cfg.icon, { size: 14 })}
+            {cfg.label}
+          </span>
+          {inspection.lastInspectedDate && (
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+              Last: {inspection.lastInspectedDate}
+            </span>
+          )}
+        </div>
+
+        {/* Editable fields */}
+        <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          {/* Name */}
+          <div>
+            <label style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+              Inspection Name
+            </label>
+            <input value={name} onChange={e => setName(e.target.value)} style={inputStyle} />
+          </div>
+
+          {/* Due month */}
+          <div>
+            <label style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+              Due Month
+            </label>
+            <input type="month" value={dueMonth} onChange={e => setDueMonth(e.target.value)} style={inputStyle} />
+          </div>
+
+          {/* Frequency slider */}
+          <FrequencySlider value={freq} onChange={setFreq} />
+
+          {/* Notes */}
+          <div>
+            <label style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+              Notes
+            </label>
+            <textarea
+              value={notes} onChange={e => setNotes(e.target.value)}
+              placeholder="Vendor, contact info, certificate #..."
+              rows={2}
+              style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }}
+            />
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div style={{ padding: '0 20px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {/* Save if changed */}
+          {hasChanges && (
+            <button
+              onClick={() => onSave({ name: name.trim(), dueMonth, frequencyMonths: freq, notes: notes.trim() || undefined })}
+              style={{
+                width: '100%', padding: '12px', borderRadius: 'var(--radius-md)',
+                background: 'var(--navy, #1b3a5c)', color: '#fff', border: 'none',
+                fontSize: '14px', fontWeight: 700, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+              }}
+            >
+              <Check size={16} />
+              Save Changes
+            </button>
+          )}
+
+          {/* Mark complete */}
+          <button
+            onClick={onMarkComplete}
+            style={{
+              width: '100%', padding: '12px', borderRadius: 'var(--radius-md)',
+              background: hasChanges ? 'rgba(34,197,94,0.08)' : 'var(--navy, #1b3a5c)',
+              color: hasChanges ? '#22c55e' : '#fff',
+              border: hasChanges ? '1px solid rgba(34,197,94,0.3)' : 'none',
+              fontSize: '14px', fontWeight: 700, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+            }}
+          >
+            <ClipboardCheck size={16} />
+            Mark as Inspected
+          </button>
+
+          {/* Delete + Cancel row */}
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={onDelete}
+              style={{
+                flex: 1, padding: '10px', borderRadius: 'var(--radius-md)',
+                background: 'rgba(220,38,38,0.06)', color: '#dc2626', border: '1px solid rgba(220,38,38,0.2)',
+                fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
+              }}
+            >
+              <Trash2 size={13} />
+              Remove
+            </button>
+            <button
+              onClick={onClose}
+              style={{
+                flex: 1, padding: '10px', borderRadius: 'var(--radius-md)',
+                background: 'var(--bg)', color: 'var(--text-muted)', border: '1px solid var(--border)',
+                fontSize: '12px', fontWeight: 500, cursor: 'pointer',
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Add Inspection Modal ────────────────────────────────────────────────────
 
 function AddInspectionModal({ isOpen, onClose, uid, pid, onAdded }: {
@@ -372,7 +534,7 @@ function AddInspectionModal({ isOpen, onClose, uid, pid, onAdded }: {
 }) {
   const [name, setName] = useState('');
   const [dueMonth, setDueMonth] = useState(currentYM());
-  const [frequency, setFrequency] = useState('12');
+  const [freq, setFreq] = useState(12);
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async () => {
@@ -383,11 +545,11 @@ function AddInspectionModal({ isOpen, onClose, uid, pid, onAdded }: {
         propertyId: pid,
         name: name.trim(),
         dueMonth,
-        frequencyMonths: parseInt(frequency) || 12,
+        frequencyMonths: freq,
       });
       onAdded();
       onClose();
-      setName(''); setDueMonth(currentYM()); setFrequency('12');
+      setName(''); setDueMonth(currentYM()); setFreq(12);
     } finally {
       setSaving(false);
     }
@@ -408,26 +570,13 @@ function AddInspectionModal({ isOpen, onClose, uid, pid, onAdded }: {
           </label>
           <input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Fire Extinguisher" style={inputStyle} />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-          <div>
-            <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-              Due Month
-            </label>
-            <input type="month" value={dueMonth} onChange={e => setDueMonth(e.target.value)} style={inputStyle} />
-          </div>
-          <div>
-            <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-              Frequency (months)
-            </label>
-            <select value={frequency} onChange={e => setFrequency(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
-              <option value="1">Every month</option>
-              <option value="3">Every 3 months</option>
-              <option value="6">Every 6 months</option>
-              <option value="12">Every 12 months</option>
-              <option value="24">Every 2 years</option>
-            </select>
-          </div>
+        <div>
+          <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+            Due Month
+          </label>
+          <input type="month" value={dueMonth} onChange={e => setDueMonth(e.target.value)} style={inputStyle} />
         </div>
+        <FrequencySlider value={freq} onChange={setFreq} />
         <button
           onClick={handleSubmit}
           disabled={!name.trim() || saving}
