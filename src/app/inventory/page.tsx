@@ -211,13 +211,13 @@ export default function InventoryPage() {
   // ─── MAIN VIEW ─────────────────────────────────────────────────────────────
   return (
     <AppLayout>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '100px' }}>
-        <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Inventory</h1>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '100px', alignItems: 'center' }}>
+        <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, alignSelf: 'flex-start' }}>Inventory</h1>
 
         {/* Count CTA */}
         <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '16px 20px', borderRadius: 'var(--radius-lg)',
+          display: 'inline-flex', alignItems: 'center', gap: '20px',
+          padding: '14px 24px', borderRadius: 'var(--radius-lg)',
           background: 'linear-gradient(135deg, var(--navy, #1b3a5c), #2a5a8c)',
           color: '#fff',
         }}>
@@ -273,9 +273,9 @@ export default function InventoryPage() {
           ))}
         </div>
 
-        {/* Item grid — 2 columns */}
+        {/* Item grid — 3 columns */}
         <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)',
+          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', width: '100%',
           borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflow: 'hidden',
         }}>
           {sortedItems.length === 0 ? (
@@ -289,36 +289,31 @@ export default function InventoryPage() {
               const pct = item.parLevel > 0 ? Math.min(100, Math.round((item.currentStock / item.parLevel) * 100)) : 0;
               return (
                 <div key={item.id} style={{
-                  display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px',
+                  display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px',
                   borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)',
-                  minHeight: '52px',
+                  minHeight: '44px',
                 }}>
                   {/* Status dot */}
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: STATUS_COLORS[status], flexShrink: 0 }} />
+                  <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: STATUS_COLORS[status], flexShrink: 0 }} />
 
-                  {/* Name + category */}
+                  {/* Name + time */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div style={{ fontWeight: 600, fontSize: '12px', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {item.name}
                     </div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>
+                    <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '1px' }}>
                       {timeAgo(item.updatedAt)}
                     </div>
                   </div>
 
                   {/* Count / Target */}
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '14px', color: STATUS_COLORS[status] }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '13px', color: STATUS_COLORS[status] }}>
                       {item.currentStock}
                     </div>
-                    <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                      / {item.parLevel} {item.unit}
+                    <div style={{ fontSize: '9px', color: 'var(--text-muted)' }}>
+                      / {item.parLevel}
                     </div>
-                  </div>
-
-                  {/* Mini progress */}
-                  <div style={{ width: '40px', height: '4px', background: 'rgba(0,0,0,0.08)', borderRadius: '99px', overflow: 'hidden', flexShrink: 0 }}>
-                    <div style={{ height: '100%', width: `${pct}%`, background: STATUS_COLORS[status], borderRadius: '99px' }} />
                   </div>
                 </div>
               );
