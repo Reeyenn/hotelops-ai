@@ -253,7 +253,7 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     scheduledToday: 'Scheduled Today',
     overtimeWarning: 'Will hit overtime',
     loading: 'Loading...',
-    signIn: 'Sign in with Google',
+    signIn: 'Sign In',
     signOut: 'Sign Out',
     // ── ROI ──
     totalSaved: 'Total Saved',
@@ -732,7 +732,7 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     scheduledToday: 'Programada Hoy',
     overtimeWarning: 'Llegará a tiempo extra',
     loading: 'Cargando...',
-    signIn: 'Iniciar sesión con Google',
+    signIn: 'Iniciar Sesión',
     signOut: 'Cerrar Sesión',
     // ── ROI ──
     totalSaved: 'Total Ahorrado',

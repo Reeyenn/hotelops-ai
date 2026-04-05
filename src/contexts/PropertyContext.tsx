@@ -70,16 +70,22 @@ export function PropertyProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('hotelops-active-property', id);
   };
 
-  // Load properties list
+  // Load properties list.
+  // After account-based login, the Firestore SDK's internal auth listener may
+  // not have processed the new custom-token session yet when this effect fires.
+  // If the first attempt fails with a permissions error, retry once after a
+  // short delay to give Firestore time to pick up the auth change.
   useEffect(() => {
     if (!user) {
       setLoading(false);
       return;
     }
-    (async () => {
-      setLoading(true);
+    let cancelled = false;
+
+    const loadProps = async (retries = 1): Promise<void> => {
       try {
         const allProps = await getProperties(user.uid);
+        if (cancelled) return;
         // Admin role or wildcard access sees all properties
         const access = user.propertyAccess ?? [];
         const props = user.role === 'admin' || access.includes('*')
@@ -91,11 +97,23 @@ export function PropertyProvider({ children }: { children: React.ReactNode }) {
         const pid = stored && props.find(p => p.id === stored) ? stored : props[0]?.id ?? null;
         setActivePropertyIdState(pid);
       } catch (err) {
+        if (cancelled) return;
+        // Firestore auth may not be synced yet — retry after a delay
+        if (retries > 0 && String(err).includes('permission')) {
+          await new Promise(r => setTimeout(r, 1500));
+          if (!cancelled) return loadProps(retries - 1);
+        }
         console.error('PropertyContext: failed to load properties', err);
-      } finally {
-        setLoading(false);
       }
+    };
+
+    (async () => {
+      setLoading(true);
+      await loadProps();
+      if (!cancelled) setLoading(false);
     })();
+
+    return () => { cancelled = true; };
   }, [user]);
 
   // Load active property data.

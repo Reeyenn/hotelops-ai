@@ -38,6 +38,9 @@ service cloud.firestore {
               'issueNote',
               'isDnd',
               'dndNote',
+              'helpRequested',
+              'helpRequestedAt',
+              'helpRequestedBy',
               'priority',
               'checklist',
               'hasPhoto'
