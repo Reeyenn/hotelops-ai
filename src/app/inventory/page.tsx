@@ -10,253 +10,64 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Modal } from '@/components/ui/Modal';
 import {
   subscribeToInventory, addInventoryItem, updateInventoryItem,
-  getRoomsForDate,
 } from '@/lib/firestore';
-import { computePredictions, extractRoomCounts } from '@/lib/inventory-predictions';
 import type { InventoryItem, InventoryCategory } from '@/types';
-import type { ItemPrediction } from '@/lib/inventory-predictions';
 import {
-  Plus, Minus, Package, AlertTriangle, Copy, Check,
-  Settings2, ClipboardList, BarChart3, Pencil,
+  Plus, Package, ClipboardCheck, Clock, AlertTriangle, Check,
 } from 'lucide-react';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-type TabKey = 'overview' | 'reorder' | 'settings';
-
-const TABS: { key: TabKey; icon: React.ReactNode; labelKey: 'overview' | 'reorderList' | 'usageSettings' }[] = [
-  { key: 'overview', icon: <BarChart3 size={14} />, labelKey: 'overview' },
-  { key: 'reorder', icon: <ClipboardList size={14} />, labelKey: 'reorderList' },
-  { key: 'settings', icon: <Settings2 size={14} />, labelKey: 'usageSettings' },
+const CATEGORIES: { key: InventoryCategory | 'all'; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'housekeeping', label: 'Housekeeping' },
+  { key: 'maintenance', label: 'Maintenance' },
+  { key: 'breakfast', label: 'Breakfast/F&B' },
 ];
-
-const CATEGORIES: { key: InventoryCategory | 'all'; labelKey: 'allCategories' | 'housekeepingCategory' | 'maintenanceCategory' | 'breakfastFbCategory' }[] = [
-  { key: 'all', labelKey: 'allCategories' },
-  { key: 'housekeeping', labelKey: 'housekeepingCategory' },
-  { key: 'maintenance', labelKey: 'maintenanceCategory' },
-  { key: 'breakfast', labelKey: 'breakfastFbCategory' },
-];
-
-const URGENCY_COLORS: Record<ItemPrediction['reorderUrgency'], string> = {
-  critical: '#dc2626',
-  soon: '#f59e0b',
-  ok: '#22c55e',
-  overstocked: '#3b82f6',
-};
 
 const DEFAULTS: Omit<InventoryItem, 'id' | 'updatedAt' | 'propertyId'>[] = [
-  { name: 'King Sheets', category: 'housekeeping', currentStock: 0, parLevel: 80, unit: 'sets', usagePerCheckout: 1, usagePerStayover: 0, reorderLeadDays: 5, vendorName: '' },
-  { name: 'Queen Sheets', category: 'housekeeping', currentStock: 0, parLevel: 120, unit: 'sets', usagePerCheckout: 1, usagePerStayover: 0, reorderLeadDays: 5, vendorName: '' },
-  { name: 'Bath Towels', category: 'housekeeping', currentStock: 0, parLevel: 200, unit: 'units', usagePerCheckout: 3, usagePerStayover: 0.5, reorderLeadDays: 3, vendorName: '' },
-  { name: 'Hand Towels', category: 'housekeeping', currentStock: 0, parLevel: 200, unit: 'units', usagePerCheckout: 2, usagePerStayover: 0.3, reorderLeadDays: 3, vendorName: '' },
-  { name: 'Washcloths', category: 'housekeeping', currentStock: 0, parLevel: 200, unit: 'units', usagePerCheckout: 2, usagePerStayover: 0.3, reorderLeadDays: 3, vendorName: '' },
-  { name: 'Bath Mats', category: 'housekeeping', currentStock: 0, parLevel: 100, unit: 'units', usagePerCheckout: 1, usagePerStayover: 0, reorderLeadDays: 3, vendorName: '' },
-  { name: 'Shampoo', category: 'housekeeping', currentStock: 0, parLevel: 150, unit: 'bottles', usagePerCheckout: 1, usagePerStayover: 0.3, reorderLeadDays: 3, vendorName: '' },
-  { name: 'Conditioner', category: 'housekeeping', currentStock: 0, parLevel: 150, unit: 'bottles', usagePerCheckout: 1, usagePerStayover: 0.2, reorderLeadDays: 3, vendorName: '' },
-  { name: 'Body Wash', category: 'housekeeping', currentStock: 0, parLevel: 150, unit: 'bottles', usagePerCheckout: 1, usagePerStayover: 0.3, reorderLeadDays: 3, vendorName: '' },
-  { name: 'All-Purpose Cleaner', category: 'housekeeping', currentStock: 0, parLevel: 24, unit: 'bottles', usagePerCheckout: 0.02, usagePerStayover: 0.01, reorderLeadDays: 5, vendorName: '' },
-  { name: 'Glass Cleaner', category: 'housekeeping', currentStock: 0, parLevel: 12, unit: 'bottles', usagePerCheckout: 0.01, usagePerStayover: 0.005, reorderLeadDays: 5, vendorName: '' },
-  { name: 'Trash Liners (Large)', category: 'housekeeping', currentStock: 0, parLevel: 500, unit: 'bags', usagePerCheckout: 2, usagePerStayover: 1, reorderLeadDays: 3, vendorName: '' },
-  { name: 'Coffee Pods', category: 'breakfast', currentStock: 0, parLevel: 200, unit: 'pods', usagePerCheckout: 2, usagePerStayover: 1, reorderLeadDays: 3, vendorName: '' },
-  { name: 'Light Bulbs (LED)', category: 'maintenance', currentStock: 0, parLevel: 50, unit: 'bulbs', usagePerCheckout: 0, usagePerStayover: 0, reorderLeadDays: 7, vendorName: '' },
-  { name: 'HVAC Filters', category: 'maintenance', currentStock: 0, parLevel: 10, unit: 'filters', usagePerCheckout: 0, usagePerStayover: 0, reorderLeadDays: 14, vendorName: '' },
+  { name: 'King Sheets', category: 'housekeeping', currentStock: 0, parLevel: 80, unit: 'sets' },
+  { name: 'Queen Sheets', category: 'housekeeping', currentStock: 0, parLevel: 120, unit: 'sets' },
+  { name: 'Pillowcases', category: 'housekeeping', currentStock: 0, parLevel: 200, unit: 'units' },
+  { name: 'Bath Towels', category: 'housekeeping', currentStock: 0, parLevel: 200, unit: 'units' },
+  { name: 'Hand Towels', category: 'housekeeping', currentStock: 0, parLevel: 200, unit: 'units' },
+  { name: 'Washcloths', category: 'housekeeping', currentStock: 0, parLevel: 200, unit: 'units' },
+  { name: 'Bath Mats', category: 'housekeeping', currentStock: 0, parLevel: 100, unit: 'units' },
+  { name: 'Shampoo', category: 'housekeeping', currentStock: 0, parLevel: 150, unit: 'bottles' },
+  { name: 'Conditioner', category: 'housekeeping', currentStock: 0, parLevel: 150, unit: 'bottles' },
+  { name: 'Body Wash', category: 'housekeeping', currentStock: 0, parLevel: 150, unit: 'bottles' },
+  { name: 'All-Purpose Cleaner', category: 'housekeeping', currentStock: 0, parLevel: 24, unit: 'bottles' },
+  { name: 'Glass Cleaner', category: 'housekeeping', currentStock: 0, parLevel: 12, unit: 'bottles' },
+  { name: 'Trash Liners (Large)', category: 'housekeeping', currentStock: 0, parLevel: 500, unit: 'bags' },
+  { name: 'Coffee Pods', category: 'breakfast', currentStock: 0, parLevel: 200, unit: 'pods' },
+  { name: 'Light Bulbs (LED)', category: 'maintenance', currentStock: 0, parLevel: 50, unit: 'bulbs' },
+  { name: 'HVAC Filters', category: 'maintenance', currentStock: 0, parLevel: 10, unit: 'filters' },
 ];
 
-// ─── Sub-components ──────────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function HeaderWithTip({ label, tip }: { label: string; tip: string }) {
-  const [show, setShow] = useState(false);
-  return (
-    <span
-      style={{ textAlign: 'center', position: 'relative', cursor: 'help', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}
-      onMouseEnter={() => setShow(true)}
-      onMouseLeave={() => setShow(false)}
-    >
-      {label}
-      <span style={{ fontSize: '9px', width: '12px', height: '12px', borderRadius: '50%', border: '1px solid var(--text-muted)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1, flexShrink: 0 }}>?</span>
-      {show && (
-        <div style={{
-          position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)',
-          marginTop: '6px', padding: '8px 12px', borderRadius: '8px',
-          background: 'var(--navy, #1b3a5c)', color: '#fff',
-          fontSize: '12px', fontWeight: 400, textTransform: 'none', letterSpacing: 'normal',
-          lineHeight: 1.4, whiteSpace: 'normal', width: '200px', textAlign: 'left',
-          zIndex: 50, boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          pointerEvents: 'none',
-        }}>
-          {tip}
-        </div>
-      )}
-    </span>
-  );
+function timeAgo(date: Date | null | undefined): string {
+  if (!date) return 'Never';
+  const ms = Date.now() - new Date(date).getTime();
+  const mins = Math.floor(ms / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days === 1) return 'Yesterday';
+  return `${days}d ago`;
 }
 
-function ProgressBar({ value, max, color, label }: { value: number; max: number; color: string; label?: string }) {
-  const pct = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-      <div
-        role="progressbar"
-        aria-valuenow={value}
-        aria-valuemin={0}
-        aria-valuemax={max}
-        aria-label={label}
-        style={{ flex: 1, height: '6px', background: 'rgba(0,0,0,0.08)', borderRadius: '99px', overflow: 'hidden' }}
-      >
-        <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: '99px', transition: 'width 400ms ease' }} />
-      </div>
-      <span style={{ fontSize: '12px', fontWeight: 600, fontFamily: 'var(--font-mono)', color, minWidth: '30px', textAlign: 'right' }}>
-        {pct}%
-      </span>
-    </div>
-  );
+function stockStatus(current: number, target: number): 'good' | 'low' | 'out' {
+  if (current <= 0) return 'out';
+  if (current < target * 0.3) return 'out';
+  if (current < target * 0.7) return 'low';
+  return 'good';
 }
 
-function CategoryPill({ label, count, active, onClick }: { label: string; count: number; active: boolean; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        display: 'inline-flex', alignItems: 'center', gap: '5px',
-        padding: '6px 14px', borderRadius: 'var(--radius-full)',
-        border: active ? '1.5px solid var(--navy)' : '1.5px solid var(--border)',
-        background: active ? 'var(--navy)' : 'transparent',
-        color: active ? '#fff' : 'var(--text-secondary)',
-        fontSize: '12px', fontWeight: 600,
-        cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
-        transition: 'all 150ms',
-      }}
-    >
-      {label}
-      <span style={{
-        fontSize: '11px', fontWeight: 700,
-        background: active ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.06)',
-        padding: '1px 6px', borderRadius: '99px',
-      }}>
-        {count}
-      </span>
-    </button>
-  );
-}
-
-function ItemCard({
-  prediction,
-  lang,
-  onIncrement,
-  onDecrement,
-  onEdit,
-  onGoSettings,
-}: {
-  prediction: ItemPrediction;
-  lang: 'en' | 'es';
-  onIncrement: () => void;
-  onDecrement: () => void;
-  onEdit: () => void;
-  onGoSettings: () => void;
-}) {
-  const { item, dailyBurnRate, daysUntilEmpty, reorderUrgency } = prediction;
-  const color = URGENCY_COLORS[reorderUrgency];
-  const pct = item.parLevel > 0 ? Math.min(100, Math.round((item.currentStock / item.parLevel) * 100)) : (item.currentStock > 0 ? 100 : 0);
-  const hasBurnRate = dailyBurnRate > 0;
-
-  const categoryLabel = {
-    housekeeping: t('housekeepingCategory', lang),
-    maintenance: t('maintenanceCategory', lang),
-    breakfast: t('breakfastFbCategory', lang),
-  }[item.category];
-
-  return (
-    <div
-      style={{
-        display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px',
-        borderBottom: '1px solid var(--border)',
-        borderRight: '1px solid var(--border)',
-        minHeight: '48px',
-      }}
-    >
-      {/* Name + category badge */}
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <span style={{
-          width: '6px', height: '6px', borderRadius: '50%',
-          background: color, flexShrink: 0,
-        }} />
-        <span style={{
-          fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)',
-          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-        }}>
-          {item.name}
-        </span>
-        <span style={{
-          fontSize: '9px', fontWeight: 700, textTransform: 'uppercase',
-          letterSpacing: '0.06em', color: 'var(--text-muted)',
-          padding: '1px 6px', background: 'rgba(0,0,0,0.06)', borderRadius: 'var(--radius-full)',
-          flexShrink: 0, whiteSpace: 'nowrap',
-        }}>
-          {categoryLabel}
-        </span>
-      </div>
-
-      {/* Stock fraction */}
-      <span style={{ fontSize: '11px', fontWeight: 600, fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)', whiteSpace: 'nowrap', minWidth: '50px', textAlign: 'right' }}>
-        {item.currentStock}/{item.parLevel}
-      </span>
-
-      {/* Thin progress bar */}
-      <div style={{ width: '60px', height: '4px', background: 'rgba(0,0,0,0.08)', borderRadius: '99px', overflow: 'hidden', flexShrink: 0 }}>
-        <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: '99px', transition: 'width 400ms ease' }} />
-      </div>
-
-      {/* Burn rate inline */}
-      {hasBurnRate && (
-        <span style={{ fontSize: '11px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', minWidth: '80px' }}>
-          {reorderUrgency === 'critical' && <span style={{ color: '#dc2626', fontWeight: 600 }}>⚠️ Critical</span>}
-          {reorderUrgency === 'soon' && <span style={{ color: '#f59e0b', fontWeight: 600 }}>Soon</span>}
-          {reorderUrgency === 'ok' && <span>OK</span>}
-        </span>
-      )}
-
-      {/* Action buttons */}
-      <div style={{ display: 'flex', gap: '2px', flexShrink: 0 }}>
-        <button
-          onClick={onDecrement}
-          aria-label={`Decrease ${item.name} stock`}
-          style={{
-            width: '32px', height: '32px', borderRadius: 'var(--radius-md)',
-            border: '1px solid var(--border)', background: 'var(--bg)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', color: 'var(--text-secondary)', padding: 0,
-          }}
-        >
-          <Minus size={12} />
-        </button>
-        <button
-          onClick={onIncrement}
-          aria-label={`Increase ${item.name} stock`}
-          style={{
-            width: '32px', height: '32px', borderRadius: 'var(--radius-md)',
-            border: '1px solid var(--border)', background: 'var(--bg)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', color: 'var(--text-secondary)', padding: 0,
-          }}
-        >
-          <Plus size={12} />
-        </button>
-        <button
-          onClick={onEdit}
-          aria-label={`Edit ${item.name}`}
-          style={{
-            width: '32px', height: '32px', borderRadius: 'var(--radius-md)',
-            border: '1px solid var(--border)', background: 'var(--bg)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', color: 'var(--text-secondary)', padding: 0,
-          }}
-        >
-          <Pencil size={12} />
-        </button>
-      </div>
-    </div>
-  );
-}
+const STATUS_COLORS = { good: '#22c55e', low: '#f59e0b', out: '#dc2626' };
+const STATUS_LABELS = { good: 'Good', low: 'Low', out: 'Critical' };
 
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
@@ -267,17 +78,17 @@ export default function InventoryPage() {
   const router = useRouter();
 
   const [items, setItems] = useState<InventoryItem[]>([]);
-  const [roomHistory, setRoomHistory] = useState<{ date: string; checkouts: number; stayovers: number }[]>([]);
-  const [historyLoaded, setHistoryLoaded] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabKey>('overview');
   const [activeCategory, setActiveCategory] = useState<InventoryCategory | 'all'>('all');
+  const [counting, setCounting] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [editItem, setEditItem] = useState<InventoryItem | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
   const seededRef = useRef(false);
-  const pendingStockRef = useRef<Record<string, number>>({});
-  const stockTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const showToast = useCallback((msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2500);
+  }, []);
 
   // Auth guard
   useEffect(() => {
@@ -289,12 +100,10 @@ export default function InventoryPage() {
   useEffect(() => {
     if (!user || !activePropertyId) return;
     let isFirst = true;
-    // Map old categories to new ones (one-time migration)
     const OLD_TO_NEW: Record<string, InventoryCategory> = {
       linens: 'housekeeping', towels: 'housekeeping', amenities: 'housekeeping',
       cleaning: 'housekeeping', other: 'housekeeping',
     };
-    // Items that should be in specific categories based on name
     const NAME_CATEGORY: Record<string, InventoryCategory> = {
       'Coffee Pods': 'breakfast',
       'Light Bulbs (LED)': 'maintenance',
@@ -302,7 +111,6 @@ export default function InventoryPage() {
     };
     let migrated = false;
     const unsub = subscribeToInventory(user.uid, activePropertyId, (snapshot) => {
-      // Migrate items with old category values (runs once per mount)
       if (!migrated) {
         migrated = true;
         snapshot.forEach(item => {
@@ -320,7 +128,6 @@ export default function InventoryPage() {
         const mapped = OLD_TO_NEW[item.category];
         return mapped ? { ...item, category: mapped } : item;
       }));
-      // Seed defaults on first empty snapshot (seededRef prevents Strict Mode double-fire)
       if (isFirst && snapshot.length === 0 && !seededRef.current) {
         seededRef.current = true;
         DEFAULTS.forEach(def => {
@@ -332,387 +139,173 @@ export default function InventoryPage() {
     return unsub;
   }, [user, activePropertyId]);
 
-  // Load last 7 days of room data
-  useEffect(() => {
-    if (!user || !activePropertyId) return;
-    let cancelled = false;
-    const loadHistory = async () => {
-      const dates = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date();
-        d.setDate(d.getDate() - (i + 1));
-        return d.toLocaleDateString('en-CA');
-      });
-      const results = await Promise.all(
-        dates.map(date => getRoomsForDate(user.uid, activePropertyId, date))
-      );
-      if (cancelled) return;
-      const history = dates.map((date, i) => ({
-        date,
-        ...extractRoomCounts(results[i]),
-      }));
-      setRoomHistory(history);
-      setHistoryLoaded(true);
-    };
-    loadHistory();
-    return () => { cancelled = true; };
-  }, [user, activePropertyId]);
+  // Derived data
+  const sortedItems = useMemo(() => {
+    const filtered = activeCategory === 'all' ? items : items.filter(i => i.category === activeCategory);
+    return [...filtered].sort((a, b) => a.name.localeCompare(b.name));
+  }, [items, activeCategory]);
 
-  // Compute predictions
-  const predictions = useMemo(() =>
-    computePredictions(items, roomHistory),
-    [items, roomHistory]
-  );
-
-  const criticalItems = useMemo(() => predictions.filter(p => p.reorderUrgency === 'critical'), [predictions]);
-  const belowPar = useMemo(() => items.filter(i => i.currentStock < i.parLevel), [items]);
-
-  // Category counts
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { all: items.length };
-    CATEGORIES.slice(1).forEach(cat => {
-      counts[cat.key] = items.filter(i => i.category === cat.key).length;
-    });
+    items.forEach(i => { counts[i.category] = (counts[i.category] ?? 0) + 1; });
     return counts;
   }, [items]);
 
-  // Avg checkouts
-  const avgCheckouts = useMemo(() => {
-    if (roomHistory.length === 0) return 0;
-    return Math.round(roomHistory.reduce((s, d) => s + d.checkouts, 0) / roomHistory.length);
-  }, [roomHistory]);
+  const lowCount = useMemo(() => items.filter(i => stockStatus(i.currentStock, i.parLevel) !== 'good').length, [items]);
 
-  // Sorted + filtered predictions
-  const sortedPredictions = useMemo(() => {
-    const urgencyOrder: Record<string, number> = { critical: 0, soon: 1, ok: 2, overstocked: 3 };
-    let filtered = activeCategory === 'all'
-      ? predictions
-      : predictions.filter(p => p.item.category === activeCategory);
-    return [...filtered].sort((a, b) => {
-      const ua = urgencyOrder[a.reorderUrgency] ?? 2;
-      const ub = urgencyOrder[b.reorderUrgency] ?? 2;
-      if (ua !== ub) return ua - ub;
-      return a.item.name.localeCompare(b.item.name);
-    });
-  }, [predictions, activeCategory]);
+  const lastCounted = useMemo(() => {
+    const dates = items.map(i => i.updatedAt).filter(Boolean) as Date[];
+    if (dates.length === 0) return null;
+    return new Date(Math.max(...dates.map(d => new Date(d).getTime())));
+  }, [items]);
 
-  // Reorder items
-  const reorderItems = useMemo(() =>
-    predictions
-      .filter(p => p.reorderUrgency === 'critical' || p.reorderUrgency === 'soon')
-      .sort((a, b) => {
-        if (a.reorderUrgency === 'critical' && b.reorderUrgency !== 'critical') return -1;
-        if (b.reorderUrgency === 'critical' && a.reorderUrgency !== 'critical') return 1;
-        return a.item.name.localeCompare(b.item.name);
-      }),
-    [predictions]
-  );
+  // Loading guard
+  if (authLoading || propLoading || !user || !activePropertyId) {
+    return <AppLayout><div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}><div className="loading-spinner" /></div></AppLayout>;
+  }
 
-  // Toast helper
-  const showToast = useCallback((msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 2000);
-  }, []);
-
-  // Stock adjustments — batches rapid taps with a short debounce
-  const adjustStock = useCallback((item: InventoryItem, delta: number) => {
-    if (!user || !activePropertyId) return;
-    const key = item.id;
-    const pending = pendingStockRef.current[key] ?? item.currentStock;
-    pendingStockRef.current[key] = Math.max(0, pending + delta);
-    // Optimistic UI update
-    setItems(prev => prev.map(i => i.id === key ? { ...i, currentStock: pendingStockRef.current[key] } : i));
-    if (stockTimerRef.current) clearTimeout(stockTimerRef.current);
-    stockTimerRef.current = setTimeout(() => {
-      const finalStock = pendingStockRef.current[key];
-      if (finalStock !== undefined) {
-        updateInventoryItem(user.uid, activePropertyId, key, { currentStock: finalStock });
-        delete pendingStockRef.current[key];
-        showToast(t('stockUpdated', lang));
-      }
-    }, 300);
-  }, [user, activePropertyId, lang, showToast]);
-
-  // Copy reorder list
-  const copyReorderList = useCallback(async () => {
-    const criticalList = reorderItems.filter(p => p.reorderUrgency === 'critical');
-    const soonList = reorderItems.filter(p => p.reorderUrgency === 'soon');
-    const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-
-    let text = `REORDER LIST — ${activeProperty?.name ?? 'Property'} — ${today}\n\n`;
-
-    if (criticalList.length > 0) {
-      text += 'CRITICAL:\n';
-      criticalList.forEach(p => {
-        const qty = suggestedOrderQty(p);
-        text += `- ${p.item.name}: Order ${qty} ${p.item.unit}${p.item.vendorName ? ` (${p.item.vendorName})` : ''}\n`;
-      });
-      text += '\n';
-    }
-    if (soonList.length > 0) {
-      text += 'ORDER SOON:\n';
-      soonList.forEach(p => {
-        const qty = suggestedOrderQty(p);
-        text += `- ${p.item.name}: Order ${qty} ${p.item.unit}${p.item.vendorName ? ` (${p.item.vendorName})` : ''}\n`;
-      });
-    }
-
-    try {
-      await navigator.clipboard.writeText(text);
-      showToast(t('copiedToClipboard', lang) + ' ✓');
-    } catch {
-      showToast(lang === 'es' ? 'Error al copiar' : 'Failed to copy');
-    }
-  }, [reorderItems, activeProperty, lang, showToast]);
-
-  if (authLoading || propLoading) {
+  // ─── COUNT MODE ────────────────────────────────────────────────────────────
+  if (counting) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
-        <div className="spinner" style={{ width: '32px', height: '32px' }} />
-      </div>
+      <CountMode
+        items={items}
+        uid={user.uid}
+        pid={activePropertyId}
+        onDone={() => { setCounting(false); showToast('Inventory count saved ✓'); }}
+        onCancel={() => setCounting(false)}
+      />
     );
   }
 
-  if (!user || !activePropertyId) return null;
-
+  // ─── MAIN VIEW ─────────────────────────────────────────────────────────────
   return (
     <AppLayout>
-      <div style={{ padding: '16px 20px 100px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '100px' }}>
+        <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Inventory</h1>
 
-        {/* Header */}
-        <div className="animate-in" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h1 style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: '22px', color: 'var(--text-primary)', letterSpacing: '-0.02em', lineHeight: 1 }}>
-            {t('inventoryTracking', lang)}
-          </h1>
+        {/* Count CTA */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '16px 20px', borderRadius: 'var(--radius-lg)',
+          background: 'linear-gradient(135deg, var(--navy, #1b3a5c), #2a5a8c)',
+          color: '#fff',
+        }}>
+          <div>
+            <div style={{ fontSize: '16px', fontWeight: 700, marginBottom: '4px' }}>Weekly Inventory Count</div>
+            <div style={{ fontSize: '12px', opacity: 0.8, display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Clock size={12} />
+              Last counted: {lastCounted ? timeAgo(lastCounted) : 'Never'}
+              {lowCount > 0 && (
+                <span style={{ marginLeft: '8px', padding: '2px 8px', borderRadius: '99px', background: 'rgba(220,38,38,0.3)', fontSize: '11px', fontWeight: 600 }}>
+                  {lowCount} low
+                </span>
+              )}
+            </div>
+          </div>
+          <button
+            onClick={() => setCounting(true)}
+            style={{
+              padding: '10px 20px', borderRadius: 'var(--radius-md)',
+              background: '#fff', color: 'var(--navy, #1b3a5c)', border: 'none',
+              fontWeight: 700, fontSize: '14px', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: '6px',
+            }}
+          >
+            <ClipboardCheck size={16} />
+            Count Now
+          </button>
         </div>
 
-        {/* Tab bar */}
-        <div className="animate-in stagger-1" style={{ display: 'flex', gap: '4px', background: 'rgba(0,0,0,0.04)', borderRadius: 'var(--radius-lg)', padding: '3px' }}>
-          {TABS.map(tab => (
+        {/* Category filters */}
+        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
+          {CATEGORIES.map(cat => (
             <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
+              key={cat.key}
+              onClick={() => setActiveCategory(cat.key)}
               style={{
-                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
-                padding: '10px 8px', borderRadius: 'var(--radius-md)',
-                border: 'none', cursor: 'pointer',
-                background: activeTab === tab.key ? 'var(--bg-card)' : 'transparent',
-                color: activeTab === tab.key ? 'var(--text-primary)' : 'var(--text-muted)',
-                fontWeight: activeTab === tab.key ? 600 : 500,
-                fontSize: '13px',
-                boxShadow: activeTab === tab.key ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-                transition: 'all 150ms',
+                padding: '6px 14px', borderRadius: 'var(--radius-full)',
+                border: activeCategory === cat.key ? 'none' : '1px solid var(--border)',
+                background: activeCategory === cat.key ? 'var(--navy, #1b3a5c)' : 'var(--bg)',
+                color: activeCategory === cat.key ? '#fff' : 'var(--text-secondary)',
+                fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+                whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px',
               }}
             >
-              {tab.icon}
-              {t(tab.labelKey, lang)}
+              {cat.label}
+              <span style={{
+                fontSize: '11px', fontWeight: 700,
+                opacity: activeCategory === cat.key ? 0.8 : 0.5,
+              }}>
+                {categoryCounts[cat.key] ?? 0}
+              </span>
             </button>
           ))}
         </div>
 
-        {/* ═══ OVERVIEW TAB ═══ */}
-        {activeTab === 'overview' && (
-          <>
-            {/* Alert banner */}
-            {criticalItems.length > 0 && (
-              <div
-                className="animate-in stagger-1"
-                style={{
-                  padding: '14px 16px',
-                  borderRadius: 'var(--radius-lg)',
-                  background: 'linear-gradient(135deg, rgba(220,38,38,0.06) 0%, rgba(220,38,38,0.12) 100%)',
-                  border: '1px solid rgba(220,38,38,0.2)',
-                  display: 'flex', alignItems: 'center', gap: '12px',
-                }}
-              >
-                <div style={{
-                  width: '40px', height: '40px', borderRadius: '10px',
-                  background: 'rgba(220,38,38,0.12)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        {/* Item grid — 2 columns */}
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)',
+          borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflow: 'hidden',
+        }}>
+          {sortedItems.length === 0 ? (
+            <div style={{ gridColumn: '1 / -1', padding: '40px', textAlign: 'center' }}>
+              <Package size={28} color="var(--text-muted)" style={{ margin: '0 auto 8px' }} />
+              <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>No items in this category</p>
+            </div>
+          ) : (
+            sortedItems.map(item => {
+              const status = stockStatus(item.currentStock, item.parLevel);
+              const pct = item.parLevel > 0 ? Math.min(100, Math.round((item.currentStock / item.parLevel) * 100)) : 0;
+              return (
+                <div key={item.id} style={{
+                  display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px',
+                  borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)',
+                  minHeight: '52px',
                 }}>
-                  <AlertTriangle size={18} color="#dc2626" />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: '14px', fontWeight: 600, color: '#dc2626', marginBottom: '2px' }}>
-                    {criticalItems.length} {t('needsOrderingNow', lang)}
-                  </p>
-                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {criticalItems.slice(0, 3).map(p => p.item.name).join(', ')}
-                    {criticalItems.length > 3 ? ` +${criticalItems.length - 3}` : ''}
-                  </p>
-                </div>
-                <button
-                  onClick={() => setActiveTab('reorder')}
-                  style={{
-                    padding: '8px 14px', borderRadius: 'var(--radius-md)',
-                    background: '#dc2626', color: '#fff', border: 'none',
-                    fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                    flexShrink: 0, whiteSpace: 'nowrap',
-                  }}
-                >
-                  {t('reorderList', lang)}
-                </button>
-              </div>
-            )}
+                  {/* Status dot */}
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: STATUS_COLORS[status], flexShrink: 0 }} />
 
-            {/* Category filter pills */}
-            <div className="animate-in stagger-2" style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px', WebkitOverflowScrolling: 'touch' }}>
-              {CATEGORIES.map(cat => (
-                <CategoryPill
-                  key={cat.key}
-                  label={t(cat.labelKey, lang)}
-                  count={categoryCounts[cat.key] ?? 0}
-                  active={activeCategory === cat.key}
-                  onClick={() => setActiveCategory(cat.key)}
-                />
-              ))}
-            </div>
-
-            {/* Item cards — 2-column grid */}
-            <div className="animate-in stagger-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflow: 'hidden' }}>
-              {sortedPredictions.length === 0 ? (
-                <div className="card" style={{ padding: '32px', textAlign: 'center', gridColumn: '1 / -1' }}>
-                  <Package size={28} color="var(--text-muted)" style={{ margin: '0 auto 8px' }} />
-                  <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
-                    {t('noInventoryItems', lang)}
-                  </p>
-                </div>
-              ) : (
-                sortedPredictions.map(pred => (
-                  <ItemCard
-                    key={pred.item.id}
-                    prediction={pred}
-                    lang={lang}
-                    onIncrement={() => adjustStock(pred.item, 1)}
-                    onDecrement={() => adjustStock(pred.item, -1)}
-                    onEdit={() => setEditItem(pred.item)}
-                    onGoSettings={() => setActiveTab('settings')}
-                  />
-                ))
-              )}
-            </div>
-          </>
-        )}
-
-        {/* ═══ REORDER TAB ═══ */}
-        {activeTab === 'reorder' && (
-          <>
-            {reorderItems.length > 0 && (
-              <button
-                onClick={copyReorderList}
-                className="btn btn-primary"
-                style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}
-              >
-                <Copy size={14} />
-                {t('copyReorderList', lang)}
-              </button>
-            )}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflow: 'hidden' }}>
-              {reorderItems.length === 0 ? (
-                <div className="card" style={{ padding: '40px 20px', textAlign: 'center', gridColumn: '1 / -1' }}>
-                  <Check size={32} color="var(--green)" style={{ margin: '0 auto 12px' }} />
-                  <p style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
-                    {t('allStockedUp', lang)}
-                  </p>
-                  <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                    🎉
-                  </p>
-                </div>
-              ) : (
-                reorderItems.map(pred => {
-                  const { item, dailyBurnRate, daysUntilEmpty, reorderUrgency } = pred;
-                  const color = URGENCY_COLORS[reorderUrgency];
-                  const qty = suggestedOrderQty(pred);
-
-                  return (
-                    <div
-                      key={item.id}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px',
-                        borderBottom: '1px solid var(--border)',
-                        borderRight: '1px solid var(--border)',
-                        borderLeft: `3px solid ${color}`,
-                        minHeight: '52px',
-                      }}
-                    >
-                      {/* Item name and details */}
-                      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{
-                          fontWeight: 600, fontSize: '13px', color: 'var(--text-primary)',
-                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                        }}>
-                          {item.name}
-                          {item.vendorName && (
-                            <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: '11px', marginLeft: '4px' }}>
-                              ({item.vendorName})
-                            </span>
-                          )}
-                        </span>
-                        <div style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'flex', gap: '12px' }}>
-                          <span>{item.currentStock}/{item.parLevel}</span>
-                          {reorderUrgency === 'critical'
-                            ? <span style={{ color: '#dc2626', fontWeight: 600 }}>Critical</span>
-                            : <span style={{ color: '#f59e0b', fontWeight: 600 }}>Soon</span>
-                          }
-                        </div>
-                      </div>
-
-                      {/* Suggested order */}
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1px', whiteSpace: 'nowrap' }}>
-                        <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                          Order {qty}
-                        </span>
-                        <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                          {item.unit}
-                        </span>
-                      </div>
+                  {/* Name + category */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {item.name}
                     </div>
-                  );
-                })
-              )}
-            </div>
-          </>
-        )}
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>
+                      {timeAgo(item.updatedAt)}
+                    </div>
+                  </div>
 
-        {/* ═══ SETTINGS TAB ═══ */}
-        {activeTab === 'settings' && (
-          <>
-            {/* Compact settings table */}
-            <div style={{ borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflow: 'hidden', maxWidth: '640px', margin: '0 auto' }}>
-              {/* Header row */}
-              <div style={{
-                display: 'grid', gridTemplateColumns: '1fr 56px 56px 44px 90px',
-                gap: '6px', padding: '6px 12px', background: 'rgba(0,0,0,0.03)',
-                borderBottom: '1px solid var(--border)',
-                fontSize: '10px', fontWeight: 600, textTransform: 'uppercase',
-                letterSpacing: '0.05em', color: 'var(--text-muted)',
-              }}>
-                <span>Item</span>
-                <HeaderWithTip label="C/O" tip="Usage per checkout — how many of this item are used each time a guest checks out." />
-                <HeaderWithTip label="Stay" tip="Usage per stayover — how many are used each day a guest stays without checking out." />
-                <HeaderWithTip label="Lead" tip="Lead days — how many days it takes for a new order to arrive after you place it." />
-                <span style={{ textAlign: 'center' }}>Vendor</span>
-              </div>
-              {/* Item rows */}
-              {items.map(item => (
-                <UsageSettingsRow key={item.id} item={item} lang={lang} uid={user.uid} pid={activePropertyId} />
-              ))}
-            </div>
-          </>
-        )}
+                  {/* Count / Target */}
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '14px', color: STATUS_COLORS[status] }}>
+                      {item.currentStock}
+                    </div>
+                    <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                      / {item.parLevel} {item.unit}
+                    </div>
+                  </div>
 
+                  {/* Mini progress */}
+                  <div style={{ width: '40px', height: '4px', background: 'rgba(0,0,0,0.08)', borderRadius: '99px', overflow: 'hidden', flexShrink: 0 }}>
+                    <div style={{ height: '100%', width: `${pct}%`, background: STATUS_COLORS[status], borderRadius: '99px' }} />
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
       </div>
 
       {/* FAB */}
       <button
         onClick={() => setShowAddModal(true)}
-        aria-label={t('addItem', lang)}
+        aria-label="Add Item"
         style={{
           position: 'fixed', bottom: '80px', right: '20px', zIndex: 30,
           width: '52px', height: '52px', borderRadius: '50%',
           background: 'var(--navy)', color: '#fff', border: 'none',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer',
-          boxShadow: '0 4px 16px rgba(27,58,92,0.3)',
+          cursor: 'pointer', boxShadow: '0 4px 16px rgba(27,58,92,0.3)',
         }}
       >
         <Plus size={22} />
@@ -724,22 +317,8 @@ export default function InventoryPage() {
         onClose={() => setShowAddModal(false)}
         uid={user.uid}
         pid={activePropertyId}
-        lang={lang}
-        onAdded={() => showToast(t('itemAdded', lang) + ' ✓')}
+        onAdded={() => showToast('Item added ✓')}
       />
-
-      {/* Edit item modal */}
-      {editItem && (
-        <EditItemModal
-          isOpen={!!editItem}
-          onClose={() => setEditItem(null)}
-          item={editItem}
-          uid={user.uid}
-          pid={activePropertyId}
-          lang={lang}
-          onSaved={() => { setEditItem(null); showToast(t('stockUpdated', lang)); }}
-        />
-      )}
 
       {/* Toast */}
       {toast && (
@@ -749,7 +328,6 @@ export default function InventoryPage() {
           background: 'var(--navy)', color: '#fff',
           fontSize: '13px', fontWeight: 600, zIndex: 50,
           boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          animation: 'fadeIn 200ms ease',
         }}>
           {toast}
         </div>
@@ -758,98 +336,189 @@ export default function InventoryPage() {
   );
 }
 
-// ─── Stat Mini ───────────────────────────────────────────────────────────────
+// ─── COUNT MODE ──────────────────────────────────────────────────────────────
 
-function StatMini({ icon, iconBg, label, value, sub }: { icon: React.ReactNode; iconBg: string; label: string; value: string | number; sub?: string }) {
-  return (
-    <div className="card" style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
-      <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        {icon}
-      </div>
-      <div>
-        <p style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', marginBottom: '2px' }}>{label}</p>
-        <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '22px', lineHeight: 1, letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>
-          {value}
-        </div>
-        {sub && <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{sub}</p>}
-      </div>
-    </div>
-  );
-}
+function CountMode({
+  items, uid, pid, onDone, onCancel,
+}: {
+  items: InventoryItem[];
+  uid: string;
+  pid: string;
+  onDone: () => void;
+  onCancel: () => void;
+}) {
+  const sorted = useMemo(() => [...items].sort((a, b) => a.name.localeCompare(b.name)), [items]);
+  const [counts, setCounts] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {};
+    sorted.forEach(item => { init[item.id] = String(item.currentStock); });
+    return init;
+  });
+  const [saving, setSaving] = useState(false);
+  const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
-// ─── Suggested order quantity ────────────────────────────────────────────────
-
-function suggestedOrderQty(pred: ItemPrediction): number {
-  const raw = (pred.dailyBurnRate * 14) - pred.item.currentStock + pred.item.parLevel;
-  return Math.max(10, Math.ceil(raw / 10) * 10);
-}
-
-// ─── Usage Settings Row (compact inline) ────────────────────────────────────
-
-function UsageSettingsRow({ item, uid, pid }: { item: InventoryItem; lang: 'en' | 'es'; uid: string; pid: string }) {
-  const [checkout, setCheckout] = useState(String(item.usagePerCheckout ?? 0));
-  const [stayover, setStayover] = useState(String(item.usagePerStayover ?? 0));
-  const [leadDays, setLeadDays] = useState(String(item.reorderLeadDays ?? 3));
-  const [vendor, setVendor] = useState(item.vendorName ?? '');
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-
-  useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
-
-  const save = useCallback((field: string, value: string) => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      const numVal = parseFloat(value);
-      if (field === 'vendorName') {
-        updateInventoryItem(uid, pid, item.id, { vendorName: value });
-      } else if (!isNaN(numVal)) {
-        updateInventoryItem(uid, pid, item.id, { [field]: numVal });
-      }
-    }, 500);
-  }, [uid, pid, item.id]);
-
-  const cellInput: React.CSSProperties = {
-    width: '100%', padding: '4px 6px', borderRadius: '4px',
-    border: '1px solid var(--border)', background: 'var(--bg)',
-    fontSize: '12px', fontFamily: 'var(--font-mono)',
-    color: 'var(--text-primary)', textAlign: 'center',
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await Promise.all(
+        sorted.map(item => {
+          const val = parseInt(counts[item.id] ?? '0') || 0;
+          if (val !== item.currentStock) {
+            return updateInventoryItem(uid, pid, item.id, { currentStock: val });
+          }
+          return Promise.resolve();
+        })
+      );
+      onDone();
+    } catch {
+      setSaving(false);
+    }
   };
 
+  const changedCount = sorted.filter(item => {
+    const val = parseInt(counts[item.id] ?? '0') || 0;
+    return val !== item.currentStock;
+  }).length;
+
   return (
-    <div style={{
-      display: 'grid', gridTemplateColumns: '1fr 56px 56px 44px 90px',
-      gap: '6px', padding: '6px 12px', alignItems: 'center',
-      borderBottom: '1px solid var(--border)',
-      minHeight: '38px',
-    }}>
-      <span style={{ fontWeight: 600, fontSize: '12px', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: '8px' }}>
-        {item.name}
-      </span>
-      <input type="number" step="0.1" min="0" value={checkout} onChange={e => setCheckout(e.target.value)} onBlur={() => save('usagePerCheckout', checkout)} style={cellInput} />
-      <input type="number" step="0.1" min="0" value={stayover} onChange={e => setStayover(e.target.value)} onBlur={() => save('usagePerStayover', stayover)} style={cellInput} />
-      <input type="number" step="1" min="0" value={leadDays} onChange={e => setLeadDays(e.target.value)} onBlur={() => save('reorderLeadDays', leadDays)} style={cellInput} />
-      <input type="text" value={vendor} onChange={e => setVendor(e.target.value)} onBlur={() => save('vendorName', vendor)} placeholder="—" style={{ ...cellInput, fontFamily: 'var(--font-sans)', textAlign: 'left' }} />
-    </div>
+    <AppLayout>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingBottom: '100px' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <h1 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+              Inventory Count
+            </h1>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '4px 0 0' }}>
+              Go to the supply room, count each item, enter the numbers below.
+            </p>
+          </div>
+          <button
+            onClick={onCancel}
+            style={{
+              padding: '8px 16px', borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border)', background: 'var(--bg)',
+              fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+              color: 'var(--text-secondary)',
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+
+        {/* Count list */}
+        <div style={{ borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflow: 'hidden' }}>
+          {/* Column headers */}
+          <div style={{
+            display: 'grid', gridTemplateColumns: '1fr 90px 60px',
+            gap: '8px', padding: '8px 14px', background: 'rgba(0,0,0,0.03)',
+            borderBottom: '1px solid var(--border)',
+            fontSize: '10px', fontWeight: 600, textTransform: 'uppercase',
+            letterSpacing: '0.05em', color: 'var(--text-muted)',
+          }}>
+            <span>Item</span>
+            <span style={{ textAlign: 'center' }}>Count</span>
+            <span style={{ textAlign: 'right' }}>Target</span>
+          </div>
+
+          {/* Item rows */}
+          {sorted.map((item, idx) => {
+            const val = parseInt(counts[item.id] ?? '0') || 0;
+            const status = stockStatus(val, item.parLevel);
+            const changed = val !== item.currentStock;
+            return (
+              <div
+                key={item.id}
+                style={{
+                  display: 'grid', gridTemplateColumns: '1fr 90px 60px',
+                  gap: '8px', padding: '10px 14px', alignItems: 'center',
+                  borderBottom: '1px solid var(--border)',
+                  background: changed ? 'rgba(34,197,94,0.04)' : undefined,
+                }}
+              >
+                {/* Name + category */}
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {item.name}
+                  </div>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                    {item.category} · {item.unit}
+                  </div>
+                </div>
+
+                {/* Count input */}
+                <input
+                  ref={el => { inputRefs.current[item.id] = el; }}
+                  type="number"
+                  min="0"
+                  value={counts[item.id] ?? '0'}
+                  onChange={e => setCounts(prev => ({ ...prev, [item.id]: e.target.value }))}
+                  onFocus={e => e.target.select()}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === 'Tab') {
+                      e.preventDefault();
+                      const nextItem = sorted[idx + 1];
+                      if (nextItem) inputRefs.current[nextItem.id]?.focus();
+                    }
+                  }}
+                  style={{
+                    width: '100%', padding: '8px 10px', borderRadius: '6px',
+                    border: `2px solid ${changed ? '#22c55e' : 'var(--border)'}`,
+                    background: 'var(--bg)', fontSize: '16px', fontWeight: 700,
+                    fontFamily: 'var(--font-mono)', textAlign: 'center',
+                    color: STATUS_COLORS[status],
+                  }}
+                />
+
+                {/* Target */}
+                <div style={{ textAlign: 'right', fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                  {item.parLevel}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Save button — sticky at bottom */}
+        <div style={{
+          position: 'fixed', bottom: '70px', left: 0, right: 0,
+          padding: '12px 20px', background: 'var(--surface, #fff)',
+          borderTop: '1px solid var(--border)', zIndex: 30,
+        }}>
+          <button
+            onClick={handleSave}
+            disabled={saving || changedCount === 0}
+            style={{
+              width: '100%', padding: '14px', borderRadius: 'var(--radius-md)',
+              background: changedCount > 0 ? 'var(--navy, #1b3a5c)' : 'var(--border)',
+              color: '#fff', border: 'none',
+              fontSize: '15px', fontWeight: 700, cursor: changedCount > 0 ? 'pointer' : 'default',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+              opacity: saving ? 0.6 : 1,
+            }}
+          >
+            <Check size={18} />
+            {saving ? 'Saving...' : changedCount > 0 ? `Save Count (${changedCount} changed)` : 'No changes'}
+          </button>
+        </div>
+      </div>
+    </AppLayout>
   );
 }
 
 // ─── Add Item Modal ──────────────────────────────────────────────────────────
 
-function AddItemModal({ isOpen, onClose, uid, pid, lang, onAdded }: {
+function AddItemModal({ isOpen, onClose, uid, pid, onAdded }: {
   isOpen: boolean;
   onClose: () => void;
   uid: string;
   pid: string;
-  lang: 'en' | 'es';
   onAdded: () => void;
 }) {
   const [name, setName] = useState('');
   const [category, setCategory] = useState<InventoryCategory>('housekeeping');
   const [stock, setStock] = useState('0');
-  const [parLevel, setParLevel] = useState('100');
+  const [target, setTarget] = useState('100');
   const [unit, setUnit] = useState('units');
-  const [usageCheckout, setUsageCheckout] = useState('0');
-  const [usageStayover, setUsageStayover] = useState('0');
-  const [vendor, setVendor] = useState('');
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async () => {
@@ -861,18 +530,12 @@ function AddItemModal({ isOpen, onClose, uid, pid, lang, onAdded }: {
         name: name.trim(),
         category,
         currentStock: parseInt(stock) || 0,
-        parLevel: parseInt(parLevel) || 100,
+        parLevel: parseInt(target) || 100,
         unit: unit.trim() || 'units',
-        usagePerCheckout: parseFloat(usageCheckout) || 0,
-        usagePerStayover: parseFloat(usageStayover) || 0,
-        reorderLeadDays: 3,
-        vendorName: vendor.trim() || undefined,
       });
       onAdded();
       onClose();
-      // Reset
-      setName(''); setStock('0'); setParLevel('100'); setUnit('units');
-      setUsageCheckout('0'); setUsageStayover('0'); setVendor('');
+      setName(''); setStock('0'); setTarget('100'); setUnit('units');
     } finally {
       setSaving(false);
     }
@@ -885,7 +548,7 @@ function AddItemModal({ isOpen, onClose, uid, pid, lang, onAdded }: {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={t('addItem', lang)}>
+    <Modal isOpen={isOpen} onClose={onClose} title="Add Item">
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
         <div>
           <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
@@ -898,9 +561,9 @@ function AddItemModal({ isOpen, onClose, uid, pid, lang, onAdded }: {
             Category
           </label>
           <select value={category} onChange={e => setCategory(e.target.value as InventoryCategory)} style={{ ...inputStyle, cursor: 'pointer' }}>
-            <option value="housekeeping">{t('housekeepingCategory', lang)}</option>
-            <option value="maintenance">{t('maintenanceCategory', lang)}</option>
-            <option value="breakfast">{t('breakfastFbCategory', lang)}</option>
+            <option value="housekeeping">Housekeeping</option>
+            <option value="maintenance">Maintenance</option>
+            <option value="breakfast">Breakfast/F&B</option>
           </select>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
@@ -914,7 +577,7 @@ function AddItemModal({ isOpen, onClose, uid, pid, lang, onAdded }: {
             <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
               Target Stock
             </label>
-            <input type="number" min="0" value={parLevel} onChange={e => setParLevel(e.target.value)} style={inputStyle} />
+            <input type="number" min="0" value={target} onChange={e => setTarget(e.target.value)} style={inputStyle} />
           </div>
           <div>
             <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
@@ -929,88 +592,7 @@ function AddItemModal({ isOpen, onClose, uid, pid, lang, onAdded }: {
           className="btn btn-primary"
           style={{ marginTop: '4px', opacity: !name.trim() || saving ? 0.5 : 1 }}
         >
-          {saving ? t('saving', lang) : t('addItem', lang)}
-        </button>
-      </div>
-    </Modal>
-  );
-}
-
-// ─── Edit Item Modal ─────────────────────────────────────────────────────────
-
-function EditItemModal({ isOpen, onClose, item, uid, pid, lang, onSaved }: {
-  isOpen: boolean;
-  onClose: () => void;
-  item: InventoryItem;
-  uid: string;
-  pid: string;
-  lang: 'en' | 'es';
-  onSaved: () => void;
-}) {
-  const [name, setName] = useState(item.name);
-  const [stock, setStock] = useState(String(item.currentStock));
-  const [parLevel, setParLevel] = useState(String(item.parLevel));
-  const [unit, setUnit] = useState(item.unit);
-  const [saving, setSaving] = useState(false);
-
-  const handleSave = async () => {
-    if (saving) return;
-    setSaving(true);
-    try {
-      await updateInventoryItem(uid, pid, item.id, {
-        name: name.trim() || item.name,
-        currentStock: parseInt(stock) || 0,
-        parLevel: parseInt(parLevel) || 0,
-        unit: unit.trim() || item.unit,
-      });
-      onSaved();
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '10px 12px', borderRadius: 'var(--radius-md)',
-    border: '1.5px solid var(--border)', background: 'var(--bg)',
-    fontSize: '14px', color: 'var(--text-primary)',
-  };
-
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title={t('edit', lang)}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-        <div>
-          <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-            {t('name', lang)}
-          </label>
-          <input value={name} onChange={e => setName(e.target.value)} style={inputStyle} />
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
-          <div>
-            <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-              {t('currentStock', lang)}
-            </label>
-            <input type="number" min="0" value={stock} onChange={e => setStock(e.target.value)} style={inputStyle} />
-          </div>
-          <div>
-            <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-              {t('parLevel', lang)}
-            </label>
-            <input type="number" min="0" value={parLevel} onChange={e => setParLevel(e.target.value)} style={inputStyle} />
-          </div>
-          <div>
-            <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-              {t('unitLabel', lang)}
-            </label>
-            <input value={unit} onChange={e => setUnit(e.target.value)} style={inputStyle} />
-          </div>
-        </div>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="btn btn-primary"
-          style={{ marginTop: '4px', opacity: saving ? 0.5 : 1 }}
-        >
-          {saving ? t('saving', lang) : t('save', lang)}
+          {saving ? 'Saving...' : 'Add Item'}
         </button>
       </div>
     </Modal>
