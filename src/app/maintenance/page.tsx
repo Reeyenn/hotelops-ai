@@ -130,6 +130,7 @@ export default function MaintenancePage() {
   const [newRoom, setNewRoom] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [newSeverity, setNewSeverity] = useState<WorkOrderSeverity>('medium');
+  const [newBlockRoom, setNewBlockRoom] = useState(false);
 
   // Create task form
   const [newTaskName, setNewTaskName] = useState('');
@@ -251,11 +252,13 @@ export default function MaintenancePage() {
         status: 'submitted',
         submittedBy: user.uid,
         submittedByName: user.displayName ?? undefined,
+        blockedRoom: newBlockRoom || undefined,
       });
       setShowCreateModal(false);
       setNewRoom('');
       setNewDesc('');
       setNewSeverity('medium');
+      setNewBlockRoom(false);
       setToast(t('workOrderSubmitted', lang) + ' \u2713');
     } finally {
       setSubmitting(false);
@@ -504,15 +507,26 @@ export default function MaintenancePage() {
                     style={{ padding: '14px 16px', cursor: 'pointer', transition: 'box-shadow 150ms' }}
                     onClick={() => setExpandedId(isExpanded ? null : order.id)}
                   >
-                    {/* Top row: severity + time */}
+                    {/* Top row: severity + blocked badge + time */}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <span style={{
-                        fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em',
-                        padding: '3px 8px', borderRadius: 'var(--radius-full)',
-                        background: sev.bg, color: sev.color,
-                      }}>
-                        {sevLabel(order.severity)}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{
+                          fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em',
+                          padding: '3px 8px', borderRadius: 'var(--radius-full)',
+                          background: sev.bg, color: sev.color,
+                        }}>
+                          {sevLabel(order.severity)}
+                        </span>
+                        {order.blockedRoom && (
+                          <span style={{
+                            fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em',
+                            padding: '3px 8px', borderRadius: 'var(--radius-full)',
+                            background: 'rgba(220,38,38,0.1)', color: '#dc2626',
+                          }}>
+                            {lang === 'es' ? 'Bloqueada' : 'Blocked'}
+                          </span>
+                        )}
+                      </div>
                       <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <Clock size={11} />
                         {timeAgo(toJsDate(order.createdAt))}
@@ -1046,6 +1060,40 @@ export default function MaintenancePage() {
                     </button>
                   );
                 })}
+              </div>
+            </div>
+
+            {/* Block Room */}
+            <div
+              onClick={() => setNewBlockRoom(!newBlockRoom)}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '12px 14px', borderRadius: 'var(--radius-md)',
+                border: newBlockRoom ? '2px solid #dc2626' : '1px solid var(--border)',
+                background: newBlockRoom ? 'rgba(220,38,38,0.04)' : 'transparent',
+                cursor: 'pointer', transition: 'all 150ms',
+              }}
+            >
+              <div>
+                <p style={{ fontSize: '13px', fontWeight: 600, color: newBlockRoom ? '#dc2626' : 'var(--text-primary)' }}>
+                  {lang === 'es' ? 'Bloquear Habitación' : 'Block Room'}
+                </p>
+                <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                  {lang === 'es' ? 'No se puede rentar hasta resolver' : "Can't rent until resolved"}
+                </p>
+              </div>
+              <div style={{
+                width: '40px', height: '22px', borderRadius: '99px',
+                background: newBlockRoom ? '#dc2626' : 'rgba(0,0,0,0.12)',
+                position: 'relative', transition: 'background 150ms',
+              }}>
+                <div style={{
+                  width: '18px', height: '18px', borderRadius: '50%',
+                  background: '#fff', position: 'absolute', top: '2px',
+                  left: newBlockRoom ? '20px' : '2px',
+                  transition: 'left 150ms',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                }} />
               </div>
             </div>
 

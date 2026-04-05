@@ -302,6 +302,7 @@ export interface WorkOrder {
   assignedName?: string;
   photoUrl?: string;          // optional photo attachment
   notes?: string;             // manager notes
+  blockedRoom?: boolean;      // true = room is blocked from being rented due to maintenance
   createdAt: Date | null;
   updatedAt: Date | null;
   resolvedAt?: Date | null;
@@ -378,4 +379,9 @@ export interface MorningSetupForm {
   startTime: string;
   scheduledStaff: number;
   hourlyWage?: number;          // override property default for today
+  // Dashboard enrichment fields
+  arrivals?: number;            // expected check-ins today
+  reservations?: number;        // total reservations (including future)
+  inHouse?: number;             // guests currently in-house
+  adr?: number;                 // Average Daily Rate ($)
 }

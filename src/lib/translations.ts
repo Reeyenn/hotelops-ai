@@ -157,6 +157,11 @@ type TranslationKey =
   | 'dirtyRooms' | 'needCleaning' | 'checkoutsToday'
   | 'roomStatus' | 'noRoomsAssignedToday' | 'progress' | 'total'
   | 'tomorrowsCrew' | 'noConfirmationsYet'
+  // Dashboard: occupancy & revenue
+  | 'occupancy' | 'rented' | 'arrivals' | 'inHouse' | 'reservations' | 'blockedRooms'
+  | 'adr' | 'revpar' | 'perNight' | 'perAvailRoom'
+  // Dashboard: labor cost split
+  | 'frontDeskLabor' | 'housekeepingLabor' | 'maintenanceLabor'
   // ── Settings pages ────────────────────────────────────────────────────────
   | 'operationsConfig' | 'operationsConfigDesc'
   | 'propertySettings' | 'propertySettingsDesc'
@@ -640,6 +645,21 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     total: 'total',
     tomorrowsCrew: "Tomorrow's Crew",
     noConfirmationsYet: 'No confirmations yet - go to Housekeeping › Schedule to send.',
+    // Dashboard: occupancy & revenue
+    occupancy: 'Occupancy',
+    rented: 'Rented',
+    arrivals: 'Arrivals',
+    inHouse: 'In-House',
+    reservations: 'Reservations',
+    blockedRooms: 'Blocked Rooms',
+    adr: 'ADR',
+    revpar: 'RevPAR',
+    perNight: 'per night',
+    perAvailRoom: 'per avail. room',
+    // Dashboard: labor cost split
+    frontDeskLabor: 'Front Desk',
+    housekeepingLabor: 'Housekeeping',
+    maintenanceLabor: 'Maintenance',
     // ── Settings pages ──
     operationsConfig: 'Operations Config',
     operationsConfigDesc: 'Public areas, cleaning times, prep time',
@@ -1219,6 +1239,21 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     total: 'total',
     tomorrowsCrew: 'Equipo de Mañana',
     noConfirmationsYet: 'No hay confirmaciones aún — ve a Limpieza › Horario para enviar.',
+    // Dashboard: occupancy & revenue
+    occupancy: 'Ocupación',
+    rented: 'Rentadas',
+    arrivals: 'Llegadas',
+    inHouse: 'En Casa',
+    reservations: 'Reservaciones',
+    blockedRooms: 'Hab. Bloqueadas',
+    adr: 'ADR',
+    revpar: 'RevPAR',
+    perNight: 'por noche',
+    perAvailRoom: 'por hab. disponible',
+    // Dashboard: labor cost split
+    frontDeskLabor: 'Recepción',
+    housekeepingLabor: 'Limpieza',
+    maintenanceLabor: 'Mantenimiento',
     // ── Settings pages ──
     operationsConfig: 'Config. de Operaciones',
     operationsConfigDesc: 'Áreas públicas, tiempos de limpieza, preparación',

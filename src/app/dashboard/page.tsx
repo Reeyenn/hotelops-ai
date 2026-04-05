@@ -11,17 +11,16 @@ import {
   subscribeToRooms, subscribeToShiftConfirmations,
   getDeepCleanConfig, getDeepCleanRecords,
   subscribeToWorkOrders,
-  subscribeToInventory,
 } from '@/lib/firestore';
-import { computePredictions } from '@/lib/inventory-predictions';
 import { getOverdueRooms, calcDndFreedMinutes, suggestDeepCleans } from '@/lib/calculations';
 import { todayStr } from '@/lib/utils';
-import type { Room, ShiftConfirmation, ConfirmationStatus, DeepCleanConfig, DeepCleanRecord, WorkOrder, InventoryItem } from '@/types';
+import type { Room, ShiftConfirmation, ConfirmationStatus, DeepCleanConfig, DeepCleanRecord, WorkOrder } from '@/types';
 import { format } from 'date-fns';
 import {
   CheckCircle2, XCircle, Clock, AlertTriangle,
   Users, DollarSign, Wrench,
-  Sparkles, CircleDot, DoorOpen, Zap, Package,
+  Sparkles, CircleDot, DoorOpen, Zap,
+  BedDouble, Ban, Percent, TrendingUp, LogIn, Hotel, CalendarCheck,
 } from 'lucide-react';
 
 /* ── Room grid helper ── */
@@ -128,7 +127,13 @@ export default function DashboardPage() {
   const [dcConfig, setDcConfig] = useState<DeepCleanConfig | null>(null);
   const [dcRecords, setDcRecords] = useState<DeepCleanRecord[]>([]);
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+
+  // Editable dashboard fields (persisted in memory per session — user inputs these)
+  const [arrivals, setArrivals] = useState(0);
+  const [inHouseGuests, setInHouseGuests] = useState(0);
+  const [reservationCount, setReservationCount] = useState(0);
+  const [adr, setAdr] = useState(0);
+  const [editingField, setEditingField] = useState<string | null>(null);
 
   const tomorrow = addDays(todayStr(), 1);
 
@@ -166,24 +171,22 @@ export default function DashboardPage() {
 
   const openOrders = workOrders.filter(o => o.status !== 'resolved');
   const urgentOrders = openOrders.filter(o => o.severity === 'urgent');
-
-  // Subscribe to inventory
-  useEffect(() => {
-    if (!user || !activePropertyId) return;
-    return subscribeToInventory(user.uid, activePropertyId, setInventoryItems);
-  }, [user, activePropertyId]);
-
-  const inventoryPredictions = useMemo(() => computePredictions(inventoryItems, []), [inventoryItems]);
-  const criticalInventory = useMemo(() => inventoryPredictions.filter(p => p.reorderUrgency === 'critical').length, [inventoryPredictions]);
-  const belowParCount = useMemo(() => inventoryItems.filter(i => i.currentStock < i.parLevel).length, [inventoryItems]);
+  const blockedRooms = openOrders.filter(o => o.blockedRoom).length;
 
   const clean      = rooms.filter(r => r.status === 'clean' || r.status === 'inspected').length;
   const inProgress = rooms.filter(r => r.status === 'in_progress').length;
   const dirty      = rooms.filter(r => r.status === 'dirty').length;
   const checkouts  = rooms.filter(r => r.type === 'checkout').length;
+  const stayovers  = rooms.filter(r => r.type === 'stayover').length;
   const vacant     = rooms.filter(r => r.type === 'vacant').length;
   const total      = rooms.length;
   const pct        = total > 0 ? Math.round((clean / total) * 100) : 0;
+
+  // Occupancy & revenue
+  const totalPropertyRooms = activeProperty?.totalRooms || 74;
+  const rentedRooms = checkouts + stayovers; // rooms currently occupied
+  const occupancyPct = totalPropertyRooms > 0 ? Math.round((rentedRooms / totalPropertyRooms) * 100) : 0;
+  const revpar = totalPropertyRooms > 0 && adr > 0 ? Math.round((adr * rentedRooms) / totalPropertyRooms) : 0;
 
   const confirmedCount = tomorrowConfs.filter(c => c.status === 'confirmed').length;
 
@@ -241,6 +244,50 @@ export default function DashboardPage() {
     </div>
   );
 
+  /* ── Editable stat card — tap to edit value ── */
+  const EditableStatCard = ({ icon, iconBg, label, value, onChange, editing, fieldKey, setEditing, sub, prefix }: {
+    icon: React.ReactNode; iconBg: string; label: string; value: number;
+    onChange: (v: number) => void; editing: string | null; fieldKey: string;
+    setEditing: (k: string | null) => void; sub?: string; prefix?: string;
+  }) => {
+    const isEditing = editing === fieldKey;
+    return (
+      <div
+        className="card"
+        onClick={() => { if (!isEditing) setEditing(fieldKey); }}
+        style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '14px', cursor: isEditing ? 'default' : 'pointer', transition: 'box-shadow 150ms' }}
+      >
+        <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          {icon}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', marginBottom: '2px' }}>{label}</p>
+          {isEditing ? (
+            <input
+              type="number"
+              autoFocus
+              value={value || ''}
+              onChange={e => onChange(parseInt(e.target.value) || 0)}
+              onBlur={() => setEditing(null)}
+              onKeyDown={e => { if (e.key === 'Enter') setEditing(null); }}
+              style={{
+                width: '80px', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '20px',
+                border: '2px solid var(--navy)', borderRadius: '6px', padding: '2px 6px',
+                background: 'var(--bg)', color: 'var(--text-primary)', outline: 'none',
+              }}
+            />
+          ) : (
+            <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '22px', lineHeight: 1, letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>
+              {value > 0 ? `${prefix || ''}${value}` : '—'}
+              <span style={{ fontSize: '10px', fontWeight: 400, color: 'var(--text-muted)', marginLeft: '4px' }}>✎</span>
+            </div>
+          )}
+          {sub && <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{sub}</p>}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <AppLayout>
       <div style={{ padding: '16px 20px 20px', display: 'flex', flexDirection: 'column', gap: '14px', height: '100%' }}>
@@ -254,68 +301,194 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ── Stat cards - full-width row ── */}
-        <div className="animate-in stagger-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-          <StatCard
-            icon={<Users size={16} color="#16A34A" />}
-            iconBg="rgba(22,163,74,0.08)"
-            label={t('staffTomorrow', lang)}
-            value={confirmedCount}
-            sub={`${tomorrowConfs.length} ${t('contacted', lang)}`}
-          />
-          <StatCard
-            icon={<DollarSign size={16} color="#CA8A04" />}
-            iconBg="rgba(202,138,4,0.08)"
-            label={t('estLaborCost', lang)}
-            value={total > 0 ? `$${Math.round(total * 3.2)}` : '-'}
-            sub={t('today', lang)}
-          />
-          <StatCard
-            icon={<AlertTriangle size={16} color="#DC2626" />}
-            iconBg="rgba(220,38,38,0.08)"
-            label={t('dirtyRooms', lang)}
-            value={dirty}
-            sub={t('needCleaning', lang)}
-          />
-          <StatCard
-            icon={<DoorOpen size={16} color="var(--navy)" />}
-            iconBg="rgba(27,58,92,0.08)"
-            label={t('availableRooms', lang)}
-            value={vacant}
-            sub={`${total} ${t('total', lang)}`}
-          />
-          <StatCard
-            icon={<Clock size={16} color="var(--navy)" />}
-            iconBg="rgba(27,58,92,0.08)"
-            label={t('avgTurnover', lang)}
-            value={avgTurnover !== null ? `${avgTurnover}m` : '—'}
-            sub={avgTurnover !== null ? `${rooms.filter(r => r.completedAt).length} ${t('roomsCleaned', lang)}` : t('noDataYet', lang)}
-          />
-          <StatCard
-            icon={<Wrench size={16} color={urgentOrders.length > 0 ? '#DC2626' : 'var(--navy)'} />}
-            iconBg={urgentOrders.length > 0 ? 'rgba(220,38,38,0.08)' : 'rgba(27,58,92,0.08)'}
-            label={t('openWorkOrders', lang)}
-            value={openOrders.length}
-            sub={urgentOrders.length > 0 ? `${urgentOrders.length} urgent` : t('allRoutine', lang)}
-          />
-        </div>
-
-        {/* ── Inventory alert ── */}
-        {(criticalInventory > 0 || belowParCount > 0) && (
-          <div
-            className="animate-in stagger-1"
-            onClick={() => router.push('/inventory')}
-            style={{ cursor: 'pointer' }}
-          >
+        {/* ── Occupancy & Guests ── */}
+        <div className="animate-in stagger-1">
+          <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', marginBottom: '8px' }}>
+            {t('occupancy', lang)} & {lang === 'es' ? 'Huéspedes' : 'Guests'}
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+            {/* Occupancy % — big hero card */}
+            <div className="card" style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(27,58,92,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Percent size={16} color="var(--navy)" />
+              </div>
+              <div>
+                <p style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', marginBottom: '2px' }}>{t('occupancy', lang)}</p>
+                <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '22px', lineHeight: 1, letterSpacing: '-0.03em', color: occupancyPct >= 80 ? '#16A34A' : occupancyPct >= 50 ? 'var(--navy)' : '#d97706' }}>
+                  {occupancyPct}%
+                </div>
+                <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{rentedRooms}/{totalPropertyRooms} rooms</p>
+              </div>
+            </div>
+            {/* Rented rooms */}
             <StatCard
-              icon={<Package size={16} color={criticalInventory > 0 ? '#DC2626' : 'var(--navy)'} />}
-              iconBg={criticalInventory > 0 ? 'rgba(220,38,38,0.08)' : 'rgba(27,58,92,0.08)'}
-              label={t('inventoryLabel', lang)}
-              value={criticalInventory > 0 ? `${criticalInventory} ${t('criticallyLow', lang).toLowerCase()}` : t('allStocked', lang)}
-              sub={`${belowParCount} ${t('belowPar', lang).toLowerCase()}`}
+              icon={<BedDouble size={16} color="var(--navy)" />}
+              iconBg="rgba(27,58,92,0.08)"
+              label={t('rented', lang)}
+              value={rentedRooms}
+              sub={`${vacant} ${t('availableRooms', lang).toLowerCase()}`}
+            />
+            {/* Arrivals (editable) */}
+            <EditableStatCard
+              icon={<LogIn size={16} color="#7c3aed" />}
+              iconBg="rgba(124,58,237,0.08)"
+              label={t('arrivals', lang)}
+              value={arrivals}
+              onChange={setArrivals}
+              editing={editingField}
+              fieldKey="arrivals"
+              setEditing={setEditingField}
+              sub={t('today', lang)}
+            />
+            {/* Reservations (editable) */}
+            <EditableStatCard
+              icon={<CalendarCheck size={16} color="#0891b2" />}
+              iconBg="rgba(8,145,178,0.08)"
+              label={t('reservations', lang)}
+              value={reservationCount}
+              onChange={setReservationCount}
+              editing={editingField}
+              fieldKey="reservations"
+              setEditing={setEditingField}
+              sub={t('today', lang)}
+            />
+            {/* In-House (editable) */}
+            <EditableStatCard
+              icon={<Hotel size={16} color="#16A34A" />}
+              iconBg="rgba(22,163,74,0.08)"
+              label={t('inHouse', lang)}
+              value={inHouseGuests}
+              onChange={setInHouseGuests}
+              editing={editingField}
+              fieldKey="inHouse"
+              setEditing={setEditingField}
+              sub={lang === 'es' ? 'huéspedes' : 'guests'}
+            />
+            {/* Blocked rooms */}
+            <StatCard
+              icon={<Ban size={16} color={blockedRooms > 0 ? '#DC2626' : 'var(--text-muted)'} />}
+              iconBg={blockedRooms > 0 ? 'rgba(220,38,38,0.08)' : 'rgba(0,0,0,0.04)'}
+              label={t('blockedRooms', lang)}
+              value={blockedRooms}
+              sub={lang === 'es' ? 'mantenimiento' : 'maintenance'}
             />
           </div>
-        )}
+        </div>
+
+        {/* ── Revenue ── */}
+        <div className="animate-in stagger-1">
+          <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', marginBottom: '8px' }}>
+            {lang === 'es' ? 'Ingresos' : 'Revenue'}
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+            {/* ADR (editable) */}
+            <EditableStatCard
+              icon={<DollarSign size={16} color="#CA8A04" />}
+              iconBg="rgba(202,138,4,0.08)"
+              label={t('adr', lang)}
+              value={adr}
+              onChange={setAdr}
+              editing={editingField}
+              fieldKey="adr"
+              setEditing={setEditingField}
+              sub={t('perNight', lang)}
+              prefix="$"
+            />
+            {/* RevPAR (calculated) */}
+            <StatCard
+              icon={<TrendingUp size={16} color="#16A34A" />}
+              iconBg="rgba(22,163,74,0.08)"
+              label={t('revpar', lang)}
+              value={adr > 0 ? `$${revpar}` : '—'}
+              sub={t('perAvailRoom', lang)}
+            />
+          </div>
+        </div>
+
+        {/* ── Operations ── */}
+        <div className="animate-in stagger-1">
+          <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', marginBottom: '8px' }}>
+            {lang === 'es' ? 'Operaciones' : 'Operations'}
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+            <StatCard
+              icon={<Users size={16} color="#16A34A" />}
+              iconBg="rgba(22,163,74,0.08)"
+              label={t('staffTomorrow', lang)}
+              value={confirmedCount}
+              sub={`${tomorrowConfs.length} ${t('contacted', lang)}`}
+            />
+            <StatCard
+              icon={<AlertTriangle size={16} color="#DC2626" />}
+              iconBg="rgba(220,38,38,0.08)"
+              label={t('dirtyRooms', lang)}
+              value={dirty}
+              sub={t('needCleaning', lang)}
+            />
+            <StatCard
+              icon={<Clock size={16} color="var(--navy)" />}
+              iconBg="rgba(27,58,92,0.08)"
+              label={t('avgTurnover', lang)}
+              value={avgTurnover !== null ? `${avgTurnover}m` : '—'}
+              sub={avgTurnover !== null ? `${rooms.filter(r => r.completedAt).length} ${t('roomsCleaned', lang)}` : t('noDataYet', lang)}
+            />
+            <StatCard
+              icon={<Wrench size={16} color={urgentOrders.length > 0 ? '#DC2626' : 'var(--navy)'} />}
+              iconBg={urgentOrders.length > 0 ? 'rgba(220,38,38,0.08)' : 'rgba(27,58,92,0.08)'}
+              label={t('openWorkOrders', lang)}
+              value={openOrders.length}
+              sub={urgentOrders.length > 0 ? `${urgentOrders.length} urgent` : t('allRoutine', lang)}
+            />
+            <StatCard
+              icon={<DoorOpen size={16} color="var(--navy)" />}
+              iconBg="rgba(27,58,92,0.08)"
+              label={t('availableRooms', lang)}
+              value={vacant}
+              sub={`${totalPropertyRooms} ${t('total', lang)}`}
+            />
+          </div>
+        </div>
+
+        {/* ── Est. Labor Cost (by department) ── */}
+        <div className="animate-in stagger-1">
+          <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', marginBottom: '8px' }}>
+            {t('estLaborCost', lang)}
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+            {(() => {
+              const wage = activeProperty?.hourlyWage || 12;
+              const hkStaff = rooms.length > 0 ? Math.ceil(rooms.length / 15) : 1;
+              const hkCost = Math.round(hkStaff * wage * 8);
+              const fdCost = Math.round(2 * wage * 8); // typically 2 front desk per shift
+              const mtCost = Math.round(1 * wage * 8); // typically 1 maintenance
+              return (
+                <>
+                  <StatCard
+                    icon={<DollarSign size={16} color="#0891b2" />}
+                    iconBg="rgba(8,145,178,0.08)"
+                    label={t('frontDeskLabor', lang)}
+                    value={`$${fdCost}`}
+                    sub={t('today', lang)}
+                  />
+                  <StatCard
+                    icon={<DollarSign size={16} color="#CA8A04" />}
+                    iconBg="rgba(202,138,4,0.08)"
+                    label={t('housekeepingLabor', lang)}
+                    value={`$${hkCost}`}
+                    sub={`${hkStaff} staff`}
+                  />
+                  <StatCard
+                    icon={<DollarSign size={16} color="#6b7280" />}
+                    iconBg="rgba(107,114,128,0.08)"
+                    label={t('maintenanceLabor', lang)}
+                    value={`$${mtCost}`}
+                    sub={t('today', lang)}
+                  />
+                </>
+              );
+            })()}
+          </div>
+        </div>
 
         {/* ── Deep Clean Insight Banner ── */}
         {overdueRooms.length > 0 && (
