@@ -677,7 +677,7 @@ function ScheduleSection() {
           })}
 
           {/* Add staff row */}
-          {/* Bottom row: Add staff + Settings */}
+          {/* Bottom row: Add staff + Priority side by side */}
           <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '16px', borderTop: '1px solid var(--border)' }}>
             {eligiblePool.filter(s => !selectedCrew.find(c => c.id === s.id)).length > 0 && (
               <div onClick={() => setShowAddStaff(true)} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
@@ -687,7 +687,6 @@ function ScheduleSection() {
                 </span>
               </div>
             )}
-            <div style={{ flex: 1 }} />
             <div onClick={() => setShowPrioritySettings(true)} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
               <Settings size={14} color="var(--text-muted)" />
               <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)' }}>
