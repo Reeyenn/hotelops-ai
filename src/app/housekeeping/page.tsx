@@ -400,8 +400,15 @@ function ScheduleSection() {
     [shiftRooms]
   );
 
+  // Track whether user has manually touched the crew list
+  const userEditedCrew = useRef(false);
+
   // The selected crew: auto-pick or manual override
   const selectedCrew = useMemo(() => {
+    if (userEditedCrew.current) {
+      // User has made manual changes — respect crewOverride exactly (even if empty)
+      return crewOverride.map(id => staff.find(s => s.id === id)).filter((s): s is StaffMember => !!s);
+    }
     if (crewOverride.length > 0) return crewOverride.map(id => staff.find(s => s.id === id)).filter((s): s is StaffMember => !!s);
     if (recommendedStaff > 0 && totalRooms > 0) return eligiblePool.slice(0, recommendedStaff);
     return eligiblePool;
@@ -436,6 +443,7 @@ function ScheduleSection() {
   }, [selectedCrew, assignableRooms, coMins, soMins, prepPerRoom, shiftLen]);
 
   const toggleCrewMember = (memberId: string) => {
+    userEditedCrew.current = true;
     setCrewOverride(prev => {
       const current = prev.length > 0 ? prev : selectedCrew.map(s => s.id);
       if (current.includes(memberId)) {
