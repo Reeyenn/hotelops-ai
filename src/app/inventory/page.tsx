@@ -650,11 +650,11 @@ export default function InventoryPage() {
         {activeTab === 'settings' && (
           <>
             {/* Compact settings table */}
-            <div style={{ borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflow: 'hidden' }}>
+            <div style={{ borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflow: 'hidden', maxWidth: '640px', margin: '0 auto' }}>
               {/* Header row */}
               <div style={{
-                display: 'grid', gridTemplateColumns: '1fr 64px 64px 48px 90px',
-                gap: 0, padding: '6px 12px', background: 'rgba(0,0,0,0.03)',
+                display: 'grid', gridTemplateColumns: '1fr 56px 56px 44px 90px',
+                gap: '6px', padding: '6px 12px', background: 'rgba(0,0,0,0.03)',
                 borderBottom: '1px solid var(--border)',
                 fontSize: '10px', fontWeight: 600, textTransform: 'uppercase',
                 letterSpacing: '0.05em', color: 'var(--text-muted)',
@@ -789,8 +789,8 @@ function UsageSettingsRow({ item, uid, pid }: { item: InventoryItem; lang: 'en' 
 
   return (
     <div style={{
-      display: 'grid', gridTemplateColumns: '1fr 64px 64px 48px 90px',
-      gap: 0, padding: '6px 12px', alignItems: 'center',
+      display: 'grid', gridTemplateColumns: '1fr 56px 56px 44px 90px',
+      gap: '6px', padding: '6px 12px', alignItems: 'center',
       borderBottom: '1px solid var(--border)',
       minHeight: '38px',
     }}>
