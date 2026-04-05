@@ -82,7 +82,7 @@ export function PropertyProvider({ children }: { children: React.ReactNode }) {
     }
     let cancelled = false;
 
-    const loadProps = async (retries = 1): Promise<void> => {
+    const loadProps = async (retries = 3): Promise<void> => {
       try {
         const allProps = await getProperties(user.uid);
         if (cancelled) return;
@@ -98,9 +98,12 @@ export function PropertyProvider({ children }: { children: React.ReactNode }) {
         setActivePropertyIdState(pid);
       } catch (err) {
         if (cancelled) return;
-        // Firestore auth may not be synced yet — retry after a delay
-        if (retries > 0 && String(err).includes('permission')) {
-          await new Promise(r => setTimeout(r, 1500));
+        const errStr = String(err).toLowerCase();
+        const isPermErr = errStr.includes('permission') || errStr.includes('unauthorized') || errStr.includes('unauthenticated');
+        // Firestore auth may not be synced yet — retry with increasing delay
+        if (retries > 0 && isPermErr) {
+          const delay = (4 - retries) * 1000; // 1s, 2s, 3s
+          await new Promise(r => setTimeout(r, delay));
           if (!cancelled) return loadProps(retries - 1);
         }
         console.error('PropertyContext: failed to load properties', err);
