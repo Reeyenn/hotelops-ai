@@ -649,14 +649,25 @@ export default function InventoryPage() {
         {/* ═══ SETTINGS TAB ═══ */}
         {activeTab === 'settings' && (
           <>
-            <div className="card" style={{ padding: '14px 16px' }}>
-              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                {t('usageSettingsDesc', lang)}
-              </p>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {/* Compact settings table */}
+            <div style={{ borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflow: 'hidden' }}>
+              {/* Header row */}
+              <div style={{
+                display: 'grid', gridTemplateColumns: '1fr 64px 64px 48px 90px',
+                gap: 0, padding: '6px 12px', background: 'rgba(0,0,0,0.03)',
+                borderBottom: '1px solid var(--border)',
+                fontSize: '10px', fontWeight: 600, textTransform: 'uppercase',
+                letterSpacing: '0.05em', color: 'var(--text-muted)',
+              }}>
+                <span>Item</span>
+                <span style={{ textAlign: 'center' }}>C/O</span>
+                <span style={{ textAlign: 'center' }}>Stay</span>
+                <span style={{ textAlign: 'center' }}>Lead</span>
+                <span style={{ textAlign: 'center' }}>Vendor</span>
+              </div>
+              {/* Item rows */}
               {items.map(item => (
-                <UsageSettingsCard key={item.id} item={item} lang={lang} uid={user.uid} pid={activePropertyId} />
+                <UsageSettingsRow key={item.id} item={item} lang={lang} uid={user.uid} pid={activePropertyId} />
               ))}
             </div>
           </>
@@ -746,21 +757,16 @@ function suggestedOrderQty(pred: ItemPrediction): number {
   return Math.max(10, Math.ceil(raw / 10) * 10);
 }
 
-// ─── Usage Settings Card ─────────────────────────────────────────────────────
+// ─── Usage Settings Row (compact inline) ────────────────────────────────────
 
-function UsageSettingsCard({ item, lang, uid, pid }: { item: InventoryItem; lang: 'en' | 'es'; uid: string; pid: string }) {
+function UsageSettingsRow({ item, uid, pid }: { item: InventoryItem; lang: 'en' | 'es'; uid: string; pid: string }) {
   const [checkout, setCheckout] = useState(String(item.usagePerCheckout ?? 0));
   const [stayover, setStayover] = useState(String(item.usagePerStayover ?? 0));
   const [leadDays, setLeadDays] = useState(String(item.reorderLeadDays ?? 3));
   const [vendor, setVendor] = useState(item.vendorName ?? '');
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  // Flush pending save on unmount
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, []);
+  useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
 
   const save = useCallback((field: string, value: string) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -774,75 +780,27 @@ function UsageSettingsCard({ item, lang, uid, pid }: { item: InventoryItem; lang
     }, 500);
   }, [uid, pid, item.id]);
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-md)',
-    border: '1.5px solid var(--border)', background: 'var(--bg)',
-    fontSize: '14px', fontFamily: 'var(--font-mono)',
-    color: 'var(--text-primary)',
+  const cellInput: React.CSSProperties = {
+    width: '100%', padding: '4px 6px', borderRadius: '4px',
+    border: '1px solid var(--border)', background: 'var(--bg)',
+    fontSize: '12px', fontFamily: 'var(--font-mono)',
+    color: 'var(--text-primary)', textAlign: 'center',
   };
 
   return (
-    <div className="card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      <span style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>
+    <div style={{
+      display: 'grid', gridTemplateColumns: '1fr 64px 64px 48px 90px',
+      gap: 0, padding: '6px 12px', alignItems: 'center',
+      borderBottom: '1px solid var(--border)',
+      minHeight: '38px',
+    }}>
+      <span style={{ fontWeight: 600, fontSize: '12px', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: '8px' }}>
         {item.name}
       </span>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-        <div>
-          <label style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-            {t('usagePerCheckout', lang)}
-          </label>
-          <input
-            type="number"
-            step="0.1"
-            min="0"
-            value={checkout}
-            onChange={e => setCheckout(e.target.value)}
-            onBlur={() => save('usagePerCheckout', checkout)}
-            style={inputStyle}
-          />
-        </div>
-        <div>
-          <label style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-            {t('usagePerStayover', lang)}
-          </label>
-          <input
-            type="number"
-            step="0.1"
-            min="0"
-            value={stayover}
-            onChange={e => setStayover(e.target.value)}
-            onBlur={() => save('usagePerStayover', stayover)}
-            style={inputStyle}
-          />
-        </div>
-        <div>
-          <label style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-            {t('reorderLeadDays', lang)}
-          </label>
-          <input
-            type="number"
-            step="1"
-            min="0"
-            value={leadDays}
-            onChange={e => setLeadDays(e.target.value)}
-            onBlur={() => save('reorderLeadDays', leadDays)}
-            style={inputStyle}
-          />
-        </div>
-        <div>
-          <label style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-            {t('vendor', lang)}
-          </label>
-          <input
-            type="text"
-            value={vendor}
-            onChange={e => setVendor(e.target.value)}
-            onBlur={() => save('vendorName', vendor)}
-            placeholder="e.g. HD Supply"
-            style={{ ...inputStyle, fontFamily: 'var(--font-sans)' }}
-          />
-        </div>
-      </div>
+      <input type="number" step="0.1" min="0" value={checkout} onChange={e => setCheckout(e.target.value)} onBlur={() => save('usagePerCheckout', checkout)} style={cellInput} />
+      <input type="number" step="0.1" min="0" value={stayover} onChange={e => setStayover(e.target.value)} onBlur={() => save('usagePerStayover', stayover)} style={cellInput} />
+      <input type="number" step="1" min="0" value={leadDays} onChange={e => setLeadDays(e.target.value)} onBlur={() => save('reorderLeadDays', leadDays)} style={cellInput} />
+      <input type="text" value={vendor} onChange={e => setVendor(e.target.value)} onBlur={() => save('vendorName', vendor)} placeholder="—" style={{ ...cellInput, fontFamily: 'var(--font-sans)', textAlign: 'left' }} />
     </div>
   );
 }
