@@ -64,6 +64,33 @@ const DEFAULTS: Omit<InventoryItem, 'id' | 'updatedAt' | 'propertyId'>[] = [
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
+function HeaderWithTip({ label, tip }: { label: string; tip: string }) {
+  const [show, setShow] = useState(false);
+  return (
+    <span
+      style={{ textAlign: 'center', position: 'relative', cursor: 'help', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+    >
+      {label}
+      <span style={{ fontSize: '9px', width: '12px', height: '12px', borderRadius: '50%', border: '1px solid var(--text-muted)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1, flexShrink: 0 }}>?</span>
+      {show && (
+        <div style={{
+          position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)',
+          marginTop: '6px', padding: '8px 12px', borderRadius: '8px',
+          background: 'var(--navy, #1b3a5c)', color: '#fff',
+          fontSize: '12px', fontWeight: 400, textTransform: 'none', letterSpacing: 'normal',
+          lineHeight: 1.4, whiteSpace: 'normal', width: '200px', textAlign: 'left',
+          zIndex: 50, boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          pointerEvents: 'none',
+        }}>
+          {tip}
+        </div>
+      )}
+    </span>
+  );
+}
+
 function ProgressBar({ value, max, color, label }: { value: number; max: number; color: string; label?: string }) {
   const pct = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
   return (
@@ -660,9 +687,9 @@ export default function InventoryPage() {
                 letterSpacing: '0.05em', color: 'var(--text-muted)',
               }}>
                 <span>Item</span>
-                <span style={{ textAlign: 'center' }}>C/O</span>
-                <span style={{ textAlign: 'center' }}>Stay</span>
-                <span style={{ textAlign: 'center' }}>Lead</span>
+                <HeaderWithTip label="C/O" tip="Usage per checkout — how many of this item are used each time a guest checks out." />
+                <HeaderWithTip label="Stay" tip="Usage per stayover — how many are used each day a guest stays without checking out." />
+                <HeaderWithTip label="Lead" tip="Lead days — how many days it takes for a new order to arrive after you place it." />
                 <span style={{ textAlign: 'center' }}>Vendor</span>
               </div>
               {/* Item rows */}
