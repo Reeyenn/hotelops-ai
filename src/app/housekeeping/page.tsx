@@ -402,7 +402,7 @@ function ScheduleSection() {
 
   // The selected crew: auto-pick or manual override
   const selectedCrew = useMemo(() => {
-    if (crewOverride.length > 0) return staff.filter(s => crewOverride.includes(s.id));
+    if (crewOverride.length > 0) return crewOverride.map(id => staff.find(s => s.id === id)).filter((s): s is StaffMember => !!s);
     if (recommendedStaff > 0 && totalRooms > 0) return eligiblePool.slice(0, recommendedStaff);
     return eligiblePool;
   }, [crewOverride, eligiblePool, recommendedStaff, totalRooms, staff]);
