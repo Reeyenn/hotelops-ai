@@ -35,6 +35,7 @@ import type {
   ManagerNotification,
   DeepCleanConfig,
   DeepCleanRecord,
+  LandscapingTask,
 } from '@/types';
 
 // ─── Path helpers ──────────────────────────────────────────────────────────
@@ -340,6 +341,48 @@ export async function updatePreventiveTask(
 
 export async function deletePreventiveTask(uid: string, pid: string, tid: string) {
   await deleteDoc(preventiveTaskDocRef(uid, pid, tid));
+}
+
+// ─── Landscaping Tasks ────────────────────────────────────────────────────
+
+export const landscapingTasksRef = (uid: string, pid: string) =>
+  collection(db, 'users', uid, 'properties', pid, 'landscapingTasks');
+export const landscapingTaskDocRef = (uid: string, pid: string, tid: string) =>
+  doc(db, 'users', uid, 'properties', pid, 'landscapingTasks', tid);
+
+export function subscribeToLandscapingTasks(
+  uid: string,
+  pid: string,
+  callback: (tasks: LandscapingTask[]) => void
+) {
+  return onSnapshot(landscapingTasksRef(uid, pid), snap => {
+    const tasks = snap.docs.map(d => ({ id: d.id, ...d.data() } as LandscapingTask));
+    callback(tasks);
+  });
+}
+
+export async function addLandscapingTask(
+  uid: string,
+  pid: string,
+  task: Omit<LandscapingTask, 'id' | 'createdAt'>
+): Promise<string> {
+  const clean = Object.fromEntries(Object.entries(task).filter(([, v]) => v !== undefined));
+  const ref = await addDoc(landscapingTasksRef(uid, pid), { ...clean, createdAt: serverTimestamp() });
+  return ref.id;
+}
+
+export async function updateLandscapingTask(
+  uid: string,
+  pid: string,
+  tid: string,
+  data: Partial<LandscapingTask>
+) {
+  const clean = Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined));
+  await updateDoc(landscapingTaskDocRef(uid, pid, tid), clean);
+}
+
+export async function deleteLandscapingTask(uid: string, pid: string, tid: string) {
+  await deleteDoc(landscapingTaskDocRef(uid, pid, tid));
 }
 
 // ─── Inventory / Supply Tracking ───────────────────────────────────────────

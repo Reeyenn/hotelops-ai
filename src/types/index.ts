@@ -153,6 +153,22 @@ export interface Inspection {
   updatedAt: Date | null;
 }
 
+// ─── Landscaping Tasks ────────────────────────────────────────────────────
+
+export type LandscapingSeason = 'year-round' | 'spring' | 'summer' | 'fall' | 'winter';
+
+export interface LandscapingTask {
+  id: string;
+  propertyId: string;
+  name: string;                    // e.g. "Grass Mowing", "Shrub Trimming"
+  season: LandscapingSeason;       // when this task applies
+  frequencyDays: number;           // how often it recurs (e.g. 7, 10, 14, 90)
+  lastCompletedAt: Date | null;    // null = never done
+  lastCompletedBy?: string;        // name of who did it
+  notes?: string;
+  createdAt: Date | null;
+}
+
 // ─── Shift Handoff Log ─────────────────────────────────────────────────────
 
 export interface HandoffEntry {

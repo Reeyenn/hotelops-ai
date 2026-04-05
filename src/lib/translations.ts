@@ -201,6 +201,9 @@ type TranslationKey =
   | 'allRoutine' | 'preventiveMaintenance' | 'lastCompleted' | 'never'
   | 'dueToday' | 'addTask' | 'taskName' | 'frequencyDays'
   | 'noWorkOrders' | 'noPreventiveTasks' | 'justNow'
+  // Landscaping
+  | 'landscaping' | 'noLandscapingTasks' | 'addLandscapingTask' | 'landscapingTaskName'
+  | 'season' | 'yearRound' | 'spring' | 'summer' | 'fall' | 'winter'
   | 'inspect' | 'inspection' | 'approve' | 'reject' | 'rejectReason'
   | 'roomApproved' | 'roomRejected' | 'allCaughtUp' | 'alreadyInspected'
   | 'roomsCleaned' | 'avgTime' | 'noRoomsCompleted' | 'avgTurnover'
@@ -755,6 +758,17 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     frequencyDays: 'Frequency (days)',
     noWorkOrders: 'No work orders yet',
     noPreventiveTasks: 'No preventive tasks yet',
+    // Landscaping
+    landscaping: 'Landscaping',
+    noLandscapingTasks: 'No landscaping tasks yet',
+    addLandscapingTask: 'Add Task',
+    landscapingTaskName: 'Task Name',
+    season: 'Season',
+    yearRound: 'Year-Round',
+    spring: 'Spring',
+    summer: 'Summer',
+    fall: 'Fall',
+    winter: 'Winter',
     justNow: 'just now',
     inspect: 'Inspect',
     inspection: 'Inspection',
@@ -1323,6 +1337,17 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     frequencyDays: 'Frecuencia (días)',
     noWorkOrders: 'Sin órdenes de trabajo',
     noPreventiveTasks: 'Sin tareas preventivas',
+    // Landscaping
+    landscaping: 'Jardinería',
+    noLandscapingTasks: 'Sin tareas de jardinería',
+    addLandscapingTask: 'Agregar Tarea',
+    landscapingTaskName: 'Nombre de la tarea',
+    season: 'Temporada',
+    yearRound: 'Todo el año',
+    spring: 'Primavera',
+    summer: 'Verano',
+    fall: 'Otoño',
+    winter: 'Invierno',
     justNow: 'ahora mismo',
     inspect: 'Inspeccionar',
     inspection: 'Inspección',
