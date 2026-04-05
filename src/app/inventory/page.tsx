@@ -527,13 +527,6 @@ export default function InventoryPage() {
               </div>
             )}
 
-            {/* Stat cards */}
-            <div className="animate-in stagger-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-              <StatMini icon={<Package size={16} color="var(--navy)" />} iconBg="rgba(27,58,92,0.08)" label={t('totalItems', lang)} value={items.length} />
-              <StatMini icon={<AlertTriangle size={16} color="#dc2626" />} iconBg="rgba(220,38,38,0.08)" label={t('belowPar', lang)} value={belowPar.length} />
-              <StatMini icon={<BarChart3 size={16} color="var(--navy)" />} iconBg="rgba(27,58,92,0.08)" label={t('avgCheckoutsPerDay', lang)} value={historyLoaded ? `~${avgCheckouts}` : '—'} sub={historyLoaded ? '7d' : ''} />
-            </div>
-
             {/* Category filter pills */}
             <div className="animate-in stagger-2" style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px', WebkitOverflowScrolling: 'touch' }}>
               {CATEGORIES.map(cat => (
