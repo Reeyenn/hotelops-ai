@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   collectionGroup,
   doc,
@@ -49,6 +50,9 @@ function sortRooms(rooms: RoomWithRef[]): RoomWithRef[] {
 
 export default function HousekeeperRoomPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: housekeeperId } = React.use(params);
+  const searchParams = useSearchParams();
+  const uid = searchParams.get('uid');
+  const pid = searchParams.get('pid');
   const today = todayStr();
   const { lang, setLang } = useLang();
 
@@ -182,6 +186,23 @@ export default function HousekeeperRoomPage({ params }: { params: Promise<{ id: 
         helpRequestedBy: housekeeperId,
       });
       setHelpSent(prev => new Set(prev).add(room.id));
+
+      // Send SMS notification to front desk staff (best-effort, don't block on failure)
+      if (uid && pid) {
+        fetch('/api/help-request', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            uid,
+            pid,
+            staffName: room.assignedName || 'Housekeeper',
+            roomNumber: room.number,
+            language: lang,
+          }),
+        }).catch(err => {
+          console.error('[housekeeper] help request SMS failed:', err);
+        });
+      }
     } catch (err) {
       console.error('[housekeeper] help request error:', err);
     } finally {
