@@ -71,3 +71,8 @@ export function timeAgo(date: Date | null | undefined): string {
   const days = Math.floor(hours / 24);
   return `${days}d ago`;
 }
+
+/** Validate YYYY-MM-DD date string */
+export function isValidDateStr(s: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(new Date(s).getTime());
+}

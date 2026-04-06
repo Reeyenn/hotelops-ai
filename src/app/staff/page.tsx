@@ -250,7 +250,7 @@ export default function StaffPage() {
     return new Set(confirmations.filter(c => c.status !== 'declined').map(c => c.staffId));
   }, [confirmations]);
 
-  const totalRooms = activeProperty?.totalRooms || 74;
+  const totalRooms = activeProperty?.totalRooms || 0;
   // Use a rough occupancy estimate — in real life this would come from PMS
   const occupancyPct = totalRooms > 0 ? Math.round(((staff.filter(s => s.scheduledToday).length * 15) / totalRooms) * 100) : 65;
 

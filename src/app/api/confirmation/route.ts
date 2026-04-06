@@ -45,6 +45,10 @@ export async function GET(req: NextRequest) {
     }
 
     const data = snap.data()!;
+    if (data?.expiresAt && new Date(data.expiresAt) < new Date()) {
+      return NextResponse.json({ error: 'This confirmation link has expired' }, { status: 410 });
+    }
+
     return NextResponse.json({
       staffName: data.staffName as string,
       shiftDate: data.shiftDate as string,
@@ -87,6 +91,9 @@ export async function POST(req: NextRequest) {
     }
 
     const data = snap.data()!;
+    if (data?.expiresAt && new Date(data.expiresAt) < new Date()) {
+      return NextResponse.json({ error: 'This confirmation link has expired' }, { status: 410 });
+    }
 
     // Already responded - idempotent
     if (data.status !== 'pending') {
@@ -255,6 +262,7 @@ export async function POST(req: NextRequest) {
               sentAt: admin.firestore.FieldValue.serverTimestamp(),
               respondedAt: null,
               smsSent: false,
+              expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
             });
 
           try {

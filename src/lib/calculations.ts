@@ -53,7 +53,7 @@ export function calcLaundryMinutes(
       twoBedCheckouts * cat.unitsPerCheckout * cat.twoBedMultiplier +
       stayovers * cat.unitsPerCheckout * cat.stayoverFactor;
 
-    const loads = Math.ceil(units / cat.roomEquivsPerLoad);
+    const loads = Math.ceil(units / Math.max(cat.roomEquivsPerLoad, 1));
     const minutes = loads * cat.minutesPerLoad;
 
     return { category: cat.name, units: Math.round(units), loads, minutes };

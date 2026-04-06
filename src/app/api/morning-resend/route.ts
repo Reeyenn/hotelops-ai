@@ -14,6 +14,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import admin from '@/lib/firebase-admin';
 import { sendSms } from '@/lib/sms';
+import { isValidDateStr } from '@/lib/utils';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -87,6 +88,10 @@ export async function POST(req: NextRequest) {
 
     if (!uid || !pid || !shiftDate) {
       return NextResponse.json({ error: 'Missing uid, pid, or shiftDate' }, { status: 400 });
+    }
+
+    if (!isValidDateStr(shiftDate)) {
+      return NextResponse.json({ error: 'Invalid shiftDate format (expected YYYY-MM-DD)' }, { status: 400 });
     }
 
     const db = admin.firestore();

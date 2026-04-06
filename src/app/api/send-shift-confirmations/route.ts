@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import admin from '@/lib/firebase-admin';
 import { sendSms } from '@/lib/sms';
+import { isValidDateStr } from '@/lib/utils';
 
 interface StaffEntry {
   staffId: string;
@@ -47,6 +48,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    if (!isValidDateStr(shiftDate)) {
+      return NextResponse.json({ error: 'Invalid shiftDate format (expected YYYY-MM-DD)' }, { status: 400 });
+    }
+
     const db = admin.firestore();
 
     // Fetch hotel name from property doc
@@ -84,6 +89,7 @@ export async function POST(req: NextRequest) {
             sentAt: admin.firestore.FieldValue.serverTimestamp(),
             respondedAt: null,
             smsSent: false,
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
           });
 
         const dateLabel   = formatShiftDate(shiftDate, language);

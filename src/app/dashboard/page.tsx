@@ -79,7 +79,7 @@ export default function DashboardPage() {
   const total      = rooms.length;
   const pct        = total > 0 ? Math.round((clean / total) * 100) : 0;
 
-  const totalPropertyRooms = activeProperty?.totalRooms || 74;
+  const totalPropertyRooms = activeProperty?.totalRooms || 0;
   const rentedRooms = checkouts + stayovers;
   const occupancyPct = totalPropertyRooms > 0 ? Math.round((rentedRooms / totalPropertyRooms) * 100) : 0;
   const revpar = totalPropertyRooms > 0 && adr > 0 ? Math.round((adr * rentedRooms) / totalPropertyRooms) : 0;

@@ -33,7 +33,7 @@ export default function PropertySettingsPage() {
 
   const [form, setForm] = useState({
     name: '',
-    totalRooms: 74,
+    totalRooms: 0,
     avgOccupancy: 65,
     totalStaffOnRoster: 8,
     hourlyWage: 12,
@@ -52,7 +52,7 @@ export default function PropertySettingsPage() {
     if (activeProperty) {
       setForm({
         name: activeProperty.name ?? '',
-        totalRooms: activeProperty.totalRooms ?? 74,
+        totalRooms: activeProperty.totalRooms ?? 0,
         avgOccupancy: activeProperty.avgOccupancy ?? 65,
         totalStaffOnRoster: activeProperty.totalStaffOnRoster ?? 8,
         hourlyWage: activeProperty.hourlyWage ?? 12,
@@ -82,7 +82,7 @@ export default function PropertySettingsPage() {
     if (!user || !newPropertyName.trim()) return;
     const pid = await createProperty(user.uid, {
       name: newPropertyName.trim(),
-      totalRooms: 74,
+      totalRooms: 0,
       avgOccupancy: 65,
       hourlyWage: 12,
       checkoutMinutes: 30,
