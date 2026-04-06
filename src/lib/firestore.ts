@@ -105,20 +105,37 @@ export function subscribeToStaff(
 ): () => void {
   return onSnapshot(staffRef(uid, pid), snap => {
     callback(snap.docs.map(d => ({ id: d.id, ...d.data() } as StaffMember)));
+  }, error => {
+    console.error('[Firestore] Listener error in subscribeToStaff:', error.message);
   });
 }
 
 export async function addStaffMember(uid: string, pid: string, data: Omit<StaffMember, 'id'>): Promise<string> {
-  const ref = await addDoc(staffRef(uid, pid), data);
-  return ref.id;
+  try {
+    const ref = await addDoc(staffRef(uid, pid), data);
+    return ref.id;
+  } catch (error: any) {
+    console.error('[Firestore] addStaffMember failed:', error.message);
+    throw error;
+  }
 }
 
 export async function updateStaffMember(uid: string, pid: string, sid: string, data: Partial<StaffMember>) {
-  await updateDoc(staffDocRef(uid, pid, sid), data);
+  try {
+    await updateDoc(staffDocRef(uid, pid, sid), data);
+  } catch (error: any) {
+    console.error('[Firestore] updateStaffMember failed:', error.message);
+    throw error;
+  }
 }
 
 export async function deleteStaffMember(uid: string, pid: string, sid: string) {
-  await deleteDoc(staffDocRef(uid, pid, sid));
+  try {
+    await deleteDoc(staffDocRef(uid, pid, sid));
+  } catch (error: any) {
+    console.error('[Firestore] deleteStaffMember failed:', error.message);
+    throw error;
+  }
 }
 
 export async function saveStaffFcmToken(uid: string, pid: string, sid: string, fcmToken: string) {
@@ -165,7 +182,12 @@ export async function getDailyLog(uid: string, pid: string, date: string): Promi
 }
 
 export async function saveDailyLog(uid: string, pid: string, log: DailyLog) {
-  await setDoc(dailyLogRef(uid, pid, log.date), log);
+  try {
+    await setDoc(dailyLogRef(uid, pid, log.date), log);
+  } catch (error: any) {
+    console.error('[Firestore] saveDailyLog failed:', error.message);
+    throw error;
+  }
 }
 
 export async function getRecentDailyLogs(uid: string, pid: string, days = 30): Promise<DailyLog[]> {
@@ -188,12 +210,19 @@ export function subscribeToRooms(
   return onSnapshot(q, snap => {
     const rooms = snap.docs.map(d => ({ id: d.id, ...d.data() } as Room));
     callback(rooms);
+  }, error => {
+    console.error('[Firestore] Listener error in subscribeToRooms:', error.message);
   });
 }
 
 export async function addRoom(uid: string, pid: string, room: Omit<Room, 'id'>): Promise<string> {
-  const ref = await addDoc(roomsRef(uid, pid), room);
-  return ref.id;
+  try {
+    const ref = await addDoc(roomsRef(uid, pid), room);
+    return ref.id;
+  } catch (error: any) {
+    console.error('[Firestore] addRoom failed:', error.message);
+    throw error;
+  }
 }
 
 export async function updateRoom(uid: string, pid: string, rid: string, data: Partial<Room>) {
@@ -207,8 +236,13 @@ export async function deleteRoom(uid: string, pid: string, rid: string) {
 }
 
 export async function bulkAddRooms(uid: string, pid: string, rooms: Omit<Room, 'id'>[]) {
-  const writes = rooms.map(r => addDoc(roomsRef(uid, pid), r));
-  await Promise.all(writes);
+  try {
+    const writes = rooms.map(r => addDoc(roomsRef(uid, pid), r));
+    await Promise.all(writes);
+  } catch (error: any) {
+    console.error('[Firestore] bulkAddRooms failed:', error.message);
+    throw error;
+  }
 }
 
 /** One-time fetch of rooms for a specific date (no real-time listener) */
@@ -265,6 +299,8 @@ export function subscribeToWorkOrders(
       } as WorkOrder;
     });
     callback(orders);
+  }, error => {
+    console.error('[Firestore] Listener error in subscribeToWorkOrders:', error.message);
   });
 }
 
@@ -273,16 +309,21 @@ export async function addWorkOrder(
   pid: string,
   order: Omit<WorkOrder, 'id' | 'createdAt' | 'updatedAt'>
 ): Promise<string> {
-  // Firestore rejects undefined values - strip them before writing
-  const clean = Object.fromEntries(
-    Object.entries(order).filter(([, v]) => v !== undefined)
-  );
-  const ref = await addDoc(workOrdersRef(uid, pid), {
-    ...clean,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  });
-  return ref.id;
+  try {
+    // Firestore rejects undefined values - strip them before writing
+    const clean = Object.fromEntries(
+      Object.entries(order).filter(([, v]) => v !== undefined)
+    );
+    const ref = await addDoc(workOrdersRef(uid, pid), {
+      ...clean,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    return ref.id;
+  } catch (error: any) {
+    console.error('[Firestore] addWorkOrder failed:', error.message);
+    throw error;
+  }
 }
 
 export async function updateWorkOrder(
@@ -291,10 +332,15 @@ export async function updateWorkOrder(
   wid: string,
   data: Partial<WorkOrder>
 ) {
-  await updateDoc(workOrderDocRef(uid, pid, wid), {
-    ...data,
-    updatedAt: serverTimestamp(),
-  });
+  try {
+    await updateDoc(workOrderDocRef(uid, pid, wid), {
+      ...data,
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error: any) {
+    console.error('[Firestore] updateWorkOrder failed:', error.message);
+    throw error;
+  }
 }
 
 export async function deleteWorkOrder(uid: string, pid: string, wid: string) {
@@ -316,6 +362,8 @@ export function subscribeToPreventiveTasks(
   return onSnapshot(preventiveTasksRef(uid, pid), snap => {
     const tasks = snap.docs.map(d => ({ id: d.id, ...d.data() } as PreventiveTask));
     callback(tasks);
+  }, error => {
+    console.error('[Firestore] Listener error in subscribeToPreventiveTasks:', error.message);
   });
 }
 
@@ -358,6 +406,8 @@ export function subscribeToLandscapingTasks(
   return onSnapshot(landscapingTasksRef(uid, pid), snap => {
     const tasks = snap.docs.map(d => ({ id: d.id, ...d.data() } as LandscapingTask));
     callback(tasks);
+  }, error => {
+    console.error('[Firestore] Listener error in subscribeToLandscapingTasks:', error.message);
   });
 }
 
@@ -398,6 +448,8 @@ export function subscribeToInventory(
 ) {
   return onSnapshot(inventoryRef(uid, pid), snap => {
     callback(snap.docs.map(d => ({ id: d.id, ...d.data() } as InventoryItem)));
+  }, error => {
+    console.error('[Firestore] Listener error in subscribeToInventory:', error.message);
   });
 }
 
@@ -435,6 +487,8 @@ export function subscribeToInspections(
 ) {
   return onSnapshot(inspectionsRef(uid, pid), snap => {
     callback(snap.docs.map(d => ({ id: d.id, ...d.data() } as Inspection)));
+  }, error => {
+    console.error('[Firestore] Listener error in subscribeToInspections:', error.message);
   });
 }
 
@@ -473,6 +527,8 @@ export function subscribeToHandoffLogs(
   const q = query(handoffRef(uid, pid), orderBy('createdAt', 'desc'));
   return onSnapshot(q, snap => {
     callback(snap.docs.map(d => ({ id: d.id, ...d.data() } as HandoffEntry)));
+  }, error => {
+    console.error('[Firestore] Listener error in subscribeToHandoffLogs:', error.message);
   });
 }
 
@@ -509,6 +565,8 @@ export function subscribeToGuestRequests(
   const q = query(guestRequestsRef(uid, pid), orderBy('createdAt', 'desc'));
   return onSnapshot(q, snap => {
     callback(snap.docs.map(d => ({ id: d.id, ...d.data() } as GuestRequest)));
+  }, error => {
+    console.error('[Firestore] Listener error in subscribeToGuestRequests:', error.message);
   });
 }
 
@@ -557,6 +615,8 @@ export function subscribeToShiftConfirmations(
         respondedAt: data.respondedAt?.toDate?.() ?? null,
       } as ShiftConfirmation;
     }));
+  }, error => {
+    console.error('[Firestore] Listener error in subscribeToShiftConfirmations:', error.message);
   });
 }
 
@@ -598,6 +658,8 @@ export function subscribeToManagerNotifications(
         createdAt: data.createdAt?.toDate?.() ?? null,
       } as ManagerNotification;
     }));
+  }, error => {
+    console.error('[Firestore] Listener error in subscribeToManagerNotifications:', error.message);
   });
 }
 
