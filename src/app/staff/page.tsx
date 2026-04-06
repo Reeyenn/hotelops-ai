@@ -504,28 +504,28 @@ export default function StaffPage() {
                       <div
                         onClick={(e) => { e.stopPropagation(); toggleScheduledToday(member); }}
                         style={{
-                          width: '28px', height: '28px', borderRadius: '6px',
+                          padding: '4px 10px', borderRadius: '6px',
                           background: member.scheduledToday ? 'rgba(34,197,94,0.12)' : 'rgba(0,0,0,0.04)',
                           border: `1px solid ${member.scheduledToday ? 'rgba(34,197,94,0.3)' : 'var(--border)'}`,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
                           cursor: 'pointer', flexShrink: 0,
+                          fontSize: '11px', fontWeight: 600,
+                          color: member.scheduledToday ? 'var(--green)' : 'var(--text-muted)',
                         }}
-                        title={member.scheduledToday ? 'Scheduled today' : 'Not scheduled'}
                       >
-                        <Clock size={13} color={member.scheduledToday ? 'var(--green)' : 'var(--text-muted)'} />
+                        {member.scheduledToday ? 'Scheduled' : 'Schedule'}
                       </div>
 
                       {/* Edit */}
                       <button
                         onClick={(e) => { e.stopPropagation(); openEdit(member); }}
                         style={{
-                          width: '28px', height: '28px', borderRadius: '6px',
+                          padding: '4px 10px', borderRadius: '6px',
                           background: 'rgba(0,0,0,0.04)', border: '1px solid var(--border)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
                           cursor: 'pointer', flexShrink: 0,
+                          fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)',
                         }}
                       >
-                        <Pencil size={12} color="var(--text-muted)" />
+                        Edit
                       </button>
                     </div>
                   );
