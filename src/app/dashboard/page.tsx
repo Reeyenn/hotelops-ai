@@ -8,111 +8,18 @@ import { useLang } from '@/contexts/LanguageContext';
 import { t } from '@/lib/translations';
 import { AppLayout } from '@/components/layout/AppLayout';
 import {
-  subscribeToRooms, subscribeToShiftConfirmations,
+  subscribeToRooms,
   getDeepCleanConfig, getDeepCleanRecords,
   subscribeToWorkOrders,
 } from '@/lib/firestore';
 import { getOverdueRooms, calcDndFreedMinutes, suggestDeepCleans } from '@/lib/calculations';
 import { todayStr } from '@/lib/utils';
-import type { Room, ShiftConfirmation, ConfirmationStatus, DeepCleanConfig, DeepCleanRecord, WorkOrder } from '@/types';
-import { format } from 'date-fns';
+import type { Room, DeepCleanConfig, DeepCleanRecord, WorkOrder } from '@/types';
 import {
-  CheckCircle2, XCircle, Clock, AlertTriangle,
-  Users, DollarSign, Wrench,
-  Sparkles, CircleDot, DoorOpen, Zap,
-  BedDouble, Ban, Percent, TrendingUp, LogIn, Hotel, CalendarCheck,
-  ChevronRight,
+  Clock, AlertTriangle,
+  DollarSign, Wrench,
+  Zap, Percent,
 } from 'lucide-react';
-
-/* ── Room grid helper ── */
-function RoomGrid({ rooms, overdueSet }: { rooms: Room[]; overdueSet?: Set<string> }) {
-  const { lang } = useLang();
-  const floors = new Map<string, Room[]>();
-  [...rooms]
-    .sort((a, b) => parseInt(a.number, 10) - parseInt(b.number, 10))
-    .forEach(room => {
-      const floor = room.number.length >= 3 ? room.number[0] : '1';
-      if (!floors.has(floor)) floors.set(floor, []);
-      floors.get(floor)!.push(room);
-    });
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      {Array.from(floors.entries()).map(([floor, floorRooms]) => (
-        <div key={floor}>
-          {floors.size > 1 && (
-            <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', marginBottom: '6px' }}>
-              {t('floor', lang)} {floor}
-            </div>
-          )}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-            {floorRooms.map(room => {
-              const isClean = room.status === 'clean' || room.status === 'inspected';
-              const isDirty = room.status === 'dirty';
-              const isProgress = room.status === 'in_progress';
-              const bg = isClean ? '#DCFCE7' : isProgress ? '#FEF9C3' : '#FEE2E2';
-              const border = isClean ? '#86EFAC' : isProgress ? '#FCD34D' : '#FCA5A5';
-              const color = isClean ? '#16A34A' : isProgress ? '#D97706' : '#DC2626';
-              return (
-                <div
-                  key={room.id}
-                  title={`Room ${room.number} · ${room.type ?? ''} · ${room.status}`}
-                  style={{
-                    width: '32px', height: '28px',
-                    borderRadius: '6px',
-                    background: bg,
-                    border: `1.5px solid ${border}`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '9px', fontWeight: 700,
-                    fontFamily: 'var(--font-mono)',
-                    color,
-                    position: 'relative',
-                    transition: 'transform 0.1s',
-                    cursor: 'default',
-                    flexShrink: 0,
-                    letterSpacing: '-0.02em',
-                  }}
-                >
-                  {room.number}
-                  {isDirty && room.type === 'checkout' && (
-                    <div style={{
-                      position: 'absolute', top: '2px', right: '2px',
-                      width: '5px', height: '5px', borderRadius: '50%',
-                      background: '#DC2626',
-                      border: '1px solid white',
-                    }} />
-                  )}
-                  {overdueSet?.has(room.number) && (
-                    <div style={{
-                      position: 'absolute', top: '2px', left: '2px',
-                      width: '5px', height: '5px', borderRadius: '50%',
-                      background: '#f59e0b',
-                      border: '1px solid white',
-                    }} />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function addDays(dateStr: string, n: number): string {
-  const [y, m, d] = dateStr.split('-').map(Number);
-  const dt = new Date(y, m - 1, d + n);
-  return dt.toLocaleDateString('en-CA');
-}
-
-/* ── Status badge config ── */
-const STATUS_BADGE: Record<ConfirmationStatus, { bg: string; color: string; label_en: string; label_es: string; icon: React.ReactNode }> = {
-  confirmed:   { bg: 'rgba(22,163,74,0.08)',  color: 'var(--green)',     label_en: 'Confirmed',   label_es: 'Confirmado',  icon: <CheckCircle2 size={13} /> },
-  pending:     { bg: 'rgba(202,138,4,0.08)',   color: 'var(--yellow)',    label_en: 'Pending',     label_es: 'Pendiente',   icon: <Clock size={13} /> },
-  declined:    { bg: 'rgba(220,38,38,0.08)',   color: 'var(--red)',       label_en: 'Declined',    label_es: 'Rechazado',   icon: <XCircle size={13} /> },
-  no_response: { bg: 'rgba(156,163,175,0.08)', color: 'var(--text-muted)', label_en: 'No Response', label_es: 'Sin Respuesta', icon: <AlertTriangle size={13} /> },
-};
 
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
@@ -121,7 +28,6 @@ export default function DashboardPage() {
   const router = useRouter();
 
   const [rooms, setRooms] = useState<Room[]>([]);
-  const [tomorrowConfs, setTomorrowConfs] = useState<ShiftConfirmation[]>([]);
   const [dcConfig, setDcConfig] = useState<DeepCleanConfig | null>(null);
   const [dcRecords, setDcRecords] = useState<DeepCleanRecord[]>([]);
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
@@ -132,7 +38,6 @@ export default function DashboardPage() {
   const [adr, setAdr] = useState(0);
   const [editingField, setEditingField] = useState<string | null>(null);
 
-  const tomorrow = addDays(todayStr(), 1);
 
   useEffect(() => {
     if (!authLoading && !propLoading && !user) router.replace('/signin');
@@ -144,10 +49,6 @@ export default function DashboardPage() {
     return subscribeToRooms(user.uid, activePropertyId, todayStr(), setRooms);
   }, [user, activePropertyId]);
 
-  useEffect(() => {
-    if (!user || !activePropertyId) return;
-    return subscribeToShiftConfirmations(user.uid, activePropertyId, tomorrow, setTomorrowConfs);
-  }, [user, activePropertyId, tomorrow]);
 
   useEffect(() => {
     if (!user || !activePropertyId) return;
@@ -183,7 +84,6 @@ export default function DashboardPage() {
   const occupancyPct = totalPropertyRooms > 0 ? Math.round((rentedRooms / totalPropertyRooms) * 100) : 0;
   const revpar = totalPropertyRooms > 0 && adr > 0 ? Math.round((adr * rentedRooms) / totalPropertyRooms) : 0;
 
-  const confirmedCount = tomorrowConfs.filter(c => c.status === 'confirmed').length;
 
   const overdueRooms = dcConfig && dcRecords.length > 0
     ? getOverdueRooms(dcRecords.map(r => r.roomNumber), dcRecords, dcConfig)
@@ -310,19 +210,19 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          {/* Staff Tomorrow */}
+          {/* Est. Labor Cost */}
           <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(22,163,74,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Users size={15} color="#16A34A" />
+              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(202,138,4,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <DollarSign size={15} color="#CA8A04" />
               </div>
-              <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-muted)' }}>{t('staffTomorrow', lang)}</span>
+              <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-muted)' }}>{t('estLaborCost', lang)}</span>
             </div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '36px', lineHeight: 1, letterSpacing: '-0.04em', color: confirmedCount > 0 ? '#16A34A' : 'var(--text-muted)' }}>
-              {confirmedCount}
+            <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '36px', lineHeight: 1, letterSpacing: '-0.04em', color: 'var(--navy)' }}>
+              ${totalCost}
             </div>
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
-              {tomorrowConfs.length > 0 ? `${tomorrowConfs.length} ${t('contacted', lang)}` : lang === 'es' ? 'ninguno contactado' : 'none contacted'}
+              {lang === 'es' ? 'hoy' : 'today'} · {hkStaff + 3} {lang === 'es' ? 'personal' : 'staff'}
             </p>
           </div>
         </div>
@@ -364,132 +264,6 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* ════════════════════════════════════════════════════════════
-            MAIN CONTENT — Room Grid + Tomorrow's Crew side by side
-            ════════════════════════════════════════════════════════════ */}
-        <div className="animate-in stagger-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', flex: 1, minHeight: 0 }}>
-
-          {/* LEFT: Room status + grid */}
-          <div
-            className="card"
-            onClick={() => { localStorage.setItem('hk-tab', 'rooms'); router.push('/housekeeping'); }}
-            style={{ padding: '18px', display: 'flex', flexDirection: 'column', overflow: 'hidden', cursor: 'pointer', transition: 'box-shadow 150ms' }}
-            onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 0 0 2px var(--navy-light)')}
-            onMouseLeave={e => (e.currentTarget.style.boxShadow = '')}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-              <Sparkles size={14} color="var(--navy-light)" />
-              <h2 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
-                {t('roomStatus', lang)}
-              </h2>
-              <span style={{ marginLeft: 'auto', fontSize: '18px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: pct === 100 ? 'var(--green)' : 'var(--navy-light)' }}>
-                {pct}%
-              </span>
-            </div>
-            <div style={{ height: '5px', background: '#E5E7EB', borderRadius: '99px', overflow: 'hidden', marginBottom: '12px', flexShrink: 0 }}>
-              <div style={{ height: '100%', borderRadius: '99px', transition: 'width 600ms cubic-bezier(0.4,0,0.2,1)', width: `${pct}%`, background: pct === 100 ? 'var(--green)' : 'var(--navy-light)' }} />
-            </div>
-            {total === 0 ? (
-              <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-muted)', fontSize: '13px', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {t('noRoomsAssignedToday', lang)}
-              </div>
-            ) : (
-              <>
-                <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
-                  <RoomGrid rooms={rooms} overdueSet={new Set(overdueRooms.map(r => r.roomNumber))} />
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
-                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                    {[
-                      { dot: '#86EFAC', bg: '#DCFCE7', label: t('clean', lang), count: clean },
-                      { dot: '#FCD34D', bg: '#FEF9C3', label: t('progress', lang), count: inProgress },
-                      { dot: '#FCA5A5', bg: '#FEE2E2', label: t('dirty', lang), count: dirty },
-                    ].map(({ dot, bg, label, count }) => (
-                      <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <div style={{ width: '9px', height: '9px', borderRadius: '2px', background: bg, border: `1.5px solid ${dot}`, flexShrink: 0 }} />
-                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>
-                          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{count}</span> {label}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500, flexShrink: 0 }}>{total} {t('total', lang)}</span>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* RIGHT: Tomorrow's crew */}
-          <div
-            className="card"
-            onClick={() => { localStorage.setItem('hk-tab', 'schedule'); router.push('/housekeeping'); }}
-            style={{ padding: '18px', display: 'flex', flexDirection: 'column', overflow: 'hidden', cursor: 'pointer', transition: 'box-shadow 150ms' }}
-            onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 0 0 2px var(--navy-light)')}
-            onMouseLeave={e => (e.currentTarget.style.boxShadow = '')}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', flexShrink: 0 }}>
-              <Users size={14} color="var(--navy-light)" />
-              <h2 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
-                {t('tomorrowsCrew', lang)}
-              </h2>
-              {tomorrowConfs.length > 0 && (
-                <span style={{ marginLeft: 'auto', fontSize: '12px', fontWeight: 600, color: 'var(--green)' }}>
-                  {confirmedCount}/{tomorrowConfs.length}
-                </span>
-              )}
-            </div>
-
-            {tomorrowConfs.length === 0 ? (
-              <div style={{
-                padding: '32px 16px', textAlign: 'center', borderRadius: 'var(--radius-md)',
-                background: 'rgba(0,0,0,0.02)', border: '1px dashed var(--border)', flex: 1,
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <CircleDot size={24} color="var(--text-muted)" style={{ marginBottom: '8px' }} />
-                <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>
-                  {t('noConfirmationsYet', lang)}
-                </p>
-              </div>
-            ) : (
-              <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {tomorrowConfs.map(conf => {
-                  const badge = STATUS_BADGE[conf.status];
-                  return (
-                    <div key={conf.id} style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      padding: '10px 14px', background: 'rgba(0,0,0,0.02)',
-                      border: '1px solid var(--border)', borderRadius: 'var(--radius-md)',
-                      flexShrink: 0,
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{
-                          width: '30px', height: '30px', borderRadius: '50%',
-                          background: 'var(--navy)', color: '#fff',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: '11px', fontWeight: 700, flexShrink: 0,
-                        }}>
-                          {(conf.staffName || '?')[0].toUpperCase()}
-                        </div>
-                        <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>
-                          {conf.staffName}
-                        </span>
-                      </div>
-                      <span style={{
-                        display: 'inline-flex', alignItems: 'center', gap: '5px',
-                        padding: '4px 10px', borderRadius: 'var(--radius-full)',
-                        background: badge.bg, color: badge.color,
-                        fontSize: '11px', fontWeight: 600,
-                      }}>
-                        {badge.icon}
-                        {lang === 'es' ? badge.label_es : badge.label_en}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
 
         {/* ════════════════════════════════════════════════════════════
             DETAILS — Secondary stats in a compact, single card
@@ -556,49 +330,30 @@ export default function DashboardPage() {
                     {urgentOrders.length > 0 && <span style={{ fontSize: '10px', color: '#DC2626', marginLeft: '4px' }}>!</span>}
                   </span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: '16px' }}>
-                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('blockedRooms', lang)}</span>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '15px', color: blockedRooms > 0 ? '#DC2626' : 'var(--text-primary)' }}>
-                    {blockedRooms}
-                  </span>
-                </div>
               </div>
             </div>
 
-            {/* Labor cost section */}
+            {/* Rooms section */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', borderLeft: '1px solid var(--border)', paddingLeft: '16px' }}>
               <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', margin: 0 }}>
-                {t('estLaborCost', lang)}
+                {lang === 'es' ? 'Habitaciones' : 'Rooms'}
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('frontDeskLabor', lang)}</span>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, fontSize: '13px', color: 'var(--text-secondary)' }}>${fdCost}</span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('availableRooms', lang)}</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '15px', color: 'var(--navy)' }}>{vacant}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('housekeepingLabor', lang)}</span>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, fontSize: '13px', color: 'var(--text-secondary)' }}>${hkCost}</span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('blockedRooms', lang)}</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '15px', color: blockedRooms > 0 ? '#DC2626' : 'var(--text-primary)' }}>{blockedRooms}</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '4px', borderTop: '1px solid var(--border)' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>{t('total', lang)}</span>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)' }}>${totalCost}</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('total', lang)}</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, fontSize: '13px', color: 'var(--text-muted)' }}>{totalPropertyRooms}</span>
                 </div>
               </div>
             </div>
 
-          </div>
-
-          {/* Available rooms footer */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <DoorOpen size={14} color="var(--text-muted)" />
-              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                {t('availableRooms', lang)}
-              </span>
-            </div>
-            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '15px', color: 'var(--navy)' }}>
-              {vacant} <span style={{ fontSize: '11px', fontWeight: 400, color: 'var(--text-muted)' }}>/ {totalPropertyRooms}</span>
-            </span>
           </div>
         </div>
 
