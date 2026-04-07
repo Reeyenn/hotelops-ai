@@ -244,7 +244,7 @@ export default function InventoryPage() {
               {lang === 'es' ? 'Último conteo: ' : 'Last counted: '}{lastCounted ? timeAgo(lastCounted) : (lang === 'es' ? 'Nunca' : 'Never')}
               {lowCount > 0 && (
                 <span style={{ marginLeft: '8px', padding: '2px 8px', borderRadius: '99px', background: 'rgba(220,38,38,0.3)', fontSize: '11px', fontWeight: 600 }}>
-                  {lowCount} low
+                  {lowCount} {lang === 'es' ? 'bajo' : 'low'}
                 </span>
               )}
             </div>

@@ -266,11 +266,11 @@ export default function InspectionsPage() {
                       {item.name}
                     </div>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', display: 'flex', gap: '8px' }}>
-                      <span>Due: <strong style={{ color: cfg.color }}>{formatMonth(item.dueMonth)}</strong></span>
+                      <span>{lang === 'es' ? 'Vence: ' : 'Due: '}<strong style={{ color: cfg.color }}>{formatMonth(item.dueMonth)}</strong></span>
                       {item.lastInspectedDate && (
-                        <span>Last: {item.lastInspectedDate}</span>
+                        <span>{lang === 'es' ? 'Última: ' : 'Last: '}{item.lastInspectedDate}</span>
                       )}
-                      <span>Every {item.frequencyMonths}mo</span>
+                      <span>{lang === 'es' ? `Cada ${item.frequencyMonths}m` : `Every ${item.frequencyMonths}mo`}</span>
                     </div>
                   </div>
 
@@ -279,7 +279,7 @@ export default function InspectionsPage() {
                     padding: '3px 10px', borderRadius: '99px', fontSize: '11px', fontWeight: 600,
                     background: cfg.bg, color: cfg.color, whiteSpace: 'nowrap',
                   }}>
-                    {cfg.label}
+                    {lang === 'es' ? cfg.labelEs : cfg.label}
                   </span>
 
                   <ChevronRight size={16} color="var(--text-muted)" />
