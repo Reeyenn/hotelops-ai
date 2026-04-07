@@ -23,12 +23,23 @@ import {
    SHARED HELPERS
    ════════════════════════════════════════════════════════════════════════════ */
 
+const DEPT_LABELS: Record<string, { en: string; es: string }> = {
+  housekeeping: { en: 'Housekeeping', es: 'Limpieza' },
+  front_desk:   { en: 'Front Desk',   es: 'Recepción' },
+  maintenance:  { en: 'Maintenance',  es: 'Mantenimiento' },
+  other:        { en: 'Other',        es: 'Otro' },
+};
+
 const DEPARTMENTS: { key: StaffDepartment; label: string; color: string; bg: string; border: string }[] = [
   { key: 'housekeeping', label: 'Housekeeping', color: 'var(--amber)',       bg: 'var(--amber-dim)',          border: 'var(--amber-border)' },
   { key: 'front_desk',   label: 'Front Desk',   color: 'var(--purple, #818cf8)', bg: 'rgba(99,102,241,0.12)',     border: 'rgba(99,102,241,0.25)' },
   { key: 'maintenance',  label: 'Maintenance',  color: 'var(--red)',         bg: 'var(--red-dim)',            border: 'var(--red-border, rgba(239,68,68,0.20))' },
   { key: 'other',        label: 'Other',        color: 'var(--text-muted)',  bg: 'rgba(100,116,139,0.10)',    border: 'var(--border)' },
 ];
+
+function deptLabel(key: string, lang: 'en' | 'es'): string {
+  return DEPT_LABELS[key]?.[lang] ?? key;
+}
 
 function deptConfig(dept?: StaffDepartment) {
   return DEPARTMENTS.find(d => d.key === (dept ?? 'housekeeping')) ?? DEPARTMENTS[0];
@@ -345,7 +356,8 @@ export default function StaffPage() {
 
   /* ── Filter tabs for directory ── */
   const filterTabs: { key: StaffDepartment | 'all'; label: string }[] = [
-    { key: 'all', label: 'All' }, ...DEPARTMENTS,
+    { key: 'all', label: lang === 'es' ? 'Todos' : 'All' },
+    ...DEPARTMENTS.map(d => ({ ...d, label: deptLabel(d.key, lang) })),
   ];
 
   /* ════════════════════════════════════════════════════════════════════════
@@ -468,7 +480,9 @@ export default function StaffPage() {
               <div style={{ textAlign: 'center', padding: '48px 16px' }}>
                 <Users size={40} color="var(--text-muted)" style={{ margin: '0 auto 12px' }} />
                 <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>
-                  No {deptFilter === 'all' ? '' : (DEPARTMENTS.find(d => d.key === deptFilter)?.label ?? '') + ' '}staff yet
+                  {lang === 'es'
+                    ? `Aún no hay personal${deptFilter === 'all' ? '' : ' de ' + deptLabel(deptFilter, lang)}`
+                    : `No ${deptFilter === 'all' ? '' : deptLabel(deptFilter, lang) + ' '}staff yet`}
                 </p>
               </div>
             ) : (
@@ -499,7 +513,7 @@ export default function StaffPage() {
                           {member.isSenior && <Star size={11} color="var(--amber)" fill="var(--amber)" />}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 600, color: dept.color }}>{dept.label}</span>
+                          <span style={{ fontSize: '11px', fontWeight: 600, color: dept.color }}>{deptLabel(dept.key, lang)}</span>
                           <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>·</span>
                           <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{member.language === 'es' ? 'ES' : 'EN'}</span>
                           <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>·</span>
@@ -833,7 +847,7 @@ export default function StaffPage() {
                     color: form.department === d.key ? d.color : 'var(--text-muted)',
                     fontSize: '13px', fontWeight: form.department === d.key ? 600 : 400, cursor: 'pointer', fontFamily: 'var(--font-sans)',
                   }}>
-                    {d.label}
+                    {deptLabel(d.key, lang)}
                   </button>
                 ))}
               </div>
