@@ -144,11 +144,18 @@ export default function LaundryPersonPage({ params }: { params: Promise<{ id: st
     return (
       <div style={{
         minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexDirection: 'column', gap: '12px',
         background: '#F0F9FF', fontFamily: 'system-ui, -apple-system, sans-serif',
       }}>
-        <p style={{ color: '#6B7280', fontSize: '16px' }}>
-          {t('loadingRooms', lang)}
+        <div style={{
+          width: '32px', height: '32px', border: '4px solid #E5E7EB',
+          borderTopColor: '#0369A1', borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite',
+        }} />
+        <p style={{ color: '#6B7280', fontSize: '14px', fontWeight: 500 }}>
+          {lang === 'es' ? 'Cargando tareas...' : 'Loading tasks...'}
         </p>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
@@ -184,13 +191,15 @@ export default function LaundryPersonPage({ params }: { params: Promise<{ id: st
               background: 'rgba(255,255,255,0.18)',
               border: '1.5px solid rgba(255,255,255,0.35)',
               borderRadius: '12px', color: 'white',
-              fontWeight: 700, fontSize: '14px',
+              fontWeight: 700, fontSize: '13px',
               padding: '10px 16px', cursor: 'pointer',
-              letterSpacing: '0.05em', flexShrink: 0,
+              letterSpacing: '0.03em', flexShrink: 0,
               WebkitTapHighlightColor: 'transparent',
+              display: 'flex', alignItems: 'center', gap: '6px',
             }}
           >
-            {lang === 'en' ? 'ES' : 'EN'}
+            <Globe size={14} />
+            {lang === 'en' ? 'Español' : 'English'}
           </button>
         </div>
 

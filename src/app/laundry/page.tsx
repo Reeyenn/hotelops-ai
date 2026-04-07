@@ -143,7 +143,15 @@ function LaundryInner() {
 
       {/* Loading */}
       {step === 'loading' && (
-        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{t('loading', lang)}</p>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            width: '32px', height: '32px', border: '4px solid var(--border)',
+            borderTopColor: '#3B82F6', borderRadius: '50%',
+            animation: 'spin 0.8s linear infinite', margin: '0 auto 12px',
+          }} />
+          <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{t('loading', lang)}</p>
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
       )}
 
       {/* Bad link */}
