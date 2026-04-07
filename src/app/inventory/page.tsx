@@ -195,33 +195,6 @@ export default function InventoryPage() {
     );
   }
 
-  // ─── COUNT MODE ────────────────────────────────────────────────────────────
-  if (counting) {
-    return (
-      <CountMode
-        items={items}
-        uid={user.uid}
-        pid={activePropertyId}
-        onDone={(updatedCounts) => {
-          setCounting(false);
-          // Check which items are now below target
-          const lowItems = items.filter(item => {
-            const newCount = updatedCounts[item.id] ?? item.currentStock;
-            return newCount < item.parLevel && newCount >= 0;
-          }).map(item => ({ ...item, currentStock: updatedCounts[item.id] ?? item.currentStock }));
-          if (lowItems.length > 0) {
-            setLowStockAlert(lowItems);
-            // TODO: Twilio SMS — when verified, call API route to text owner
-            // e.g. fetch('/api/alerts/low-stock', { method: 'POST', body: JSON.stringify({ items: lowItems }) })
-          } else {
-            showToast('Inventory count saved ✓');
-          }
-        }}
-        onCancel={() => setCounting(false)}
-      />
-    );
-  }
-
   // ─── MAIN VIEW ─────────────────────────────────────────────────────────────
   return (
     <AppLayout>
@@ -449,13 +422,35 @@ export default function InventoryPage() {
         </div>
       )}
 
+      {/* Count Mode Modal */}
+      {counting && (
+        <CountMode
+          items={items}
+          uid={user.uid}
+          pid={activePropertyId}
+          onDone={(updatedCounts) => {
+            setCounting(false);
+            const lowItems = items.filter(item => {
+              const newCount = updatedCounts[item.id] ?? item.currentStock;
+              return newCount < item.parLevel && newCount >= 0;
+            }).map(item => ({ ...item, currentStock: updatedCounts[item.id] ?? item.currentStock }));
+            if (lowItems.length > 0) {
+              setLowStockAlert(lowItems);
+            } else {
+              showToast('Inventory count saved ✓');
+            }
+          }}
+          onCancel={() => setCounting(false)}
+        />
+      )}
+
       {/* Toast */}
       {toast && (
         <div style={{
           position: 'fixed', bottom: '140px', left: '50%', transform: 'translateX(-50%)',
           padding: '10px 20px', borderRadius: 'var(--radius-lg)',
           background: 'var(--navy)', color: '#fff',
-          fontSize: '13px', fontWeight: 600, zIndex: 50,
+          fontSize: '13px', fontWeight: 600, zIndex: 60,
           boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
         }}>
           {toast}
@@ -511,128 +506,135 @@ function CountMode({
   }).length;
 
   return (
-    <AppLayout>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingBottom: '100px' }}>
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <h1 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-              Inventory Count
-            </h1>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '4px 0 0' }}>
-              Go to the supply room, count each item, enter the numbers below.
-            </p>
-          </div>
-          <button
-            onClick={onCancel}
-            style={{
-              padding: '8px 16px', borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--border)', background: 'var(--bg)',
-              fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-              color: 'var(--text-secondary)',
-            }}
-          >
-            Cancel
-          </button>
-        </div>
-
-        {/* Count list */}
-        <div style={{ borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflow: 'hidden' }}>
-          {/* Column headers */}
-          <div style={{
-            display: 'grid', gridTemplateColumns: '1fr 90px 60px',
-            gap: '8px', padding: '8px 14px', background: 'rgba(0,0,0,0.03)',
-            borderBottom: '1px solid var(--border)',
-            fontSize: '10px', fontWeight: 600, textTransform: 'uppercase',
-            letterSpacing: '0.05em', color: 'var(--text-muted)',
-          }}>
-            <span>Item</span>
-            <span style={{ textAlign: 'center' }}>Count</span>
-            <span style={{ textAlign: 'right' }}>Target</span>
-          </div>
-
-          {/* Item rows */}
-          {sorted.map((item, idx) => {
-            const val = parseInt(counts[item.id] ?? '0') || 0;
-            const status = stockStatus(val, item.parLevel);
-            const changed = val !== item.currentStock;
-            return (
-              <div
-                key={item.id}
-                style={{
-                  display: 'grid', gridTemplateColumns: '1fr 90px 60px',
-                  gap: '8px', padding: '10px 14px', alignItems: 'center',
-                  borderBottom: '1px solid var(--border)',
-                  background: changed ? 'rgba(34,197,94,0.04)' : undefined,
-                }}
-              >
-                {/* Name + category */}
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {item.name}
-                  </div>
-                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                    {item.category} · {item.unit}
-                  </div>
-                </div>
-
-                {/* Count input */}
-                <input
-                  ref={el => { inputRefs.current[item.id] = el; }}
-                  type="number"
-                  min="0"
-                  value={counts[item.id] ?? '0'}
-                  onChange={e => setCounts(prev => ({ ...prev, [item.id]: e.target.value }))}
-                  onFocus={e => e.target.select()}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' || e.key === 'Tab') {
-                      e.preventDefault();
-                      const nextItem = sorted[idx + 1];
-                      if (nextItem) inputRefs.current[nextItem.id]?.focus();
-                    }
-                  }}
-                  style={{
-                    width: '100%', padding: '8px 10px', borderRadius: '6px',
-                    border: `2px solid ${changed ? 'var(--green)' : 'var(--border)'}`,
-                    background: 'var(--bg)', fontSize: '16px', fontWeight: 700,
-                    fontFamily: 'var(--font-mono)', textAlign: 'center',
-                    color: STATUS_COLORS[status],
-                  }}
-                />
-
-                {/* Target */}
-                <div style={{ textAlign: 'right', fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                  {item.parLevel}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Save button — sticky at bottom */}
+    <>
+      {/* Backdrop */}
+      <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+        onClick={e => { if (e.target === e.currentTarget) onCancel(); }}
+      >
+        {/* Modal */}
         <div style={{
-          position: 'fixed', bottom: '70px', left: 0, right: 0,
-          padding: '12px 20px', background: 'var(--surface, #fff)',
-          borderTop: '1px solid var(--border)', zIndex: 30,
+          background: 'var(--bg-card, #fff)', borderRadius: '16px', width: '100%', maxWidth: '540px',
+          maxHeight: '85vh', display: 'flex', flexDirection: 'column', overflow: 'hidden',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
         }}>
-          <button
-            onClick={handleSave}
-            disabled={saving || changedCount === 0}
-            style={{
-              width: '100%', padding: '14px', borderRadius: 'var(--radius-md)',
-              background: changedCount > 0 ? 'var(--navy, #1b3a5c)' : 'var(--border)',
-              color: '#fff', border: 'none',
-              fontSize: '15px', fontWeight: 700, cursor: changedCount > 0 ? 'pointer' : 'default',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-              opacity: saving ? 0.6 : 1,
-            }}
-          >
-            <Check size={18} />
-            {saving ? 'Saving...' : changedCount > 0 ? `Save Count (${changedCount} changed)` : 'No changes'}
-          </button>
+          {/* Header */}
+          <div style={{ padding: '18px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <h2 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                Inventory Count
+              </h2>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0' }}>
+                Count each item, enter the numbers below.
+              </p>
+            </div>
+            <button
+              onClick={onCancel}
+              style={{
+                padding: '6px 14px', borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--border)', background: 'var(--bg)',
+                fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+                color: 'var(--text-secondary)',
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+
+          {/* Scrollable list */}
+          <div style={{ overflowY: 'auto', flex: 1 }}>
+            {/* Column headers */}
+            <div style={{
+              display: 'grid', gridTemplateColumns: '1fr 80px 50px',
+              gap: '8px', padding: '8px 20px', background: 'rgba(0,0,0,0.03)',
+              borderBottom: '1px solid var(--border)',
+              fontSize: '10px', fontWeight: 600, textTransform: 'uppercase',
+              letterSpacing: '0.05em', color: 'var(--text-muted)',
+              position: 'sticky', top: 0, zIndex: 1,
+            }}>
+              <span>Item</span>
+              <span style={{ textAlign: 'center' }}>Count</span>
+              <span style={{ textAlign: 'right' }}>Target</span>
+            </div>
+
+            {/* Item rows */}
+            {sorted.map((item, idx) => {
+              const val = parseInt(counts[item.id] ?? '0') || 0;
+              const status = stockStatus(val, item.parLevel);
+              const changed = val !== item.currentStock;
+              return (
+                <div
+                  key={item.id}
+                  style={{
+                    display: 'grid', gridTemplateColumns: '1fr 80px 50px',
+                    gap: '8px', padding: '10px 20px', alignItems: 'center',
+                    borderBottom: '1px solid var(--border)',
+                    background: changed ? 'rgba(34,197,94,0.04)' : undefined,
+                  }}
+                >
+                  {/* Name + category */}
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {item.name}
+                    </div>
+                    <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                      {item.category} · {item.unit}
+                    </div>
+                  </div>
+
+                  {/* Count input */}
+                  <input
+                    ref={el => { inputRefs.current[item.id] = el; }}
+                    type="number"
+                    min="0"
+                    value={counts[item.id] ?? '0'}
+                    onChange={e => setCounts(prev => ({ ...prev, [item.id]: e.target.value }))}
+                    onFocus={e => e.target.select()}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === 'Tab') {
+                        e.preventDefault();
+                        const nextItem = sorted[idx + 1];
+                        if (nextItem) inputRefs.current[nextItem.id]?.focus();
+                      }
+                    }}
+                    style={{
+                      width: '100%', padding: '8px 6px', borderRadius: '6px',
+                      border: `2px solid ${changed ? 'var(--green)' : 'var(--border)'}`,
+                      background: 'var(--bg)', fontSize: '16px', fontWeight: 700,
+                      fontFamily: 'var(--font-mono)', textAlign: 'center',
+                      color: STATUS_COLORS[status],
+                    }}
+                  />
+
+                  {/* Target */}
+                  <div style={{ textAlign: 'right', fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                    {item.parLevel}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Save button — pinned at bottom of modal */}
+          <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border)', background: 'var(--bg-card, #fff)' }}>
+            <button
+              onClick={handleSave}
+              disabled={saving || changedCount === 0}
+              style={{
+                width: '100%', padding: '14px', borderRadius: 'var(--radius-md)',
+                background: changedCount > 0 ? 'var(--navy, #1b3a5c)' : 'var(--border)',
+                color: '#fff', border: 'none',
+                fontSize: '15px', fontWeight: 700, cursor: changedCount > 0 ? 'pointer' : 'default',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                opacity: saving ? 0.6 : 1,
+              }}
+            >
+              <Check size={18} />
+              {saving ? 'Saving...' : changedCount > 0 ? `Save Count (${changedCount} changed)` : 'No changes'}
+            </button>
+          </div>
         </div>
       </div>
-    </AppLayout>
+    </>
   );
 }
 
