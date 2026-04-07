@@ -2472,46 +2472,38 @@ function DeepCleanSection() {
             <p style={{ fontSize: '18px', fontWeight: 700, margin: '0 0 10px' }}>
               {suggestedRooms.length} {lang === 'es' ? 'habitaciones' : 'rooms'}
             </p>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', overflowX: 'auto', paddingBottom: '4px' }}>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '12px', overflowX: 'auto', paddingBottom: '4px' }}>
               {suggestedRooms.map(r => {
                 const reason = r.daysSince === Infinity
                   ? (lang === 'es' ? 'Nunca limpiado' : 'Never cleaned')
                   : `${r.daysSince - freq}d ${lang === 'es' ? 'atrasado' : 'overdue'}`;
                 return (
-                  <div key={r.roomNumber} style={{
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
-                    padding: '10px 14px', background: 'rgba(255,255,255,0.15)', borderRadius: '12px',
-                    minWidth: '80px', flexShrink: 0,
-                  }}>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '20px' }}>
+                  <button
+                    key={r.roomNumber}
+                    onClick={() => { setAssignRoom(r.roomNumber); setSelectedTeam([]); }}
+                    style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
+                      padding: '14px 18px', background: 'rgba(255,255,255,0.15)', borderRadius: '14px',
+                      minWidth: '100px', flexShrink: 0, border: 'none', cursor: 'pointer',
+                      color: 'inherit', transition: 'background 0.15s',
+                    }}
+                  >
+                    <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '24px' }}>
                       {r.roomNumber}
                     </span>
-                    <span style={{ fontSize: '11px', fontWeight: 600, opacity: 0.8, textAlign: 'center', lineHeight: 1.2 }}>
+                    <span style={{ fontSize: '12px', fontWeight: 600, opacity: 0.8, textAlign: 'center', lineHeight: 1.2 }}>
                       {reason}
                     </span>
-                  </div>
+                  </button>
                 );
               })}
             </div>
-            <p style={{ fontSize: '12px', opacity: 0.8, margin: '0 0 12px' }}>
+            <p style={{ fontSize: '12px', opacity: 0.8, margin: 0 }}>
               {dndCount > 0 && (lang === 'es' ? `${dndCount} DND liberan tiempo` : `${dndCount} DND rooms free up time`)}
               {dndCount > 0 && checkoutCount < 25 && ' · '}
               {checkoutCount < 25 && (lang === 'es' ? `Solo ${checkoutCount} checkouts` : `Only ${checkoutCount} checkouts`)}
               {dayOfWeek === 1 && (dndCount > 0 || checkoutCount < 25 ? ' · ' : '') + (lang === 'es' ? 'Lunes — día más ligero' : 'Monday — lightest day')}
             </p>
-            {suggestedRooms.length > 0 && (
-              <button
-                onClick={handleAcceptSuggestion}
-                style={{
-                  padding: '12px 20px', borderRadius: 'var(--radius-md)',
-                  background: '#fff', color: 'var(--navy, #1b3a5c)', border: 'none',
-                  fontWeight: 700, fontSize: '14px', cursor: 'pointer',
-                  minHeight: '48px', width: '100%',
-                }}
-              >
-                {lang === 'es' ? 'Asignar equipo' : 'Assign Team'}
-              </button>
-            )}
           </>
         ) : (
           <>
