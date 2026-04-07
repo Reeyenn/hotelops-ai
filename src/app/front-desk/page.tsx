@@ -235,7 +235,7 @@ function RoomCard({ room, onSelect }: RoomCardProps) {
         className="text-xs mt-2 text-center font-medium uppercase tracking-wider"
         style={{ color: statusColor }}
       >
-        {getStatusLabel(room.status)}
+        {getStatusLabel(room.status, lang)}
       </div>
       <div className="text-xs mt-1 text-center" style={{ color: 'var(--text-muted)' }}>
         {room.type === 'checkout' ? t('checkout', lang) : room.type === 'stayover' ? t('stayover', lang) : t('vacant', lang)}
@@ -290,15 +290,15 @@ function RoomDetailSheet({
         </div>
 
         <h2 className="text-2xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
-          Room {room.number}
+          {lang === 'es' ? 'Habitación' : 'Room'} {room.number}
         </h2>
 
         {/* Room Details */}
         <div className="space-y-3 mb-6">
-          <DetailRow label="Status" value={getStatusLabel(room.status)} />
-          <DetailRow label="Type" value={room.type === 'checkout' ? 'Checkout' : room.type === 'stayover' ? 'Stayover' : 'Vacant'} />
-          {room.assignedName && <DetailRow label="Assigned" value={room.assignedName} />}
-          {room.isDnd && <DetailRow label="Status" value="Do Not Disturb" highlight />}
+          <DetailRow label={lang === 'es' ? 'Estado' : 'Status'} value={getStatusLabel(room.status, lang)} />
+          <DetailRow label={lang === 'es' ? 'Tipo' : 'Type'} value={room.type === 'checkout' ? 'Checkout' : room.type === 'stayover' ? (lang === 'es' ? 'Continuación' : 'Stayover') : (lang === 'es' ? 'Vacía' : 'Vacant')} />
+          {room.assignedName && <DetailRow label={lang === 'es' ? 'Asignada' : 'Assigned'} value={room.assignedName} />}
+          {room.isDnd && <DetailRow label={lang === 'es' ? 'Estado' : 'Status'} value={lang === 'es' ? 'No Molestar' : 'Do Not Disturb'} highlight />}
         </div>
 
         {/* Action Buttons */}
@@ -306,7 +306,9 @@ function RoomDetailSheet({
           {room.type === 'stayover' && (
             <>
               <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
-                Guest checking out early? This changes the room to a full checkout clean.
+                {lang === 'es'
+                  ? '¿El huésped se va antes? Esto cambia la habitación a limpieza completa de checkout.'
+                  : 'Guest checking out early? This changes the room to a full checkout clean.'}
               </p>
               <button
                 onClick={onEarlyCheckout}
@@ -317,7 +319,7 @@ function RoomDetailSheet({
                   color: 'white'
                 }}
               >
-                {processing ? 'Processing...' : 'Mark Early Checkout'}
+                {processing ? (lang === 'es' ? 'Procesando...' : 'Processing...') : (lang === 'es' ? 'Marcar Salida Anticipada' : 'Mark Early Checkout')}
               </button>
             </>
           )}
@@ -325,7 +327,9 @@ function RoomDetailSheet({
           {room.type === 'checkout' && (
             <>
               <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
-                Guest extending their stay? This changes the room to a stayover refresh.
+                {lang === 'es'
+                  ? '¿El huésped extiende su estadía? Esto cambia la habitación a limpieza de continuación.'
+                  : 'Guest extending their stay? This changes the room to a stayover refresh.'}
               </p>
               <button
                 onClick={onExtension}
@@ -336,7 +340,7 @@ function RoomDetailSheet({
                   color: 'white'
                 }}
               >
-                {processing ? 'Processing...' : 'Mark Extension'}
+                {processing ? (lang === 'es' ? 'Procesando...' : 'Processing...') : (lang === 'es' ? 'Marcar Extensión' : 'Mark Extension')}
               </button>
             </>
           )}
@@ -351,7 +355,7 @@ function RoomDetailSheet({
               borderWidth: '1px'
             }}
           >
-            Close
+            {lang === 'es' ? 'Cerrar' : 'Close'}
           </button>
         </div>
 
@@ -414,18 +418,22 @@ function getStatusColor(status: string): string {
   }
 }
 
-function getStatusLabel(status: string): string {
+function getStatusLabel(status: string, lang: string = 'en'): string {
+  if (lang === 'es') {
+    switch (status) {
+      case 'dirty': return 'Sucia';
+      case 'in_progress': return 'Limpiando';
+      case 'clean': return 'Limpia';
+      case 'inspected': return 'Inspeccionada';
+      default: return status;
+    }
+  }
   switch (status) {
-    case 'dirty':
-      return 'Dirty';
-    case 'in_progress':
-      return 'Cleaning';
-    case 'clean':
-      return 'Clean';
-    case 'inspected':
-      return 'Inspected';
-    default:
-      return status;
+    case 'dirty': return 'Dirty';
+    case 'in_progress': return 'Cleaning';
+    case 'clean': return 'Clean';
+    case 'inspected': return 'Inspected';
+    default: return status;
   }
 }
 
