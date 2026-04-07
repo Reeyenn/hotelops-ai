@@ -597,27 +597,35 @@ export default function DashboardPage() {
 
         {/* Quick action buttons — Front Desk + ROI */}
         <div style={{ display: 'flex', gap: '10px', margin: '0 16px 16px' }}>
-          <button onClick={() => router.push('/front-desk')} style={{
-            flex: 1, padding: '12px 16px', borderRadius: '12px',
+          <button onClick={() => router.push('/front-desk')} className="active:scale-98" style={{
+            flex: 1, padding: '14px 16px', borderRadius: '12px',
             background: 'var(--bg-card)', border: '1.5px solid var(--border)',
             cursor: 'pointer', fontFamily: 'var(--font-sans)',
-            display: 'flex', alignItems: 'center', gap: '8px',
+            display: 'flex', alignItems: 'center', gap: '10px',
+            transition: 'all 0.15s', boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
           }}>
-            <span style={{ fontSize: '16px' }}>🖥</span>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(27,58,92,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span style={{ fontSize: '15px' }}>🖥</span>
+            </div>
+            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', flex: 1, textAlign: 'left' }}>
               {lang === 'es' ? 'Recepción' : 'Front Desk'}
             </span>
+            <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>›</span>
           </button>
-          <button onClick={() => router.push('/roi')} style={{
-            flex: 1, padding: '12px 16px', borderRadius: '12px',
+          <button onClick={() => router.push('/roi')} className="active:scale-98" style={{
+            flex: 1, padding: '14px 16px', borderRadius: '12px',
             background: 'var(--bg-card)', border: '1.5px solid var(--border)',
             cursor: 'pointer', fontFamily: 'var(--font-sans)',
-            display: 'flex', alignItems: 'center', gap: '8px',
+            display: 'flex', alignItems: 'center', gap: '10px',
+            transition: 'all 0.15s', boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
           }}>
-            <DollarSign size={16} color="var(--green)" />
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(22,163,74,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <DollarSign size={15} color="var(--green)" />
+            </div>
+            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', flex: 1, textAlign: 'left' }}>
               {lang === 'es' ? 'Ver ROI' : 'View ROI'}
             </span>
+            <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>›</span>
           </button>
         </div>
 
