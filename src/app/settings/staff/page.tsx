@@ -135,7 +135,7 @@ export default function StaffPage() {
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                         <span style={{ fontWeight: 600, fontSize: '15px', color: 'var(--text-primary)' }}>{member.name}</span>
-                        {member.isSenior && <span className="badge badge-vip"><Star size={10} /> Senior</span>}
+                        {member.isSenior && <span className="badge badge-vip"><Star size={10} /> {lang === 'es' ? 'Veterano' : 'Senior'}</span>}
                         <span className="badge badge-stayover">{member.language === 'es' ? 'ES' : 'EN'}</span>
                         {wouldOvertime && (
                           <span style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--amber-dim, rgba(251,191,36,0.15))', color: 'var(--amber)', fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '100px' }}>
@@ -166,7 +166,7 @@ export default function StaffPage() {
 
                       {/* Weekly hours input */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Hours worked this week:</span>
+                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{lang === 'es' ? 'Horas trabajadas esta semana:' : 'Hours worked this week:'}</span>
                         <input
                           type="number"
                           value={member.weeklyHours}
@@ -185,7 +185,7 @@ export default function StaffPage() {
                             textAlign: 'center',
                           }}
                         />
-                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>hrs</span>
+                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{lang === 'es' ? 'hrs' : 'hrs'}</span>
                       </div>
                     </div>
 
@@ -242,7 +242,7 @@ export default function StaffPage() {
               </select>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'rgba(0,0,0,0.03)', border: '1px solid var(--border)', borderRadius: '8px' }}>
-              <span style={{ fontSize: '14px' }}>{t('senior', lang)} (gets VIP rooms)</span>
+              <span style={{ fontSize: '14px' }}>{t('senior', lang)} {lang === 'es' ? '(recibe habitaciones VIP)' : '(gets VIP rooms)'}</span>
               <label className="toggle" style={{ margin: 0 }}>
                 <input type="checkbox" checked={form.isSenior} onChange={e => setForm(f => ({ ...f, isSenior: e.target.checked }))} />
                 <span className="toggle-track" />

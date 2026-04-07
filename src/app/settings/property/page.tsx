@@ -143,7 +143,7 @@ export default function PropertySettingsPage() {
         {showAddProperty ? (
           <div className="card" style={{ padding: '16px', marginBottom: '20px' }}>
             <label className="label">{t('createProperty', lang)}</label>
-            <input type="text" value={newPropertyName} onChange={e => setNewPropertyName(e.target.value)} className="input" placeholder="e.g. Hampton Inn Austin" style={{ marginBottom: '12px' }} />
+            <input type="text" value={newPropertyName} onChange={e => setNewPropertyName(e.target.value)} className="input" placeholder={lang === 'es' ? 'ej. Hampton Inn Austin' : 'e.g. Hampton Inn Austin'} style={{ marginBottom: '12px' }} />
             <div style={{ display: 'flex', gap: '8px' }}>
               <button onClick={() => setShowAddProperty(false)} className="btn btn-secondary" style={{ flex: 1, justifyContent: 'center' }}>{t('cancel', lang)}</button>
               <button onClick={handleAddProperty} disabled={!newPropertyName.trim()} className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}>{t('createProperty', lang)}</button>
