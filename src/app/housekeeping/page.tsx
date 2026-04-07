@@ -649,6 +649,16 @@ function ScheduleSection() {
             </span>
           </div>
           {unassignedRooms.length > 0 && (
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '8px', fontStyle: 'italic' }}>
+              {lang === 'es' ? 'Arrastra las habitaciones al personal para asignar' : 'Drag rooms to crew members to assign'}
+            </p>
+          )}
+          {unassignedRooms.length === 0 && totalRooms > 0 && (
+            <p style={{ fontSize: '12px', color: 'var(--green)', fontWeight: 600, marginTop: '4px' }}>
+              {lang === 'es' ? '✓ Todas asignadas' : '✓ All rooms assigned'}
+            </p>
+          )}
+          {unassignedRooms.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
               {unassignedRooms.map(room => (
                 <button
@@ -730,7 +740,13 @@ function ScheduleSection() {
                   <div style={{ display: 'grid', gridTemplateColumns: '80px 100px', gap: '1px 10px', fontSize: '12px', color: 'var(--text-secondary)', width: '190px', flexShrink: 0 }}>
                     <div>{lang === 'es' ? 'Estimado' : 'Est'}: <strong style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{timeLabel}</strong></div>
                     <div style={{ color: '#DC2626' }}><strong style={{ fontWeight: 700 }}>{coCount}</strong> {lang === 'es' ? 'Salida' : 'Checkout'}{coCount !== 1 ? 's' : ''}</div>
-                    <button onClick={() => toggleCrewMember(member.id)} style={{
+                    <button onClick={() => {
+                      const roomCount = Object.values(assignments).filter(sid => sid === member.id).length;
+                      const msg = lang === 'es'
+                        ? `¿Quitar a ${member.name} y desasignar sus ${roomCount} habitaciones?`
+                        : `Remove ${member.name} and unassign their ${roomCount} room${roomCount !== 1 ? 's' : ''}?`;
+                      if (confirm(msg)) toggleCrewMember(member.id);
+                    }} style={{
                       background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-sans)',
                       fontSize: '11px', fontWeight: 600, color: 'var(--red)', padding: '0', textAlign: 'left',
                       opacity: 0.6,
@@ -1296,6 +1312,21 @@ function RoomsSection() {
         </div>
       ) : (
         <>
+          {/* Legend — sticky at top, always visible */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '14px', position: 'sticky', top: '60px', zIndex: 10 }}>
+            <div className="room-legend" style={{
+              display: 'inline-flex', alignItems: 'center', gap: '12px',
+              padding: '8px 16px',
+              background: 'linear-gradient(135deg, #1B3A5C 0%, #2563EB 100%)',
+              borderRadius: 'var(--radius-lg)',
+              boxShadow: '0 2px 10px rgba(27, 58, 92, 0.20)',
+            }}>
+              <span style={{ fontSize: '12px', fontWeight: 700, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>🚪 {t('checkout', lang)}</span>
+              <span style={{ fontSize: '12px', fontWeight: 700, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>🚫 DND</span>
+              <span style={{ fontSize: '12px', fontWeight: 700, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>🔒 {t('roomOccupied', lang)}</span>
+              <span style={{ fontSize: '12px', fontWeight: 700, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>💎 {t('available', lang)}</span>
+            </div>
+          </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {floors.map((floor, floorIdx) => {
@@ -1304,23 +1335,6 @@ function RoomsSection() {
               if (floorRooms.length === 0) return null;
               return (
                 <div key={floor}>
-                  {/* Legend — centered, shown once above first floor */}
-                  {floorIdx === 0 && (
-                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '14px' }}>
-                      <div className="room-legend" style={{
-                        display: 'inline-flex', alignItems: 'center', gap: '12px',
-                        padding: '8px 16px',
-                        background: 'linear-gradient(135deg, #1B3A5C 0%, #2563EB 100%)',
-                        borderRadius: 'var(--radius-lg)',
-                        boxShadow: '0 2px 10px rgba(27, 58, 92, 0.20)',
-                      }}>
-                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>🚪 {t('checkout', lang)}</span>
-                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>🚫 DND</span>
-                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>🔒 {t('roomOccupied', lang)}</span>
-                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>💎 {t('available', lang)}</span>
-                      </div>
-                    </div>
-                  )}
                   {/* Floor label */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                     <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
