@@ -314,22 +314,22 @@ export default function InventoryPage() {
                   minHeight: '56px', justifyContent: 'center',
                 }}>
                   {/* Name + Count on same line */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: STATUS_COLORS[status], flexShrink: 0 }} />
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: STATUS_COLORS[status], flexShrink: 0, alignSelf: 'center' }} />
                     <div style={{ fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {item.name}
                     </div>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '16px', color: STATUS_COLORS[status], marginLeft: 'auto', flexShrink: 0 }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '16px', color: STATUS_COLORS[status], flexShrink: 0 }}>
                       {item.currentStock}
                     </span>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', flexShrink: 0 }}>
+                      / {item.parLevel}
+                    </span>
                   </div>
-                  {/* Time + par level */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: '14px' }}>
+                  {/* Time */}
+                  <div style={{ paddingLeft: '14px' }}>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                       {timeAgo(item.updatedAt)}
-                    </div>
-                    <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                      / {item.parLevel}
                     </div>
                   </div>
                 </div>
