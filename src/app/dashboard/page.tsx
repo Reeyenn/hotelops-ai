@@ -268,8 +268,8 @@ export default function DashboardPage() {
           {/* Dirty Rooms — action needed */}
           <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: dirty > 0 ? 'rgba(220,38,38,0.08)' : 'rgba(22,163,74,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <AlertTriangle size={15} color={dirty > 0 ? '#DC2626' : '#16A34A'} />
+              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: dirty > 0 ? 'var(--red-dim)' : 'var(--green-dim)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <AlertTriangle size={15} color={dirty > 0 ? 'var(--red)' : 'var(--green)'} />
               </div>
               <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-muted)' }}>{t('dirtyRooms', lang)}</span>
             </div>
@@ -284,8 +284,8 @@ export default function DashboardPage() {
           {/* Est. Labor Cost */}
           <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(202,138,4,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <DollarSign size={15} color="#CA8A04" />
+              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--amber-dim)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <DollarSign size={15} color="var(--amber)" />
               </div>
               <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-muted)' }}>{t('estLaborCost', lang)}</span>
             </div>
@@ -319,16 +319,18 @@ export default function DashboardPage() {
               background: 'rgba(245,158,11,0.12)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
             }}>
-              <Zap size={16} color="#f59e0b" />
+              <Zap size={16} color="var(--amber)" />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '1px' }}>
-                {overdueRooms.length} room{overdueRooms.length !== 1 ? 's' : ''} overdue for deep cleaning
+                {lang === 'es'
+                  ? `${overdueRooms.length} habitación${overdueRooms.length !== 1 ? 'es' : ''} atrasada${overdueRooms.length !== 1 ? 's' : ''} para limpieza profunda`
+                  : `${overdueRooms.length} room${overdueRooms.length !== 1 ? 's' : ''} overdue for deep cleaning`}
               </p>
               <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
-                {dndFreedMins > 0 ? `${dndFreedMins} min freed from DND rooms.` : ''}
+                {dndFreedMins > 0 ? (lang === 'es' ? `${dndFreedMins} min liberados de habitaciones DND.` : `${dndFreedMins} min freed from DND rooms.`) : ''}
                 {dcSuggestion && dcSuggestion.count > 0
-                  ? ` Could fit ${dcSuggestion.count} deep clean${dcSuggestion.count !== 1 ? 's' : ''}.`
+                  ? (lang === 'es' ? ` Podrían caber ${dcSuggestion.count} limpieza${dcSuggestion.count !== 1 ? 's' : ''} profunda${dcSuggestion.count !== 1 ? 's' : ''}.` : ` Could fit ${dcSuggestion.count} deep clean${dcSuggestion.count !== 1 ? 's' : ''}.`)
                   : ''}
               </p>
             </div>

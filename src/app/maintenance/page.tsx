@@ -1075,8 +1075,8 @@ export default function MaintenancePage() {
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 padding: '12px 14px', borderRadius: 'var(--radius-md)',
-                border: newBlockRoom ? '2px solid #dc2626' : '1px solid var(--border)',
-                background: newBlockRoom ? 'rgba(220,38,38,0.04)' : 'transparent',
+                border: newBlockRoom ? '2px solid var(--red)' : '1px solid var(--border)',
+                background: newBlockRoom ? 'var(--red-dim)' : 'transparent',
                 cursor: 'pointer', transition: 'all 150ms',
               }}
             >
