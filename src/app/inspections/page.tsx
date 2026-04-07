@@ -245,8 +245,8 @@ export default function InspectionsPage() {
                   key={item.id}
                   onClick={() => setEditModal(item)}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: '12px',
-                    padding: '12px 16px', borderBottom: '1px solid var(--border)',
+                    display: 'flex', alignItems: 'center', gap: '14px',
+                    padding: '16px 18px', borderBottom: '1px solid var(--border)',
                     background: (status === 'overdue' || status === 'due') ? cfg.bg : undefined,
                     cursor: 'pointer',
                     transition: 'background 150ms',
@@ -254,19 +254,19 @@ export default function InspectionsPage() {
                 >
                   {/* Status icon */}
                   <div style={{
-                    width: '36px', height: '36px', borderRadius: '10px',
+                    width: '40px', height: '40px', borderRadius: '10px',
                     background: cfg.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
                     flexShrink: 0,
                   }}>
-                    <StatusIcon size={18} color={cfg.color} />
+                    <StatusIcon size={20} color={cfg.color} />
                   </div>
 
                   {/* Name + details */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-primary)' }}>
+                    <div style={{ fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)' }}>
                       {item.name}
                     </div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', display: 'flex', gap: '8px' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '3px', display: 'flex', gap: '8px' }}>
                       <span>{lang === 'es' ? 'Vence: ' : 'Due: '}<strong style={{ color: cfg.color }}>{formatMonth(item.dueMonth)}</strong></span>
                       {item.lastInspectedDate && (
                         <span>{lang === 'es' ? 'Última: ' : 'Last: '}{item.lastInspectedDate}</span>
@@ -277,7 +277,7 @@ export default function InspectionsPage() {
 
                   {/* Status badge */}
                   <span style={{
-                    padding: '3px 10px', borderRadius: '99px', fontSize: '11px', fontWeight: 600,
+                    padding: '4px 12px', borderRadius: '99px', fontSize: '12px', fontWeight: 600,
                     background: cfg.bg, color: cfg.color, whiteSpace: 'nowrap',
                   }}>
                     {lang === 'es' ? cfg.labelEs : cfg.label}
