@@ -2098,6 +2098,11 @@ function DeepCleanSection() {
   const [selectedTeam, setSelectedTeam] = useState<string[]>([]);
   const [completeRoom, setCompleteRoom] = useState<string | null>(null);
   const [collapsedFloors, setCollapsedFloors] = useState<Set<number>>(new Set());
+  const [showBackfill, setShowBackfill] = useState(false);
+  const [backfillRoom, setBackfillRoom] = useState('');
+  const [backfillDate, setBackfillDate] = useState('');
+  const [editRoom, setEditRoom] = useState<string | null>(null);
+  const [editDate, setEditDate] = useState('');
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const uid = user?.uid ?? '';
@@ -2287,6 +2292,50 @@ function DeepCleanSection() {
     showToast(lang === 'es' ? `Ciclo actualizado: ${days} días` : `Cycle updated: ${days} days`);
   };
 
+  const handleBackfill = async () => {
+    if (!uid || !pid || !backfillRoom.trim() || !backfillDate) return;
+    setSaving(true);
+    try {
+      await markRoomDeepCleaned(uid, pid, backfillRoom.trim(), user?.displayName ?? 'Backfill');
+      // Override the date to the user-provided date
+      const { setDeepCleanRecord } = await import('@/lib/firestore');
+      await setDeepCleanRecord(uid, pid, {
+        id: backfillRoom.trim(), roomNumber: backfillRoom.trim(),
+        lastDeepClean: backfillDate, cleanedBy: 'Backfill', status: 'completed', completedAt: backfillDate,
+      });
+      setRecords(prev => ({
+        ...prev,
+        [backfillRoom.trim()]: { id: backfillRoom.trim(), roomNumber: backfillRoom.trim(), lastDeepClean: backfillDate, cleanedBy: 'Backfill', status: 'completed', completedAt: backfillDate },
+      }));
+      showToast(lang === 'es' ? `${backfillRoom.trim()}: Registro guardado` : `${backfillRoom.trim()}: Record saved`);
+      setBackfillRoom('');
+      setBackfillDate('');
+    } finally { setSaving(false); }
+  };
+
+  const handleEditDate = async (roomNumber: string) => {
+    if (!uid || !pid || !editDate) return;
+    setSaving(true);
+    try {
+      const { setDeepCleanRecord } = await import('@/lib/firestore');
+      const existing = records[roomNumber];
+      await setDeepCleanRecord(uid, pid, {
+        id: roomNumber, roomNumber,
+        lastDeepClean: editDate,
+        cleanedBy: existing?.cleanedBy,
+        cleanedByTeam: existing?.cleanedByTeam,
+        status: 'completed', completedAt: editDate,
+      });
+      setRecords(prev => ({
+        ...prev,
+        [roomNumber]: { ...prev[roomNumber], id: roomNumber, roomNumber, lastDeepClean: editDate, status: 'completed', completedAt: editDate },
+      }));
+      showToast(lang === 'es' ? `${roomNumber}: Fecha actualizada` : `${roomNumber}: Date updated`);
+      setEditRoom(null);
+      setEditDate('');
+    } finally { setSaving(false); }
+  };
+
   const toggleFloor = (floor: number) => {
     setCollapsedFloors(prev => {
       const next = new Set(prev);
@@ -2383,6 +2432,69 @@ function DeepCleanSection() {
           <Settings size={12} />
           {lang === 'es' ? `Ciclo: cada ${freq} días` : `Cycle: every ${freq} days`}
         </button>
+        {/* Backfill button */}
+        <button
+          onClick={() => setShowBackfill(!showBackfill)}
+          style={{
+            fontSize: '12px', color: 'var(--navy)', marginTop: '0',
+            background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0',
+            display: 'flex', alignItems: 'center', gap: '4px', minHeight: '44px', fontWeight: 600,
+          }}
+        >
+          <Upload size={12} />
+          {lang === 'es' ? 'Registrar limpieza anterior' : 'Log past deep clean'}
+        </button>
+
+        {/* Inline backfill form */}
+        {showBackfill && (
+          <div style={{
+            padding: '14px', background: 'var(--bg-card)', border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', gap: '10px',
+          }}>
+            <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+              {lang === 'es' ? 'Registrar limpieza pasada' : 'Log a past deep clean'}
+            </p>
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
+              {lang === 'es' ? 'Para habitaciones que ya fueron limpiadas antes de usar Staxis.' : 'For rooms already cleaned before using Staxis.'}
+            </p>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input
+                type="text"
+                placeholder={lang === 'es' ? 'Habitación (ej. 201)' : 'Room (e.g. 201)'}
+                value={backfillRoom}
+                onChange={e => setBackfillRoom(e.target.value)}
+                style={{
+                  flex: 1, padding: '12px', borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border)', background: 'var(--bg)',
+                  fontSize: '14px', fontFamily: 'var(--font-mono)', minHeight: '48px',
+                }}
+              />
+              <input
+                type="date"
+                value={backfillDate}
+                onChange={e => setBackfillDate(e.target.value)}
+                style={{
+                  flex: 1, padding: '12px', borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border)', background: 'var(--bg)',
+                  fontSize: '14px', minHeight: '48px',
+                }}
+              />
+            </div>
+            <button
+              onClick={handleBackfill}
+              disabled={!backfillRoom.trim() || !backfillDate || saving}
+              style={{
+                padding: '12px', borderRadius: 'var(--radius-md)',
+                background: backfillRoom.trim() && backfillDate ? 'var(--navy)' : 'var(--border)',
+                color: '#fff', border: 'none', fontWeight: 700, fontSize: '14px',
+                cursor: backfillRoom.trim() && backfillDate ? 'pointer' : 'not-allowed',
+                minHeight: '48px', opacity: saving ? 0.6 : 1,
+              }}
+            >
+              {saving ? '...' : (lang === 'es' ? 'Guardar' : 'Save')}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ── Today's Suggestion ── */}
@@ -2546,8 +2658,15 @@ function DeepCleanSection() {
                             </span>
                           </div>
                           {room.lastCleaned && (
-                            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '3px' }}>
+                            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                               {lang === 'es' ? 'Última:' : 'Last:'} {room.daysSince}d {lang === 'es' ? 'atrás' : 'ago'}{room.cleanedBy ? ` · ${room.cleanedBy}` : ''}
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setEditRoom(room.roomNumber); setEditDate(room.lastCleaned!); }}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--text-muted)', display: 'inline-flex' }}
+                                aria-label="Edit date"
+                              >
+                                <Pencil size={12} />
+                              </button>
                             </p>
                           )}
                           {room.inProgress && room.team.length > 0 && (
@@ -2734,6 +2853,62 @@ function DeepCleanSection() {
               >
                 <Check size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} />
                 {saving ? '...' : (lang === 'es' ? '¡Hecho!' : 'Done!')}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── Edit Date Modal ── */}
+      {editRoom && (
+        <>
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 9997 }} onClick={() => { setEditRoom(null); setEditDate(''); }} />
+          <div style={{
+            position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 9998,
+            background: 'var(--bg-card)', borderRadius: '16px', boxShadow: '0 8px 40px rgba(0,0,0,0.2)',
+            padding: '20px', width: '320px', maxWidth: 'calc(100vw - 40px)',
+          }}>
+            <p style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>
+              {lang === 'es' ? `Editar fecha — ${editRoom}` : `Edit Date — ${editRoom}`}
+            </p>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 14px' }}>
+              {lang === 'es' ? 'Cambiar la fecha de la última limpieza profunda.' : 'Change the last deep clean date.'}
+            </p>
+            <input
+              type="date"
+              value={editDate}
+              onChange={e => setEditDate(e.target.value)}
+              style={{
+                width: '100%', padding: '12px', borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--border)', background: 'var(--bg)',
+                fontSize: '15px', minHeight: '48px', marginBottom: '12px',
+                boxSizing: 'border-box',
+              }}
+            />
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => { setEditRoom(null); setEditDate(''); }}
+                style={{
+                  flex: 1, padding: '12px', borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border)', background: 'transparent',
+                  color: 'var(--text-secondary)', fontWeight: 600, fontSize: '14px',
+                  cursor: 'pointer', minHeight: '48px',
+                }}
+              >
+                {lang === 'es' ? 'Cancelar' : 'Cancel'}
+              </button>
+              <button
+                onClick={() => handleEditDate(editRoom)}
+                disabled={!editDate || saving}
+                style={{
+                  flex: 1, padding: '12px', borderRadius: 'var(--radius-md)',
+                  background: editDate ? 'var(--navy)' : 'var(--border)',
+                  color: '#fff', border: 'none', fontWeight: 700, fontSize: '14px',
+                  cursor: editDate ? 'pointer' : 'not-allowed',
+                  minHeight: '48px', opacity: saving ? 0.6 : 1,
+                }}
+              >
+                {saving ? '...' : (lang === 'es' ? 'Guardar' : 'Save')}
               </button>
             </div>
           </div>
