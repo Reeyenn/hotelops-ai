@@ -108,7 +108,7 @@ export default function FrontDeskPage() {
             <ChevronLeft size={24} />
           </button>
           <h1 className="text-xl font-bold flex-1 text-center" style={{ color: 'var(--text-primary)' }}>
-            Front Desk
+            {lang === 'es' ? 'Recepción' : 'Front Desk'}
           </h1>
           <div className="w-10" />
         </div>
@@ -129,7 +129,7 @@ export default function FrontDeskPage() {
                 className="text-sm font-semibold mb-3 px-2 uppercase tracking-wider"
                 style={{ color: 'var(--text-secondary)' }}
               >
-                Floor {floor}
+                {t('floor', lang)} {floor}
               </h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                 {floorRooms.map(room => (
@@ -203,6 +203,7 @@ interface RoomCardProps {
 }
 
 function RoomCard({ room, onSelect }: RoomCardProps) {
+  const { lang } = useLang();
   const statusColor = getStatusColor(room.status);
   const isAvailable = room.status === 'clean' || room.status === 'inspected';
 
@@ -229,7 +230,7 @@ function RoomCard({ room, onSelect }: RoomCardProps) {
         {getStatusLabel(room.status)}
       </div>
       <div className="text-xs mt-1 text-center" style={{ color: 'var(--text-muted)' }}>
-        {room.type === 'checkout' ? 'Checkout' : room.type === 'stayover' ? 'Stayover' : 'Vacant'}
+        {room.type === 'checkout' ? t('checkout', lang) : room.type === 'stayover' ? t('stayover', lang) : t('vacant', lang)}
       </div>
       {isAvailable && (
         <div className="mt-2 text-xs font-semibold text-center py-1 px-2 rounded-full" style={{ backgroundColor: 'var(--green)', color: 'white' }}>

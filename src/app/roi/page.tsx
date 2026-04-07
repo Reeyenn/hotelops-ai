@@ -81,14 +81,15 @@ export default function ROIPage() {
   const allTimeLaborSaved = sumLaborSaved(allTime);
   const allTimeDaysTracked = allTime.length;
 
+  const locale = lang === 'es' ? 'es-ES' : 'en-US';
   const last30Days = getLogsForLastDays(logs, 30).sort((a, b) => a.date.localeCompare(b.date));
   const chartData = last30Days.map(log => ({
-    date: new Date(log.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    date: new Date(log.date).toLocaleDateString(locale, { month: 'short', day: 'numeric' }),
     laborCost: log.laborCost || 0,
   }));
 
   const staffComparisonData = last30Days.map(log => ({
-    date: new Date(log.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    date: new Date(log.date).toLocaleDateString(locale, { month: 'short', day: 'numeric' }),
     recommended: log.recommendedStaff || 0,
     actual: log.actualStaff || 0,
   }));
@@ -113,36 +114,36 @@ export default function ROIPage() {
             <ChevronLeft size={24} />
           </button>
           <h1 className="text-xl font-bold flex-1 text-center" style={{ color: 'var(--text-primary)' }}>
-            ROI Summary
+            {lang === 'es' ? 'Resumen ROI' : 'ROI Summary'}
           </h1>
           <div className="w-10" />
         </div>
 
         <div className="p-4 space-y-6 pb-8">
           {/* This Week */}
-          <KPICard title="This Week">
-            <KPIRow label="Labor Saved" value={`$${thisWeekLaborSaved.toFixed(0)}`} color="var(--green)" />
+          <KPICard title={lang === 'es' ? 'Esta Semana' : 'This Week'}>
+            <KPIRow label={lang === 'es' ? 'Ahorro Laboral' : 'Labor Saved'} value={`$${thisWeekLaborSaved.toFixed(0)}`} color="var(--green)" />
             <KPIRow
-              label="Avg Staff (Recommended vs Actual)"
+              label={lang === 'es' ? 'Personal Promedio (Recom. vs Real)' : 'Avg Staff (Recommended vs Actual)'}
               value={`${thisWeekStaffRecommended.toFixed(1)} vs ${thisWeekStaffActual.toFixed(1)}`}
               color="var(--navy)"
             />
           </KPICard>
 
           {/* This Month */}
-          <KPICard title="This Month">
-            <KPIRow label="Labor Saved" value={`$${thisMonthLaborSaved.toFixed(0)}`} color="var(--green)" />
+          <KPICard title={lang === 'es' ? 'Este Mes' : 'This Month'}>
+            <KPIRow label={lang === 'es' ? 'Ahorro Laboral' : 'Labor Saved'} value={`$${thisMonthLaborSaved.toFixed(0)}`} color="var(--green)" />
             <KPIRow
-              label="Avg Staff (Recommended vs Actual)"
+              label={lang === 'es' ? 'Personal Promedio (Recom. vs Real)' : 'Avg Staff (Recommended vs Actual)'}
               value={`${thisMonthStaffRecommended.toFixed(1)} vs ${thisMonthStaffActual.toFixed(1)}`}
               color="var(--navy)"
             />
           </KPICard>
 
           {/* All Time */}
-          <KPICard title="All Time">
-            <KPIRow label="Total Labor Saved" value={`$${allTimeLaborSaved.toFixed(0)}`} color="var(--green)" />
-            <KPIRow label="Days Tracked" value={allTimeDaysTracked.toString()} color="var(--navy)" />
+          <KPICard title={lang === 'es' ? 'Total' : 'All Time'}>
+            <KPIRow label={lang === 'es' ? 'Ahorro Laboral Total' : 'Total Labor Saved'} value={`$${allTimeLaborSaved.toFixed(0)}`} color="var(--green)" />
+            <KPIRow label={lang === 'es' ? 'Días Registrados' : 'Days Tracked'} value={allTimeDaysTracked.toString()} color="var(--navy)" />
           </KPICard>
 
           {/* Labor Cost Trend Chart */}
@@ -155,7 +156,7 @@ export default function ROIPage() {
               }}
             >
               <h3 className="text-sm font-bold mb-4 uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>
-                Labor Cost Trend (Last 30 Days)
+                {lang === 'es' ? 'Tendencia de Costo Laboral (Últimos 30 Días)' : 'Labor Cost Trend (Last 30 Days)'}
               </h3>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={chartData}>
@@ -200,7 +201,7 @@ export default function ROIPage() {
               }}
             >
               <h3 className="text-sm font-bold mb-4 uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>
-                Recommended vs Actual Staff (Last 30 Days)
+                {lang === 'es' ? 'Personal Recomendado vs Real (Últimos 30 Días)' : 'Recommended vs Actual Staff (Last 30 Days)'}
               </h3>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={staffComparisonData}>
