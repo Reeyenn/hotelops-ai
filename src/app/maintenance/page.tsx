@@ -30,16 +30,16 @@ type FilterKey = 'all' | 'open' | 'urgent' | 'resolved';
 // ─── Severity / status styles ────────────────────────────────────────────────
 
 const SEVERITY_STYLE: Record<WorkOrderSeverity, { bg: string; color: string }> = {
-  urgent: { bg: 'rgba(220,38,38,0.08)', color: '#dc2626' },
-  medium: { bg: 'rgba(245,158,11,0.08)', color: '#f59e0b' },
-  low:    { bg: 'rgba(156,163,175,0.08)', color: '#6b7280' },
+  urgent: { bg: 'var(--red-dim, rgba(220,38,38,0.08))', color: 'var(--red)' },
+  medium: { bg: 'var(--amber-dim, rgba(245,158,11,0.08))', color: 'var(--amber)' },
+  low:    { bg: 'rgba(156,163,175,0.08)', color: 'var(--text-muted)' },
 };
 
 const STATUS_STYLE: Record<WorkOrderStatus, { bg: string; color: string }> = {
-  submitted:   { bg: 'rgba(220,38,38,0.08)', color: '#dc2626' },
-  assigned:    { bg: 'rgba(59,130,246,0.08)', color: '#3b82f6' },
-  in_progress: { bg: 'rgba(245,158,11,0.08)', color: '#f59e0b' },
-  resolved:    { bg: 'rgba(34,197,94,0.08)', color: '#22c55e' },
+  submitted:   { bg: 'var(--red-dim, rgba(220,38,38,0.08))', color: 'var(--red)' },
+  assigned:    { bg: 'rgba(59,130,246,0.08)', color: 'var(--navy)' },
+  in_progress: { bg: 'var(--amber-dim, rgba(245,158,11,0.08))', color: 'var(--amber)' },
+  resolved:    { bg: 'var(--green-dim, rgba(34,197,94,0.08))', color: 'var(--green)' },
 };
 
 // ─── Preventive defaults ─────────────────────────────────────────────────────

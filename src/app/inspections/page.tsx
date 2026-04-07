@@ -4,6 +4,8 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProperty } from '@/contexts/PropertyContext';
+import { useLang } from '@/contexts/LanguageContext';
+import { t } from '@/lib/translations';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Modal } from '@/components/ui/Modal';
 import {
@@ -58,10 +60,10 @@ function getStatus(dueMonth: string): InspectionStatus {
 }
 
 const STATUS_CONFIG = {
-  overdue: { color: '#dc2626', bg: 'rgba(220,38,38,0.08)', label: 'Overdue', icon: AlertTriangle },
-  due:     { color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', label: 'Due This Month', icon: Calendar },
-  upcoming:{ color: '#22c55e', bg: 'rgba(34,197,94,0.06)', label: 'Good', icon: Check },
-  notset:  { color: '#94a3b8', bg: 'rgba(148,163,184,0.08)', label: 'Set Date', icon: Calendar },
+  overdue: { color: 'var(--red)', bg: 'var(--red-dim, rgba(220,38,38,0.08))', label: 'Overdue', labelEs: 'Vencida', icon: AlertTriangle },
+  due:     { color: 'var(--amber)', bg: 'var(--amber-dim, rgba(245,158,11,0.08))', label: 'Due This Month', labelEs: 'Pendiente', icon: Calendar },
+  upcoming:{ color: 'var(--green)', bg: 'var(--green-dim, rgba(34,197,94,0.06))', label: 'Good', labelEs: 'Al Día', icon: Check },
+  notset:  { color: 'var(--text-muted)', bg: 'rgba(148,163,184,0.08)', label: 'Set Date', labelEs: 'Sin Fecha', icon: Calendar },
 };
 
 // ─── Main Page ───────────────────────────────────────────────────────────────
@@ -69,6 +71,7 @@ const STATUS_CONFIG = {
 export default function InspectionsPage() {
   const { user, loading: authLoading } = useAuth();
   const { activeProperty, activePropertyId, loading: propLoading } = useProperty();
+  const { lang } = useLang();
   const router = useRouter();
 
   const [inspections, setInspections] = useState<Inspection[]>([]);
@@ -124,7 +127,18 @@ export default function InspectionsPage() {
 
   // Loading
   if (authLoading || propLoading || !user || !activePropertyId) {
-    return <AppLayout><div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}><div className="loading-spinner" /></div></AppLayout>;
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center">
+            <div className="animate-spin w-8 h-8 border-4 rounded-full mb-3 mx-auto" style={{ borderColor: 'var(--border)', borderTopColor: 'var(--navy)' }} />
+            <div className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
+              {lang === 'es' ? 'Cargando inspecciones...' : 'Loading inspections...'}
+            </div>
+          </div>
+        </div>
+      </AppLayout>
+    );
   }
 
   const handleMarkComplete = async (inspection: Inspection) => {
@@ -155,7 +169,9 @@ export default function InspectionsPage() {
   return (
     <AppLayout>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '100px', alignItems: 'center' }}>
-        <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, alignSelf: 'flex-start' }}>Inspections</h1>
+        <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, alignSelf: 'flex-start' }}>
+          {lang === 'es' ? 'Inspecciones' : 'Inspections'}
+        </h1>
 
         {/* Alert banner */}
         {alertCount > 0 && (
@@ -171,14 +187,18 @@ export default function InspectionsPage() {
             <div>
               <div style={{ fontWeight: 700, fontSize: '15px' }}>
                 {overdueCount > 0
-                  ? `${overdueCount} Overdue Inspection${overdueCount !== 1 ? 's' : ''}`
-                  : `${dueCount} Inspection${dueCount !== 1 ? 's' : ''} Due This Month`
+                  ? lang === 'es'
+                    ? `${overdueCount} Inspección${overdueCount !== 1 ? 'es' : ''} Vencida${overdueCount !== 1 ? 's' : ''}`
+                    : `${overdueCount} Overdue Inspection${overdueCount !== 1 ? 's' : ''}`
+                  : lang === 'es'
+                    ? `${dueCount} Inspección${dueCount !== 1 ? 'es' : ''} Pendiente${dueCount !== 1 ? 's' : ''} Este Mes`
+                    : `${dueCount} Inspection${dueCount !== 1 ? 's' : ''} Due This Month`
                 }
               </div>
               <div style={{ fontSize: '12px', opacity: 0.9 }}>
                 {overdueCount > 0 && dueCount > 0
-                  ? `Plus ${dueCount} due this month`
-                  : 'Tap an item to mark as inspected'
+                  ? lang === 'es' ? `Más ${dueCount} pendientes este mes` : `Plus ${dueCount} due this month`
+                  : lang === 'es' ? 'Toca un elemento para marcar como inspeccionado' : 'Tap an item to mark as inspected'
                 }
               </div>
             </div>
@@ -193,7 +213,9 @@ export default function InspectionsPage() {
           {sorted.length === 0 ? (
             <div style={{ padding: '40px', textAlign: 'center' }}>
               <ClipboardCheck size={28} color="var(--text-muted)" style={{ margin: '0 auto 8px' }} />
-              <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>No inspections set up yet</p>
+              <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
+                {lang === 'es' ? 'No hay inspecciones configuradas' : 'No inspections set up yet'}
+              </p>
             </div>
           ) : (
             sorted.map(item => {

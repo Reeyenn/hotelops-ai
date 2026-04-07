@@ -18,11 +18,11 @@ import {
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const CATEGORIES: { key: InventoryCategory | 'all'; label: string }[] = [
-  { key: 'all', label: 'All' },
-  { key: 'housekeeping', label: 'Housekeeping' },
-  { key: 'maintenance', label: 'Maintenance' },
-  { key: 'breakfast', label: 'Breakfast/F&B' },
+const CATEGORIES: { key: InventoryCategory | 'all'; label: string; labelEs: string }[] = [
+  { key: 'all', label: 'All', labelEs: 'Todo' },
+  { key: 'housekeeping', label: 'Housekeeping', labelEs: 'Limpieza' },
+  { key: 'maintenance', label: 'Maintenance', labelEs: 'Mantenimiento' },
+  { key: 'breakfast', label: 'Breakfast/F&B', labelEs: 'Desayuno/A&B' },
 ];
 
 const DEFAULTS: Omit<InventoryItem, 'id' | 'updatedAt' | 'propertyId'>[] = [
@@ -75,8 +75,9 @@ function stockStatus(current: number, target: number): 'good' | 'low' | 'out' {
   return 'good';
 }
 
-const STATUS_COLORS = { good: '#22c55e', low: '#f59e0b', out: '#dc2626' };
+const STATUS_COLORS = { good: 'var(--green)', low: 'var(--amber)', out: 'var(--red)' };
 const STATUS_LABELS = { good: 'Good', low: 'Low', out: 'Critical' };
+const STATUS_LABELS_ES = { good: 'Bien', low: 'Bajo', out: 'Crítico' };
 
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
@@ -178,7 +179,18 @@ export default function InventoryPage() {
 
   // Loading guard
   if (authLoading || propLoading || !user || !activePropertyId) {
-    return <AppLayout><div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}><div className="loading-spinner" /></div></AppLayout>;
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center">
+            <div className="animate-spin w-8 h-8 border-4 rounded-full mb-3 mx-auto" style={{ borderColor: 'var(--border)', borderTopColor: 'var(--navy)' }} />
+            <div className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
+              {lang === 'es' ? 'Cargando inventario...' : 'Loading inventory...'}
+            </div>
+          </div>
+        </div>
+      </AppLayout>
+    );
   }
 
   // ─── COUNT MODE ────────────────────────────────────────────────────────────
@@ -212,7 +224,9 @@ export default function InventoryPage() {
   return (
     <AppLayout>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '100px', alignItems: 'center' }}>
-        <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, alignSelf: 'flex-start' }}>Inventory</h1>
+        <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, alignSelf: 'flex-start' }}>
+          {lang === 'es' ? 'Inventario' : 'Inventory'}
+        </h1>
 
         {/* Count CTA */}
         <div style={{
@@ -222,10 +236,12 @@ export default function InventoryPage() {
           color: '#fff',
         }}>
           <div>
-            <div style={{ fontSize: '16px', fontWeight: 700, marginBottom: '4px' }}>Weekly Inventory Count</div>
+            <div style={{ fontSize: '16px', fontWeight: 700, marginBottom: '4px' }}>
+              {lang === 'es' ? 'Conteo Semanal de Inventario' : 'Weekly Inventory Count'}
+            </div>
             <div style={{ fontSize: '12px', opacity: 0.8, display: 'flex', alignItems: 'center', gap: '4px' }}>
               <Clock size={12} />
-              Last counted: {lastCounted ? timeAgo(lastCounted) : 'Never'}
+              {lang === 'es' ? 'Último conteo: ' : 'Last counted: '}{lastCounted ? timeAgo(lastCounted) : (lang === 'es' ? 'Nunca' : 'Never')}
               {lowCount > 0 && (
                 <span style={{ marginLeft: '8px', padding: '2px 8px', borderRadius: '99px', background: 'rgba(220,38,38,0.3)', fontSize: '11px', fontWeight: 600 }}>
                   {lowCount} low
@@ -243,7 +259,7 @@ export default function InventoryPage() {
             }}
           >
             <ClipboardCheck size={16} />
-            Count Now
+            {lang === 'es' ? 'Contar Ahora' : 'Count Now'}
           </button>
         </div>
 

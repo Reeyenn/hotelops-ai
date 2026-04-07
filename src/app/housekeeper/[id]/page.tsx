@@ -236,11 +236,18 @@ export default function HousekeeperRoomPage({ params }: { params: Promise<{ id: 
     return (
       <div style={{
         minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: '#F0FDF4', fontFamily: 'system-ui, -apple-system, sans-serif',
+        flexDirection: 'column', gap: '12px',
+        background: 'var(--bg)', fontFamily: 'system-ui, -apple-system, sans-serif',
       }}>
-        <p style={{ color: '#6B7280', fontSize: '16px' }}>
+        <div style={{
+          width: '32px', height: '32px', border: '4px solid var(--border)',
+          borderTopColor: 'var(--green)', borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite',
+        }} />
+        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
           {t('loadingRooms', lang)}
         </p>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
