@@ -2681,7 +2681,18 @@ function DeepCleanSection() {
                           </div>
                           {room.lastCleaned && (
                             <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '3px' }}>
-                              {lang === 'es' ? 'Última:' : 'Last:'} {room.daysSince}d {lang === 'es' ? 'atrás' : 'ago'}{room.cleanedBy ? ` · ${room.cleanedBy}` : ''}
+                              {lang === 'es' ? 'Última:' : 'Last:'} {room.daysSince}d {lang === 'es' ? 'atrás' : 'ago'}
+                              {room.cleanedBy ? (
+                                <>
+                                  {' · '}
+                                  <span
+                                    onClick={(e) => { e.stopPropagation(); setEditRoom(room.roomNumber); setEditDate(room.lastCleaned ?? ''); setEditCleanedBy(room.cleanedBy ?? ''); }}
+                                    style={{ textDecoration: 'underline', textDecorationStyle: 'dotted', cursor: 'pointer', color: 'var(--text-secondary)' }}
+                                  >
+                                    {room.cleanedBy}
+                                  </span>
+                                </>
+                              ) : ''}
                             </p>
                           )}
                           {room.inProgress && room.team.length > 0 && (
@@ -2769,7 +2780,17 @@ function DeepCleanSection() {
                 </span>
                 <span style={{ fontSize: '12px', color: 'var(--text-muted)', flex: 1 }}>
                   {room.daysSince === 0 ? (lang === 'es' ? 'Hoy' : 'Today') : `${room.daysSince}d ${lang === 'es' ? 'atrás' : 'ago'}`}
-                  {room.cleanedBy ? ` · ${room.cleanedBy}` : ''}
+                  {room.cleanedBy ? (
+                    <>
+                      {' · '}
+                      <span
+                        onClick={() => { setEditRoom(room.roomNumber); setEditDate(room.lastCleaned ?? ''); setEditCleanedBy(room.cleanedBy ?? ''); }}
+                        style={{ textDecoration: 'underline', textDecorationStyle: 'dotted', cursor: 'pointer', color: 'var(--text-secondary)' }}
+                      >
+                        {room.cleanedBy}
+                      </span>
+                    </>
+                  ) : ''}
                 </span>
               </div>
             ))}
