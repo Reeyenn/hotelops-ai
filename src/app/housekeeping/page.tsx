@@ -2100,6 +2100,7 @@ function DeepCleanSection() {
   const [collapsedFloors, setCollapsedFloors] = useState<Set<number>>(new Set());
   const [editRoom, setEditRoom] = useState<string | null>(null);
   const [editDate, setEditDate] = useState('');
+  const [editCleanedBy, setEditCleanedBy] = useState('');
   const [showAddRooms, setShowAddRooms] = useState(false);
   const [addRoomsFloor, setAddRoomsFloor] = useState<number | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -2298,17 +2299,18 @@ function DeepCleanSection() {
       await setDeepCleanRecord(uid, pid, {
         id: roomNumber, roomNumber,
         lastDeepClean: editDate,
-        cleanedBy: existing?.cleanedBy,
-        cleanedByTeam: existing?.cleanedByTeam,
+        cleanedBy: editCleanedBy || existing?.cleanedBy,
+        cleanedByTeam: editCleanedBy ? [editCleanedBy] : (existing?.cleanedByTeam ?? []),
         status: 'completed', completedAt: editDate,
       });
       setRecords(prev => ({
         ...prev,
-        [roomNumber]: { ...prev[roomNumber], id: roomNumber, roomNumber, lastDeepClean: editDate, status: 'completed', completedAt: editDate },
+        [roomNumber]: { ...prev[roomNumber], id: roomNumber, roomNumber, lastDeepClean: editDate, cleanedBy: editCleanedBy || existing?.cleanedBy, cleanedByTeam: editCleanedBy ? [editCleanedBy] : (existing?.cleanedByTeam ?? []), status: 'completed', completedAt: editDate },
       }));
-      showToast(lang === 'es' ? `${roomNumber}: Fecha actualizada` : `${roomNumber}: Date updated`);
+      showToast(lang === 'es' ? `${roomNumber}: Actualizado` : `${roomNumber}: Updated`);
       setEditRoom(null);
       setEditDate('');
+      setEditCleanedBy('');
     } finally { setSaving(false); }
   };
 
@@ -2690,7 +2692,7 @@ function DeepCleanSection() {
                         <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
                           {/* Add/Edit Date button */}
                           <button
-                            onClick={() => { setEditRoom(room.roomNumber); setEditDate(room.lastCleaned ?? ''); }}
+                            onClick={() => { setEditRoom(room.roomNumber); setEditDate(room.lastCleaned ?? ''); setEditCleanedBy(room.cleanedBy ?? ''); }}
                             style={{
                               padding: '10px 12px', borderRadius: '10px',
                               border: '1.5px solid var(--border)', background: 'var(--bg)',
@@ -2900,18 +2902,21 @@ function DeepCleanSection() {
       {/* ── Edit Date Modal ── */}
       {editRoom && (
         <>
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 9997 }} onClick={() => { setEditRoom(null); setEditDate(''); }} />
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 9997 }} onClick={() => { setEditRoom(null); setEditDate(''); setEditCleanedBy(''); }} />
           <div style={{
             position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 9998,
             background: 'var(--bg-card)', borderRadius: '16px', boxShadow: '0 8px 40px rgba(0,0,0,0.2)',
             padding: '20px', width: '320px', maxWidth: 'calc(100vw - 40px)',
           }}>
             <p style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>
-              {lang === 'es' ? `Editar fecha — ${editRoom}` : `Edit Date — ${editRoom}`}
+              {lang === 'es' ? `Editar — ${editRoom}` : `Edit — ${editRoom}`}
             </p>
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 14px' }}>
-              {lang === 'es' ? 'Cambiar la fecha de la última limpieza profunda.' : 'Change the last deep clean date.'}
+              {lang === 'es' ? 'Cambiar fecha y quién lo limpió.' : 'Change date and who cleaned it.'}
             </p>
+            <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>
+              {lang === 'es' ? 'Fecha' : 'Date'}
+            </label>
             <input
               type="date"
               value={editDate}
@@ -2923,9 +2928,27 @@ function DeepCleanSection() {
                 boxSizing: 'border-box',
               }}
             />
+            <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>
+              {lang === 'es' ? 'Limpiado por' : 'Cleaned by'}
+            </label>
+            <select
+              value={editCleanedBy}
+              onChange={e => setEditCleanedBy(e.target.value)}
+              style={{
+                width: '100%', padding: '12px', borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--border)', background: 'var(--bg)',
+                fontSize: '15px', minHeight: '48px', marginBottom: '12px',
+                boxSizing: 'border-box', color: editCleanedBy ? 'var(--text-primary)' : 'var(--text-muted)',
+              }}
+            >
+              <option value="">{lang === 'es' ? 'Seleccionar...' : 'Select...'}</option>
+              {availableStaff.map(s => (
+                <option key={s.id} value={s.name}>{s.name}</option>
+              ))}
+            </select>
             <div style={{ display: 'flex', gap: '10px' }}>
               <button
-                onClick={() => { setEditRoom(null); setEditDate(''); }}
+                onClick={() => { setEditRoom(null); setEditDate(''); setEditCleanedBy(''); }}
                 style={{
                   flex: 1, padding: '12px', borderRadius: 'var(--radius-md)',
                   border: '1px solid var(--border)', background: 'transparent',
