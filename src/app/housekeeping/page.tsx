@@ -2219,17 +2219,12 @@ function DeepCleanSection() {
 
   const suggestedRooms = useMemo(() => {
     if (!isLightDay) return [];
-    // Pick 2-4 most overdue rooms, preferring lighter floors
-    const sorted = [...overdueRooms].sort((a, b) => {
-      const floorA = getFloor(a.roomNumber);
-      const floorB = getFloor(b.roomNumber);
-      const loadA = floorLoad[floorA] ?? 0;
-      const loadB = floorLoad[floorB] ?? 0;
-      if (loadA !== loadB) return loadA - loadB; // lighter floor first
-      return (b.daysSince === Infinity ? 99999 : b.daysSince) - (a.daysSince === Infinity ? 99999 : a.daysSince);
-    });
-    return sorted.filter(r => !r.inProgress).slice(0, 3);
-  }, [isLightDay, overdueRooms, floorLoad]);
+    // Always pick the 5 most overdue rooms (longest overdue first), skip in-progress
+    const sorted = [...overdueRooms]
+      .filter(r => !r.inProgress)
+      .sort((a, b) => (b.daysSince === Infinity ? 99999 : b.daysSince) - (a.daysSince === Infinity ? 99999 : a.daysSince));
+    return sorted.slice(0, 5);
+  }, [isLightDay, overdueRooms]);
 
   // Staff who finished their rooms today
   const availableStaff = useMemo(() => {
@@ -2570,18 +2565,28 @@ function DeepCleanSection() {
             <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', opacity: 0.8, margin: '0 0 6px' }}>
               {lang === 'es' ? 'Sugerencia para hoy' : "Today's Suggestion"}
             </p>
-            <p style={{ fontSize: '18px', fontWeight: 700, margin: '0 0 8px' }}>
+            <p style={{ fontSize: '18px', fontWeight: 700, margin: '0 0 10px' }}>
               {suggestedRooms.length} {lang === 'es' ? 'habitaciones' : 'rooms'}
             </p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}>
-              {suggestedRooms.map(r => (
-                <span key={r.roomNumber} style={{
-                  fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '15px',
-                  padding: '4px 12px', background: 'rgba(255,255,255,0.2)', borderRadius: '8px',
-                }}>
-                  {r.roomNumber}
-                </span>
-              ))}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
+              {suggestedRooms.map(r => {
+                const reason = r.daysSince === Infinity
+                  ? (lang === 'es' ? 'Nunca limpiado' : 'Never cleaned')
+                  : `${r.daysSince - freq}d ${lang === 'es' ? 'atrasado' : 'overdue'}`;
+                return (
+                  <div key={r.roomNumber} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '8px 12px', background: 'rgba(255,255,255,0.12)', borderRadius: '10px',
+                  }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '16px' }}>
+                      {r.roomNumber}
+                    </span>
+                    <span style={{ fontSize: '12px', fontWeight: 600, opacity: 0.85 }}>
+                      {reason}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
             <p style={{ fontSize: '12px', opacity: 0.8, margin: '0 0 12px' }}>
               {dndCount > 0 && (lang === 'es' ? `${dndCount} DND liberan tiempo` : `${dndCount} DND rooms free up time`)}
