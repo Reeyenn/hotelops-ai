@@ -273,7 +273,7 @@ function HousekeeperInner() {
           background: 'var(--bg-card)', border: '1px solid var(--border)',
           borderRadius: 'var(--radius-lg)', padding: '32px 24px',
         }}>
-          <AlertCircle size={40} color="#EF4444" style={{ marginBottom: '16px' }} />
+          <AlertCircle size={40} color="var(--red)" style={{ marginBottom: '16px' }} />
           <h2 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>{t('somethingWentWrong', lang)}</h2>
           <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>{errorMsg}</p>
           <button onClick={() => { setStep('loading'); }} style={{

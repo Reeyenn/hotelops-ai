@@ -25,8 +25,8 @@ import {
 
 const DEPARTMENTS: { key: StaffDepartment; label: string; color: string; bg: string; border: string }[] = [
   { key: 'housekeeping', label: 'Housekeeping', color: 'var(--amber)',       bg: 'var(--amber-dim)',          border: 'var(--amber-border)' },
-  { key: 'front_desk',   label: 'Front Desk',   color: '#818cf8',            bg: 'rgba(99,102,241,0.12)',     border: 'rgba(99,102,241,0.25)' },
-  { key: 'maintenance',  label: 'Maintenance',  color: '#ef4444',            bg: 'rgba(239,68,68,0.10)',      border: 'rgba(239,68,68,0.20)' },
+  { key: 'front_desk',   label: 'Front Desk',   color: 'var(--purple, #818cf8)', bg: 'rgba(99,102,241,0.12)',     border: 'rgba(99,102,241,0.25)' },
+  { key: 'maintenance',  label: 'Maintenance',  color: 'var(--red)',         bg: 'var(--red-dim)',            border: 'var(--red-border, rgba(239,68,68,0.20))' },
   { key: 'other',        label: 'Other',        color: 'var(--text-muted)',  bg: 'rgba(100,116,139,0.10)',    border: 'var(--border)' },
 ];
 

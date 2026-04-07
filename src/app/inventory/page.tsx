@@ -232,7 +232,7 @@ export default function InventoryPage() {
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: '20px',
           padding: '14px 24px', borderRadius: 'var(--radius-lg)',
-          background: 'linear-gradient(135deg, var(--navy, #1b3a5c), #2a5a8c)',
+          background: 'linear-gradient(135deg, var(--navy, #1b3a5c), var(--navy-light, #2a5a8c))',
           color: '#fff',
         }}>
           <div>
@@ -385,7 +385,7 @@ export default function InventoryPage() {
           >
             {/* Alert header */}
             <div style={{
-              padding: '16px 20px', background: 'linear-gradient(135deg, #dc2626, #ef4444)',
+              padding: '16px 20px', background: 'linear-gradient(135deg, var(--red), #ef4444)',
               color: '#fff', display: 'flex', alignItems: 'center', gap: '10px',
             }}>
               <AlertTriangle size={22} />
@@ -594,7 +594,7 @@ function CountMode({
                   }}
                   style={{
                     width: '100%', padding: '8px 10px', borderRadius: '6px',
-                    border: `2px solid ${changed ? '#22c55e' : 'var(--border)'}`,
+                    border: `2px solid ${changed ? 'var(--green)' : 'var(--border)'}`,
                     background: 'var(--bg)', fontSize: '16px', fontWeight: 700,
                     fontFamily: 'var(--font-mono)', textAlign: 'center',
                     color: STATUS_COLORS[status],

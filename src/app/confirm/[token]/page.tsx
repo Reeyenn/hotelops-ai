@@ -104,7 +104,7 @@ function ConfirmContent() {
     <div style={{
       minHeight: '100dvh',
       background: '#FFFFFF',
-      color: '#1A1A2E',
+      color: 'var(--text-primary)',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       display: 'flex',
       flexDirection: 'column',
@@ -122,9 +122,9 @@ function ConfirmContent() {
             onClick={() => setLang(l)}
             style={{
               padding: '6px 12px',
-              border: `1px solid ${lang === l ? '#1B3A5C' : 'rgba(0,0,0,0.12)'}`,
+              border: `1px solid ${lang === l ? 'var(--navy)' : 'rgba(0,0,0,0.12)'}`,
               background: lang === l ? 'rgba(27,58,92,0.08)' : 'transparent',
-              color: lang === l ? '#1B3A5C' : '#9CA3AF',
+              color: lang === l ? 'var(--navy)' : 'var(--text-muted)',
               borderRadius: '8px',
               fontSize: '12px',
               fontWeight: 600,
@@ -145,7 +145,7 @@ function ConfirmContent() {
           fontWeight: 700,
           letterSpacing: '0.12em',
           textTransform: 'uppercase',
-          color: '#1B3A5C',
+          color: 'var(--navy)',
           marginBottom: '48px',
         }}>
           Staxis
@@ -153,33 +153,33 @@ function ConfirmContent() {
 
         {/* States */}
         {state === 'loading' && (
-          <p style={{ color: '#9CA3AF', fontSize: '16px' }}>{c.loading}</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '16px' }}>{c.loading}</p>
         )}
 
         {state === 'not_found' && (
-          <p style={{ color: '#6B7280', fontSize: '17px', lineHeight: 1.5 }}>{c.notFound}</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '17px', lineHeight: 1.5 }}>{c.notFound}</p>
         )}
 
         {state === 'error' && (
-          <p style={{ color: '#DC2626', fontSize: '17px', lineHeight: 1.5 }}>{c.error}</p>
+          <p style={{ color: 'var(--red)', fontSize: '17px', lineHeight: 1.5 }}>{c.error}</p>
         )}
 
         {state === 'confirmed' && (
           <>
             <div style={{ fontSize: '60px', marginBottom: '20px', lineHeight: 1 }}>✅</div>
-            <p style={{ fontSize: '22px', fontWeight: 600, color: '#16A34A', lineHeight: 1.3 }}>{c.confirmed}</p>
+            <p style={{ fontSize: '22px', fontWeight: 600, color: 'var(--green)', lineHeight: 1.3 }}>{c.confirmed}</p>
           </>
         )}
 
         {state === 'declined' && (
           <>
             <div style={{ fontSize: '60px', marginBottom: '20px', lineHeight: 1 }}>👍</div>
-            <p style={{ fontSize: '22px', fontWeight: 600, color: '#6B7280', lineHeight: 1.3 }}>{c.declined}</p>
+            <p style={{ fontSize: '22px', fontWeight: 600, color: 'var(--text-secondary)', lineHeight: 1.3 }}>{c.declined}</p>
           </>
         )}
 
         {state === 'already' && (
-          <p style={{ color: '#9CA3AF', fontSize: '18px' }}>{c.already}</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '18px' }}>{c.already}</p>
         )}
 
         {(state === 'ready' || state === 'submitting') && data && (
@@ -190,7 +190,7 @@ function ConfirmContent() {
               fontWeight: 600,
               textTransform: 'uppercase',
               letterSpacing: '0.1em',
-              color: '#9CA3AF',
+              color: 'var(--text-muted)',
               marginBottom: '10px',
             }}>
               {c.shift}
@@ -200,7 +200,7 @@ function ConfirmContent() {
             <p style={{
               fontSize: '36px',
               fontWeight: 700,
-              color: '#1A1A2E',
+              color: 'var(--text-primary)',
               lineHeight: 1.1,
               marginBottom: '10px',
             }}>
@@ -211,7 +211,7 @@ function ConfirmContent() {
             <p style={{
               fontSize: '19px',
               fontWeight: 500,
-              color: '#6B7280',
+              color: 'var(--text-secondary)',
               marginBottom: '52px',
               lineHeight: 1.3,
             }}>
@@ -225,7 +225,7 @@ function ConfirmContent() {
               style={{
                 width: '100%',
                 padding: '22px 20px',
-                background: '#16A34A',
+                background: 'var(--green)',
                 color: '#FFFFFF',
                 border: 'none',
                 borderRadius: '18px',
@@ -251,7 +251,7 @@ function ConfirmContent() {
                 width: '100%',
                 padding: '22px 20px',
                 background: 'rgba(220,38,38,0.06)',
-                color: '#DC2626',
+                color: 'var(--red)',
                 border: '1px solid rgba(220,38,38,0.2)',
                 borderRadius: '18px',
                 fontSize: '22px',
@@ -282,7 +282,7 @@ export default function ConfirmPage() {
         alignItems: 'center',
         justifyContent: 'center',
       }}>
-        <p style={{ color: '#9CA3AF', fontFamily: 'sans-serif', fontSize: '16px' }}>Loading…</p>
+        <p style={{ color: 'var(--text-muted)', fontFamily: 'sans-serif', fontSize: '16px' }}>Loading…</p>
       </div>
     }>
       <ConfirmContent />

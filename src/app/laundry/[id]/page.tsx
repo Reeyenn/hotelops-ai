@@ -145,14 +145,14 @@ export default function LaundryPersonPage({ params }: { params: Promise<{ id: st
       <div style={{
         minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center',
         flexDirection: 'column', gap: '12px',
-        background: '#F0F9FF', fontFamily: 'system-ui, -apple-system, sans-serif',
+        background: 'var(--blue-dim, #F0F9FF)', fontFamily: 'system-ui, -apple-system, sans-serif',
       }}>
         <div style={{
-          width: '32px', height: '32px', border: '4px solid #E5E7EB',
-          borderTopColor: '#0369A1', borderRadius: '50%',
+          width: '32px', height: '32px', border: '4px solid var(--border)',
+          borderTopColor: 'var(--navy)', borderRadius: '50%',
           animation: 'spin 0.8s linear infinite',
         }} />
-        <p style={{ color: '#6B7280', fontSize: '14px', fontWeight: 500 }}>
+        <p style={{ color: 'var(--text-muted)', fontSize: '14px', fontWeight: 500 }}>
           {lang === 'es' ? 'Cargando tareas...' : 'Loading tasks...'}
         </p>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -162,12 +162,12 @@ export default function LaundryPersonPage({ params }: { params: Promise<{ id: st
 
   return (
     <div style={{
-      minHeight: '100dvh', background: '#F0F9FF',
+      minHeight: '100dvh', background: 'var(--blue-dim, #F0F9FF)',
       fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
     }}>
 
       {/* ── Header ── */}
-      <div style={{ background: '#0369A1', padding: '20px 16px 28px', color: 'white' }}>
+      <div style={{ background: 'var(--navy)', padding: '20px 16px 28px', color: 'white' }}>
         <p style={{
           fontSize: '11px', fontWeight: 600, letterSpacing: '0.08em',
           textTransform: 'uppercase', opacity: 0.55, marginBottom: '6px',
@@ -222,7 +222,7 @@ export default function LaundryPersonPage({ params }: { params: Promise<{ id: st
             }}>
               <div style={{
                 height: '100%', width: `${progressPct}%`,
-                background: progressPct === 100 ? '#22C55E' : '#4ADE80',
+                background: progressPct === 100 ? 'var(--green)' : 'var(--green-light, #4ADE80)',
                 borderRadius: '99px',
                 transition: 'width 500ms cubic-bezier(0.4,0,0.2,1)',
               }} />
@@ -241,15 +241,15 @@ export default function LaundryPersonPage({ params }: { params: Promise<{ id: st
           }}>
             <div style={{
               width: '84px', height: '84px', borderRadius: '50%',
-              background: '#DCFCE7', display: 'flex', alignItems: 'center',
+              background: 'var(--green-dim)', display: 'flex', alignItems: 'center',
               justifyContent: 'center', margin: '0 auto 20px',
             }}>
-              <CheckCircle size={42} color="#16A34A" />
+              <CheckCircle size={42} color="var(--green)" />
             </div>
-            <h2 style={{ fontSize: '26px', fontWeight: 800, color: '#111827', marginBottom: '10px' }}>
+            <h2 style={{ fontSize: '26px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '10px' }}>
               {t('allDone', lang)}
             </h2>
-            <p style={{ fontSize: '16px', color: '#4B5563', lineHeight: 1.5 }}>
+            <p style={{ fontSize: '16px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
               {lang === 'es'
                 ? `¡Buen trabajo hoy, ${firstName}! 🎉`
                 : `Great work today, ${firstName}! 🎉`}
@@ -260,7 +260,7 @@ export default function LaundryPersonPage({ params }: { params: Promise<{ id: st
             textAlign: 'center', padding: '64px 24px', background: 'white',
             borderRadius: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
           }}>
-            <p style={{ fontSize: '16px', color: '#6B7280', lineHeight: 1.8 }}>
+            <p style={{ fontSize: '16px', color: 'var(--text-muted)', lineHeight: 1.8 }}>
               {lang === 'es'
                 ? 'No hay tareas de lavandería hoy. ¡Vuelve más tarde!'
                 : 'No laundry tasks today. Check back later!'}
@@ -272,7 +272,7 @@ export default function LaundryPersonPage({ params }: { params: Promise<{ id: st
             {areasDueToday.length > 0 && (
               <div>
                 <h3 style={{
-                  fontSize: '16px', fontWeight: 700, color: '#0369A1',
+                  fontSize: '16px', fontWeight: 700, color: 'var(--navy)',
                   marginBottom: '12px', marginTop: '8px', paddingLeft: '4px',
                 }}>
                   {lang === 'es' ? 'Áreas Públicas' : 'Public Areas'}
@@ -303,7 +303,7 @@ export default function LaundryPersonPage({ params }: { params: Promise<{ id: st
             {loadCards.length > 0 && (
               <div>
                 <h3 style={{
-                  fontSize: '16px', fontWeight: 700, color: '#0369A1',
+                  fontSize: '16px', fontWeight: 700, color: 'var(--navy)',
                   marginBottom: '12px', marginTop: areasDueToday.length > 0 ? '16px' : '8px', paddingLeft: '4px',
                 }}>
                   {lang === 'es' ? 'Cargas de Lavandería' : 'Laundry Loads'}
@@ -355,9 +355,9 @@ function AreaTaskCard({
       onClick={onToggle}
       style={{
         width: '100%', textAlign: 'left',
-        background: isCompleted ? '#F0FDF4' : 'white',
-        border: `2px solid ${isCompleted ? '#86EFAC' : '#E5E7EB'}`,
-        borderLeft: `6px solid ${isCompleted ? '#16A34A' : '#3B82F6'}`,
+        background: isCompleted ? 'var(--green-dim)' : 'white',
+        border: `2px solid ${isCompleted ? 'var(--green-light, #86EFAC)' : 'var(--border)'}`,
+        borderLeft: `6px solid ${isCompleted ? 'var(--green)' : 'var(--navy)'}`,
         borderRadius: '16px',
         padding: '16px',
         transition: 'background 300ms ease, border-color 300ms ease',
@@ -368,8 +368,8 @@ function AreaTaskCard({
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <div style={{
           width: '20px', height: '20px', borderRadius: '4px',
-          border: `2px solid ${isCompleted ? '#16A34A' : '#D1D5DB'}`,
-          background: isCompleted ? '#16A34A' : 'transparent',
+          border: `2px solid ${isCompleted ? 'var(--green)' : 'var(--border)'}`,
+          background: isCompleted ? 'var(--green)' : 'transparent',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           flexShrink: 0,
         }}>
@@ -378,13 +378,13 @@ function AreaTaskCard({
         <div style={{ flex: 1 }}>
           <p style={{
             fontSize: '16px', fontWeight: 700,
-            color: isCompleted ? '#16A34A' : '#111827',
+            color: isCompleted ? 'var(--green)' : 'var(--text-primary)',
             marginBottom: '4px',
           }}>
             {area.name}
           </p>
           <p style={{
-            fontSize: '13px', color: isCompleted ? '#6B7280' : '#6B7280',
+            fontSize: '13px', color: isCompleted ? 'var(--text-muted)' : 'var(--text-muted)',
           }}>
             {lang === 'es' ? 'Piso' : 'Floor'} {area.floor} • {area.minutesPerClean} {lang === 'es' ? 'min' : 'min'}
           </p>
@@ -413,9 +413,9 @@ function LaundryLoadCard({
       onClick={onToggle}
       style={{
         width: '100%', textAlign: 'left',
-        background: isCompleted ? '#F0FDF4' : 'white',
-        border: `2px solid ${isCompleted ? '#86EFAC' : '#E5E7EB'}`,
-        borderLeft: `6px solid ${isCompleted ? '#16A34A' : '#3B82F6'}`,
+        background: isCompleted ? 'var(--green-dim)' : 'white',
+        border: `2px solid ${isCompleted ? 'var(--green-light, #86EFAC)' : 'var(--border)'}`,
+        borderLeft: `6px solid ${isCompleted ? 'var(--green)' : 'var(--navy)'}`,
         borderRadius: '16px',
         padding: '16px',
         transition: 'background 300ms ease, border-color 300ms ease',
@@ -426,8 +426,8 @@ function LaundryLoadCard({
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <div style={{
           width: '20px', height: '20px', borderRadius: '4px',
-          border: `2px solid ${isCompleted ? '#16A34A' : '#D1D5DB'}`,
-          background: isCompleted ? '#16A34A' : 'transparent',
+          border: `2px solid ${isCompleted ? 'var(--green)' : 'var(--border)'}`,
+          background: isCompleted ? 'var(--green)' : 'transparent',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           flexShrink: 0,
         }}>
@@ -436,13 +436,13 @@ function LaundryLoadCard({
         <div style={{ flex: 1 }}>
           <p style={{
             fontSize: '16px', fontWeight: 700,
-            color: isCompleted ? '#16A34A' : '#111827',
+            color: isCompleted ? 'var(--green)' : 'var(--text-primary)',
             marginBottom: '4px',
           }}>
             {load.category}
           </p>
           <p style={{
-            fontSize: '13px', color: isCompleted ? '#6B7280' : '#6B7280',
+            fontSize: '13px', color: isCompleted ? 'var(--text-muted)' : 'var(--text-muted)',
           }}>
             {load.loads} {lang === 'es' ? 'cargas' : 'loads'} • {load.minutes} {lang === 'es' ? 'min' : 'min'}
           </p>

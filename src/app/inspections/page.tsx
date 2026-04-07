@@ -196,8 +196,8 @@ export default function InspectionsPage() {
             display: 'inline-flex', alignItems: 'center', gap: '12px',
             padding: '14px 24px', borderRadius: 'var(--radius-lg)',
             background: overdueCount > 0
-              ? 'linear-gradient(135deg, #dc2626, #ef4444)'
-              : 'linear-gradient(135deg, #f59e0b, #fbbf24)',
+              ? 'linear-gradient(135deg, var(--red), #ef4444)'
+              : 'linear-gradient(135deg, var(--amber), #fbbf24)',
             color: '#fff',
           }}>
             <AlertTriangle size={20} />
@@ -590,7 +590,7 @@ function EditInspectionModal({ inspection, onClose, onSave, onMarkComplete, onDe
               onClick={onDelete}
               style={{
                 flex: 1, padding: '10px', borderRadius: 'var(--radius-md)',
-                background: 'rgba(220,38,38,0.06)', color: '#dc2626', border: '1px solid rgba(220,38,38,0.2)',
+                background: 'var(--red-dim)', color: 'var(--red)', border: '1px solid var(--red-border, rgba(220,38,38,0.2))',
                 fontSize: '12px', fontWeight: 600, cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
               }}
