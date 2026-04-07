@@ -139,7 +139,7 @@ export default function DashboardPage() {
   }, [rooms]);
 
   const STATUS_DOT: Record<string, string> = {
-    dirty: '#DC2626', in_progress: '#F59E0B', clean: '#16A34A', inspected: '#7C3AED',
+    dirty: 'var(--red)', in_progress: 'var(--amber)', clean: 'var(--green)', inspected: 'var(--purple, #7C3AED)',
   };
 
   /* ── Housekeeper activity: who's cleaning what right now ── */
@@ -255,7 +255,7 @@ export default function DashboardPage() {
               </div>
               <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-muted)' }}>{t('occupancy', lang)}</span>
             </div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '36px', lineHeight: 1, letterSpacing: '-0.04em', color: occupancyPct >= 80 ? '#16A34A' : occupancyPct >= 50 ? 'var(--navy)' : '#d97706' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '36px', lineHeight: 1, letterSpacing: '-0.04em', color: occupancyPct >= 80 ? 'var(--green)' : occupancyPct >= 50 ? 'var(--navy)' : 'var(--amber)' }}>
               {occupancyPct}<span style={{ fontSize: '22px', fontWeight: 600 }}>%</span>
             </div>
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
@@ -273,7 +273,7 @@ export default function DashboardPage() {
               </div>
               <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-muted)' }}>{t('dirtyRooms', lang)}</span>
             </div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '36px', lineHeight: 1, letterSpacing: '-0.04em', color: dirty > 0 ? '#DC2626' : '#16A34A' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '36px', lineHeight: 1, letterSpacing: '-0.04em', color: dirty > 0 ? 'var(--red)' : 'var(--green)' }}>
               {dirty}
             </div>
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
@@ -396,9 +396,9 @@ export default function DashboardPage() {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: '16px' }}>
                   <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('openWorkOrders', lang)}</span>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '15px', color: urgentOrders.length > 0 ? '#DC2626' : 'var(--text-primary)' }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '15px', color: urgentOrders.length > 0 ? 'var(--red)' : 'var(--text-primary)' }}>
                     {openOrders.length}
-                    {urgentOrders.length > 0 && <span style={{ fontSize: '10px', color: '#DC2626', marginLeft: '4px' }}>!</span>}
+                    {urgentOrders.length > 0 && <span style={{ fontSize: '10px', color: 'var(--red)', marginLeft: '4px' }}>!</span>}
                   </span>
                 </div>
               </div>
@@ -416,7 +416,7 @@ export default function DashboardPage() {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('blockedRooms', lang)}</span>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '15px', color: blockedRooms > 0 ? '#DC2626' : 'var(--text-primary)' }}>{blockedRooms}</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '15px', color: blockedRooms > 0 ? 'var(--red)' : 'var(--text-primary)' }}>{blockedRooms}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('total', lang)}</span>
@@ -449,7 +449,7 @@ export default function DashboardPage() {
                         title={`${r.number} — ${r.status}${r.assignedName ? ` (${r.assignedName})` : ''}`}
                         style={{
                           width: '32px', height: '24px', borderRadius: '4px',
-                          background: STATUS_DOT[r.status] || '#94a3b8',
+                          background: STATUS_DOT[r.status] || 'var(--text-muted)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           fontSize: '9px', fontWeight: 700, color: '#fff',
                           opacity: r.isDnd ? 0.4 : 1,
@@ -464,10 +464,10 @@ export default function DashboardPage() {
             ))}
             <div style={{ display: 'flex', gap: '12px', marginTop: '8px', borderTop: '1px solid var(--border)', paddingTop: '8px' }}>
               {[
-                { label: lang === 'es' ? 'Sucia' : 'Dirty', color: '#DC2626' },
-                { label: lang === 'es' ? 'Limpiando' : 'Cleaning', color: '#F59E0B' },
-                { label: lang === 'es' ? 'Limpia' : 'Clean', color: '#16A34A' },
-                { label: lang === 'es' ? 'Inspeccionada' : 'Inspected', color: '#7C3AED' },
+                { label: lang === 'es' ? 'Sucia' : 'Dirty', color: 'var(--red)' },
+                { label: lang === 'es' ? 'Limpiando' : 'Cleaning', color: 'var(--amber)' },
+                { label: lang === 'es' ? 'Limpia' : 'Clean', color: 'var(--green)' },
+                { label: lang === 'es' ? 'Inspeccionada' : 'Inspected', color: 'var(--purple, #7C3AED)' },
               ].map(l => (
                 <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: l.color }} />
@@ -499,7 +499,7 @@ export default function DashboardPage() {
                   {/* Status dot */}
                   <div style={{
                     width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0,
-                    background: hk.active ? '#F59E0B' : hk.done === hk.total ? '#16A34A' : '#94a3b8',
+                    background: hk.active ? 'var(--amber)' : hk.done === hk.total ? 'var(--green)' : 'var(--text-muted)',
                     boxShadow: hk.active ? '0 0 0 3px rgba(245,158,11,0.2)' : 'none',
                   }} />
                   {/* Name */}
@@ -507,7 +507,7 @@ export default function DashboardPage() {
                     {hk.name.split(' ')[0]}
                   </span>
                   {/* What they're doing */}
-                  <span style={{ fontSize: '12px', color: hk.active ? '#D97706' : 'var(--text-muted)', fontWeight: hk.active ? 600 : 400, flexShrink: 0 }}>
+                  <span style={{ fontSize: '12px', color: hk.active ? 'var(--amber)' : 'var(--text-muted)', fontWeight: hk.active ? 600 : 400, flexShrink: 0 }}>
                     {hk.active
                       ? `${lang === 'es' ? 'Rm' : 'Rm'} ${hk.active.number}`
                       : hk.done === hk.total
@@ -563,14 +563,14 @@ export default function DashboardPage() {
                     <div key={o.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', padding: '4px 0' }}>
                       <div style={{
                         width: '6px', height: '6px', borderRadius: '50%', flexShrink: 0,
-                        background: o.severity === 'urgent' ? '#DC2626' : o.severity === 'medium' ? '#F59E0B' : '#94a3b8',
+                        background: o.severity === 'urgent' ? 'var(--red)' : o.severity === 'medium' ? 'var(--amber)' : 'var(--text-muted)',
                       }} />
                       <span style={{ fontWeight: 600, color: 'var(--text-primary)', minWidth: '40px' }}>Rm {o.roomNumber}</span>
                       <span style={{ color: 'var(--text-muted)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {o.description.length > 60 ? o.description.slice(0, 60) + '…' : o.description}
                       </span>
                       {o.severity === 'urgent' && (
-                        <span style={{ fontSize: '10px', fontWeight: 700, color: '#DC2626', flexShrink: 0 }}>URGENT</span>
+                        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--red)', flexShrink: 0 }}>URGENT</span>
                       )}
                     </div>
                   ))}
@@ -593,7 +593,7 @@ export default function DashboardPage() {
                   <span><strong style={{ color: 'var(--text-primary)' }}>{checkouts}</strong> {lang === 'es' ? 'salidas' : 'checkouts'}</span>
                   <span><strong style={{ color: 'var(--text-primary)' }}>{stayovers}</strong> {lang === 'es' ? 'ocupadas' : 'stayovers'}</span>
                   <span><strong style={{ color: 'var(--text-primary)' }}>{hkActivity.length}</strong> {lang === 'es' ? 'en equipo' : 'on crew'}</span>
-                  <span><strong style={{ color: dirty > 0 ? '#DC2626' : '#16A34A' }}>{dirty}</strong> {lang === 'es' ? 'pendientes' : 'remaining'}</span>
+                  <span><strong style={{ color: dirty > 0 ? 'var(--red)' : 'var(--green)' }}>{dirty}</strong> {lang === 'es' ? 'pendientes' : 'remaining'}</span>
                 </div>
               </div>
             )}

@@ -69,11 +69,11 @@ const LANDSCAPING_DEFAULTS: Omit<LandscapingTask, 'id' | 'createdAt'>[] = [
 ];
 
 const SEASON_CONFIG: Record<LandscapingSeason, { label: string; labelEs: string; color: string; bg: string; icon: typeof Leaf }> = {
-  'year-round': { label: 'Year-Round', labelEs: 'Todo el año', color: '#22c55e', bg: 'rgba(34,197,94,0.08)', icon: TreePine },
-  spring:       { label: 'Spring', labelEs: 'Primavera', color: '#a855f7', bg: 'rgba(168,85,247,0.08)', icon: Flower2 },
-  summer:       { label: 'Summer', labelEs: 'Verano', color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', icon: Sun },
-  fall:         { label: 'Fall', labelEs: 'Otoño', color: '#ea580c', bg: 'rgba(234,88,12,0.08)', icon: Leaf },
-  winter:       { label: 'Winter', labelEs: 'Invierno', color: '#3b82f6', bg: 'rgba(59,130,246,0.08)', icon: Snowflake },
+  'year-round': { label: 'Year-Round', labelEs: 'Todo el año', color: 'var(--green)', bg: 'var(--green-dim)', icon: TreePine },
+  spring:       { label: 'Spring', labelEs: 'Primavera', color: 'var(--purple, #a855f7)', bg: 'rgba(168,85,247,0.08)', icon: Flower2 },
+  summer:       { label: 'Summer', labelEs: 'Verano', color: 'var(--amber)', bg: 'var(--amber-dim)', icon: Sun },
+  fall:         { label: 'Fall', labelEs: 'Otoño', color: 'var(--orange, #ea580c)', bg: 'rgba(234,88,12,0.08)', icon: Leaf },
+  winter:       { label: 'Winter', labelEs: 'Invierno', color: 'var(--navy)', bg: 'rgba(59,130,246,0.08)', icon: Snowflake },
 };
 
 type SeasonFilterKey = 'all' | LandscapingSeason;
@@ -527,7 +527,7 @@ export default function MaintenancePage() {
                           <span style={{
                             fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em',
                             padding: '3px 8px', borderRadius: 'var(--radius-full)',
-                            background: 'rgba(220,38,38,0.1)', color: '#dc2626',
+                            background: 'rgba(220,38,38,0.1)', color: 'var(--red)',
                           }}>
                             {lang === 'es' ? 'Bloqueada' : 'Blocked'}
                           </span>
@@ -652,7 +652,7 @@ export default function MaintenancePage() {
                             className="btn"
                             style={{
                               width: '100%', padding: '10px', fontSize: '13px', fontWeight: 600,
-                              background: 'rgba(245,158,11,0.12)', color: '#d97706', border: 'none',
+                              background: 'rgba(245,158,11,0.12)', color: 'var(--amber)', border: 'none',
                               borderRadius: 'var(--radius-md)', cursor: 'pointer',
                               minHeight: '44px',
                             }}
@@ -667,7 +667,7 @@ export default function MaintenancePage() {
                             className="btn"
                             style={{
                               width: '100%', padding: '10px', fontSize: '13px', fontWeight: 600,
-                              background: 'rgba(34,197,94,0.12)', color: '#16a34a', border: 'none',
+                              background: 'rgba(34,197,94,0.12)', color: 'var(--green)', border: 'none',
                               borderRadius: 'var(--radius-md)', cursor: 'pointer',
                               minHeight: '44px',
                             }}
@@ -717,7 +717,7 @@ export default function MaintenancePage() {
                 const daysUntil = getDaysUntilDue(task, Date.now());
                 const isOverdue = daysUntil < 0;
                 const isDueSoon = daysUntil >= 0 && daysUntil <= 7;
-                const borderColor = isOverdue ? '#dc2626' : isDueSoon ? '#f59e0b' : '#22c55e';
+                const borderColor = isOverdue ? 'var(--red)' : isDueSoon ? 'var(--amber)' : 'var(--green)';
 
                 return (
                   <div
@@ -756,7 +756,7 @@ export default function MaintenancePage() {
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <span style={{
                         fontSize: '12px', fontWeight: 600,
-                        color: isOverdue ? '#dc2626' : isDueSoon ? '#d97706' : 'var(--text-secondary)',
+                        color: isOverdue ? 'var(--red)' : isDueSoon ? 'var(--amber)' : 'var(--text-secondary)',
                       }}>
                         {isOverdue
                           ? (lang === 'es' ? `Vencida por ${Math.abs(daysUntil)} días` : `Overdue by ${Math.abs(daysUntil)} days`)
@@ -770,7 +770,7 @@ export default function MaintenancePage() {
                         style={{
                           display: 'flex', alignItems: 'center', gap: '5px',
                           padding: '7px 14px', border: 'none', borderRadius: 'var(--radius-md)',
-                          background: 'rgba(34,197,94,0.1)', color: '#16a34a',
+                          background: 'rgba(34,197,94,0.1)', color: 'var(--green)',
                           fontSize: '12px', fontWeight: 600, cursor: 'pointer',
                           minHeight: '36px',
                         }}
@@ -871,7 +871,7 @@ export default function MaintenancePage() {
                 const inSeason = isTaskInSeason(task);
                 const seasonCfg = SEASON_CONFIG[task.season];
                 const SeasonIcon = seasonCfg.icon;
-                const borderColor = !inSeason ? '#94a3b8' : isOverdue ? '#dc2626' : isDueSoon ? '#f59e0b' : '#22c55e';
+                const borderColor = !inSeason ? 'var(--text-muted)' : isOverdue ? 'var(--red)' : isDueSoon ? 'var(--amber)' : 'var(--green)';
 
                 return (
                   <div
@@ -921,7 +921,7 @@ export default function MaintenancePage() {
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <span style={{
                         fontSize: '12px', fontWeight: 600,
-                        color: !inSeason ? '#94a3b8' : isOverdue ? '#dc2626' : isDueSoon ? '#d97706' : 'var(--text-secondary)',
+                        color: !inSeason ? 'var(--text-muted)' : isOverdue ? 'var(--red)' : isDueSoon ? 'var(--amber)' : 'var(--text-secondary)',
                       }}>
                         {!inSeason
                           ? (lang === 'es' ? 'Fuera de temporada' : 'Off-season')
@@ -938,7 +938,7 @@ export default function MaintenancePage() {
                           style={{
                             display: 'flex', alignItems: 'center', gap: '5px',
                             padding: '7px 14px', border: 'none', borderRadius: 'var(--radius-md)',
-                            background: 'rgba(34,197,94,0.1)', color: '#16a34a',
+                            background: 'rgba(34,197,94,0.1)', color: 'var(--green)',
                             fontSize: '12px', fontWeight: 600, cursor: 'pointer',
                             minHeight: '36px',
                           }}
@@ -1081,7 +1081,7 @@ export default function MaintenancePage() {
               }}
             >
               <div>
-                <p style={{ fontSize: '13px', fontWeight: 600, color: newBlockRoom ? '#dc2626' : 'var(--text-primary)' }}>
+                <p style={{ fontSize: '13px', fontWeight: 600, color: newBlockRoom ? 'var(--red)' : 'var(--text-primary)' }}>
                   {lang === 'es' ? 'Bloquear Habitación' : 'Block Room'}
                 </p>
                 <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
@@ -1090,7 +1090,7 @@ export default function MaintenancePage() {
               </div>
               <div style={{
                 width: '40px', height: '22px', borderRadius: '99px',
-                background: newBlockRoom ? '#dc2626' : 'rgba(0,0,0,0.12)',
+                background: newBlockRoom ? 'var(--red)' : 'rgba(0,0,0,0.12)',
                 position: 'relative', transition: 'background 150ms',
               }}>
                 <div style={{
