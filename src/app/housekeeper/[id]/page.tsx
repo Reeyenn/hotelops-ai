@@ -66,6 +66,7 @@ export default function HousekeeperRoomPage({ params }: { params: Promise<{ id: 
   const [savingDnd, setSavingDnd] = useState<string | null>(null);
   const [helpSent, setHelpSent] = useState<Set<string>>(new Set());
   const [savingHelp, setSavingHelp] = useState<string | null>(null);
+  const [resettingRoomId, setResettingRoomId] = useState<string | null>(null);
 
   // Load saved language preference from staffPrefs on mount so the page
   // auto-displays in Spanish for HKs who replied ESPAÑOL to a text.
@@ -224,6 +225,22 @@ export default function HousekeeperRoomPage({ params }: { params: Promise<{ id: 
     setIssueNote('');
   };
 
+  // ── Reset room (clean/inspected → dirty, clear times) ─────────────────────
+  const handleResetRoom = async (room: RoomWithRef) => {
+    setResettingRoomId(room.id);
+    try {
+      await updateDoc(room._ref, {
+        status: 'dirty' as RoomStatus,
+        startedAt: null,
+        completedAt: null,
+      });
+    } catch (err) {
+      console.error('[housekeeper] reset room error:', err);
+    } finally {
+      setResettingRoomId(null);
+    }
+  };
+
   // ── Derived state ──────────────────────────────────────────────────────────
   const housekeeperName = rooms[0]?.assignedName ?? '';
   const firstName = housekeeperName.split(' ')[0] || 'Housekeeper';
@@ -370,6 +387,8 @@ export default function HousekeeperRoomPage({ params }: { params: Promise<{ id: 
               helpAlreadySent={helpSent.has(room.id)}
               onStart={() => handleStartRoom(room)}
               onFinish={() => handleFinishRoom(room)}
+              onReset={() => handleResetRoom(room)}
+              isResetting={resettingRoomId === room.id}
               onReportIssue={() => {
                 setIssueRoomId(room.id);
                 setIssueNote((room as Room & { issueNote?: string }).issueNote ?? '');
@@ -480,6 +499,8 @@ function RoomCard({
   helpAlreadySent,
   onStart,
   onFinish,
+  onReset,
+  isResetting,
   onReportIssue,
   onToggleDnd,
   onNeedHelp,
@@ -493,6 +514,8 @@ function RoomCard({
   helpAlreadySent: boolean;
   onStart: () => void;
   onFinish: () => void;
+  onReset: () => void;
+  isResetting: boolean;
   onReportIssue: () => void;
   onToggleDnd: () => void;
   onNeedHelp: () => void;
@@ -655,6 +678,7 @@ function RoomCard({
           height: '56px', borderRadius: '14px',
           background: 'var(--green-dim)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+          position: 'relative',
         }}>
           <CheckCircle size={22} color="var(--green)" />
           <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--green)' }}>
@@ -665,6 +689,29 @@ function RoomCard({
               {format(firestoreToDate(room.completedAt), 'h:mm a')}
             </span>
           )}
+          <button
+            onClick={onReset}
+            disabled={isResetting}
+            style={{
+              position: 'absolute',
+              right: '12px',
+              background: 'none',
+              border: '1.5px solid var(--green-light, #86EFAC)',
+              borderRadius: '8px',
+              padding: '4px 10px',
+              fontSize: '12px',
+              fontWeight: 600,
+              color: 'var(--green)',
+              cursor: isResetting ? 'not-allowed' : 'pointer',
+              opacity: isResetting ? 0.4 : 0.7,
+              WebkitTapHighlightColor: 'transparent',
+              transition: 'opacity 150ms ease',
+            }}
+          >
+            {isResetting
+              ? '...'
+              : (lang === 'es' ? 'Revertir' : 'Reset')}
+          </button>
         </div>
       ) : isInProgress ? (
         <HoldToFinishButton lang={lang} isSaving={isSaving} onFinish={onFinish} />
