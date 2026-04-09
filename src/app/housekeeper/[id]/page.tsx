@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   collectionGroup,
@@ -752,7 +752,7 @@ function RoomCard({
             {lang === 'es' ? 'Parar' : 'Stop'}
           </button>
           <div style={{ flex: 1 }}>
-            <HoldToFinishButton lang={lang} isSaving={isSaving} onFinish={onFinish} />
+            <CompleteButton lang={lang} isSaving={isSaving} onFinish={onFinish} />
           </div>
         </div>
       ) : (
@@ -835,10 +835,8 @@ function StartButton({
   );
 }
 
-/* ── Hold to Finish Button - press and hold 1.5s to confirm ──
-   Prevents accidental taps. A progress bar fills while holding.
-   Release early = cancel. Complete = fires onFinish.            */
-function HoldToFinishButton({
+/* ── Complete Button - simple tap to mark done ── */
+function CompleteButton({
   lang,
   isSaving,
   onFinish,
@@ -847,93 +845,31 @@ function HoldToFinishButton({
   isSaving: boolean;
   onFinish: () => void;
 }) {
-  const [progress, setProgress] = useState(0); // 0–100
-  const holdStartRef = useRef<number | null>(null);
-  const rafRef = useRef<number | null>(null);
-  const firedRef = useRef(false);
-  const HOLD_MS = 1500;
-
-  const startHold = () => {
-    if (isSaving) return;
-    firedRef.current = false;
-    holdStartRef.current = Date.now();
-
-    const tick = () => {
-      if (!holdStartRef.current) return;
-      const elapsed = Date.now() - holdStartRef.current;
-      const pct = Math.min(100, (elapsed / HOLD_MS) * 100);
-      setProgress(pct);
-
-      if (pct >= 100 && !firedRef.current) {
-        firedRef.current = true;
-        holdStartRef.current = null;
-        onFinish();
-        setProgress(0);
-      } else if (pct < 100) {
-        rafRef.current = requestAnimationFrame(tick);
-      }
-    };
-
-    rafRef.current = requestAnimationFrame(tick);
-  };
-
-  const cancelHold = () => {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    rafRef.current = null;
-    holdStartRef.current = null;
-    setProgress(0);
-  };
-
-  const isHolding = progress > 0;
-  const label = isSaving
-    ? t('savingDots', lang)
-    : isHolding
-      ? t('keepHolding', lang)
-      : t('holdToFinish', lang);
+  const [pressed, setPressed] = useState(false);
 
   return (
     <button
+      onClick={onFinish}
       disabled={isSaving}
-      onPointerDown={startHold}
-      onPointerUp={cancelHold}
-      onPointerLeave={cancelHold}
-      onPointerCancel={cancelHold}
+      onPointerDown={() => !isSaving && setPressed(true)}
+      onPointerUp={() => setPressed(false)}
+      onPointerLeave={() => setPressed(false)}
       style={{
-        position: 'relative',
         width: '100%', height: '68px', border: 'none', borderRadius: '14px',
-        background: 'var(--green-dim)',
-        color: 'var(--green-dark, #166534)',
-        fontSize: '18px', fontWeight: 800,
+        background: isSaving ? 'var(--border)' : pressed ? 'var(--green-dark, #166534)' : 'var(--green)',
+        color: isSaving ? 'var(--text-muted)' : 'white',
+        fontSize: '20px', fontWeight: 800,
         cursor: isSaving ? 'not-allowed' : 'pointer',
         letterSpacing: '-0.01em',
-        overflow: 'hidden',
+        transform: pressed && !isSaving ? 'scale(0.97)' : 'scale(1)',
+        transition: 'background 100ms ease, transform 80ms ease',
         WebkitTapHighlightColor: 'transparent',
-        userSelect: 'none',
-        // Subtle border to distinguish from the done state
-        outline: '2px solid var(--green-light, #86EFAC)',
+        boxShadow: pressed || isSaving ? 'none' : '0 4px 12px rgba(22,101,52,0.35)',
       }}
     >
-      {/* Fill bar - grows left to right as user holds */}
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        background: 'var(--green)',
-        transformOrigin: 'left center',
-        transform: `scaleX(${progress / 100})`,
-        transition: progress === 0 ? 'transform 200ms ease' : 'none',
-        borderRadius: '14px',
-      }} />
-
-      {/* Label on top of fill */}
-      <span style={{
-        position: 'relative',
-        zIndex: 1,
-        color: progress > 50 ? 'white' : 'var(--green-dark, #166534)',
-        transition: 'color 150ms ease',
-        pointerEvents: 'none',
-      }}>
-        {label}
-      </span>
+      {isSaving
+        ? t('savingDots', lang)
+        : (lang === 'es' ? '✓ Completar' : '✓ Complete')}
     </button>
   );
 }
