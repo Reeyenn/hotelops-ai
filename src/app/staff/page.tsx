@@ -440,15 +440,15 @@ export default function StaffPage() {
 
             {/* Stats */}
             {totalStaff > 0 && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '16px' }}>
+              <div className="staff-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '16px' }}>
                 {[
-                  { label: t('totalStaffLabel', lang), value: totalStaff, color: 'var(--amber)' },
+                  { label: t('totalStaffLabel', lang), value: totalStaff, color: 'var(--navy)' },
                   { label: t('scheduledTodayCount', lang), value: scheduledToday, color: 'var(--green)' },
-                  { label: t('nearOvertime', lang), value: nearOvertime, color: nearOvertime > 0 ? 'var(--amber)' : 'var(--text-muted)' },
+                  { label: t('nearOvertime', lang), value: nearOvertime, color: nearOvertime > 0 ? 'var(--red)' : 'var(--text-muted)' },
                 ].map(({ label, value, color }) => (
                   <div key={label} className="card" style={{ padding: '14px 12px', textAlign: 'center' }}>
                     <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>{label}</div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '28px', fontWeight: 700, color }}>{value}</div>
+                    <div className="stat-number" style={{ fontFamily: 'var(--font-mono)', fontSize: '28px', fontWeight: 700, color }}>{value}</div>
                   </div>
                 ))}
               </div>

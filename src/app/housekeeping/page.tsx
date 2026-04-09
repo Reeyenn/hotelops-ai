@@ -1303,7 +1303,7 @@ function RoomsSection() {
                     <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
                   </div>
                   {/* Tiles */}
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(72px, 1fr))', gap: '6px' }}>
                     {floorRooms.map(room => {
                       const info = STATUS_INFO[room.status];
                       const assignedName = room.assignedName || null;
@@ -1318,7 +1318,7 @@ function RoomsSection() {
                           disabled={room.status === 'inspected'}
                           title={`Room ${room.number} · ${room.type ?? ''} · ${info.label}${assignedName ? ` · ${assignedName}` : ''}`}
                           style={{
-                            width: '72px', height: hasHelp ? '82px' : '72px', flexShrink: 0,
+                            width: '100%', height: hasHelp ? '82px' : '72px', flexShrink: 0,
                             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                             gap: '2px',
                             background: hasHelp ? 'rgba(249,115,22,0.12)' : info.bgColor,

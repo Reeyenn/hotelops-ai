@@ -244,9 +244,10 @@ export default function InspectionsPage() {
                 <div
                   key={item.id}
                   onClick={() => setEditModal(item)}
+                  className="inspection-row"
                   style={{
-                    display: 'flex', alignItems: 'center', gap: '14px',
-                    padding: '16px 18px', borderBottom: '1px solid var(--border)',
+                    display: 'flex', alignItems: 'center', gap: '12px',
+                    padding: '14px 14px', borderBottom: '1px solid var(--border)',
                     background: (status === 'overdue' || status === 'due') ? cfg.bg : undefined,
                     cursor: 'pointer',
                     transition: 'background 150ms',
