@@ -398,13 +398,10 @@ body {
 @media (max-width: 600px) {
   .dash-hero-grid {
     grid-template-columns: 1fr !important;
-    gap: 10px !important;
+    gap: 8px !important;
   }
   .dash-hero-grid .card {
-    padding: 16px !important;
-  }
-  .dash-hero-grid .card .hero-number {
-    font-size: 28px !important;
+    padding: 14px 16px !important;
   }
   /* Dashboard: 4-column details → 2 columns on mobile */
   .dash-details-grid {
