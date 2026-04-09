@@ -260,8 +260,9 @@ export default function HousekeeperRoomPage({ params }: { params: Promise<{ id: 
   const housekeeperName = rooms[0]?.assignedName ?? '';
   const firstName = housekeeperName.split(' ')[0] || 'Housekeeper';
   const total = rooms.length;
-  const done = rooms.filter(r => r.status === 'clean' || r.status === 'inspected').length;
+  const done = rooms.filter(r => r.status === 'clean' || r.status === 'inspected' || r.isDnd).length;
   const inProgress = rooms.filter(r => r.status === 'in_progress').length;
+  const dndCount = rooms.filter(r => r.isDnd && r.status !== 'clean' && r.status !== 'inspected').length;
   const allDone = total > 0 && done === total;
   const progressPct = total > 0 ? Math.round((done / total) * 100) : 0;
 
@@ -338,8 +339,8 @@ export default function HousekeeperRoomPage({ params }: { params: Promise<{ id: 
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
               <span style={{ fontSize: '14px', fontWeight: 600 }}>
                 {lang === 'es'
-                  ? `${done} de ${total} listas${inProgress > 0 ? ` · ${inProgress} en progreso` : ''}`
-                  : `${done} of ${total} done${inProgress > 0 ? ` · ${inProgress} in progress` : ''}`}
+                  ? `${done} de ${total} listas${dndCount > 0 ? ` · ${dndCount} DND` : ''}${inProgress > 0 ? ` · ${inProgress} en progreso` : ''}`
+                  : `${done} of ${total} done${dndCount > 0 ? ` · ${dndCount} DND` : ''}${inProgress > 0 ? ` · ${inProgress} in progress` : ''}`}
               </span>
               <span style={{ fontSize: '14px', fontWeight: 700, opacity: 0.9 }}>
                 {progressPct}%
