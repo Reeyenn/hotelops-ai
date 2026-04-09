@@ -430,7 +430,8 @@ export default function HousekeeperRoomPage({ params }: { params: Promise<{ id: 
           style={{
             position: 'fixed', inset: 0,
             background: 'rgba(0,0,0,0.4)',
-            display: 'flex', alignItems: 'flex-end',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '16px',
             zIndex: 200,
           }}
           onClick={e => {
@@ -441,9 +442,9 @@ export default function HousekeeperRoomPage({ params }: { params: Promise<{ id: 
           }}
         >
           <div style={{
-            width: '100%', background: 'white',
-            borderRadius: '20px 20px 0 0',
-            padding: '24px 16px calc(env(safe-area-inset-bottom, 0px) + 24px)',
+            width: '100%', maxWidth: '420px', background: 'white',
+            borderRadius: '20px',
+            padding: '24px 20px',
           }}>
             <h3 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
               {t('reportIssue', lang)}
