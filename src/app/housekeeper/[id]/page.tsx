@@ -290,6 +290,12 @@ export default function HousekeeperRoomPage({ params }: { params: Promise<{ id: 
       minHeight: '100dvh', background: 'var(--green-bg, #F0FDF4)',
       fontFamily: 'var(--font-sans, system-ui, -apple-system, BlinkMacSystemFont, sans-serif)',
     }}>
+    <div style={{
+      maxWidth: '480px',
+      margin: '0 auto',
+      minHeight: '100dvh',
+      background: 'var(--green-bg, #F0FDF4)',
+    }}>
 
       {/* ── Header ── */}
       <div style={{ background: 'var(--green-dark, #166534)', padding: '20px 16px 28px', color: 'white' }}>
@@ -494,6 +500,7 @@ export default function HousekeeperRoomPage({ params }: { params: Promise<{ id: 
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 }
