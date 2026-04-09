@@ -298,7 +298,7 @@ export default function HousekeeperRoomPage({ params }: { params: Promise<{ id: 
     }}>
 
       {/* ── Header ── */}
-      <div style={{ background: 'var(--green-dark, #166534)', padding: '20px 16px 28px', color: 'white' }}>
+      <div style={{ background: 'linear-gradient(135deg, var(--navy, #0F172A) 0%, var(--navy-light, #2563EB) 100%)', padding: '20px 16px 28px', color: 'white' }}>
         <p style={{
           fontSize: '11px', fontWeight: 600, letterSpacing: '0.08em',
           textTransform: 'uppercase', opacity: 0.55, marginBottom: '6px',
