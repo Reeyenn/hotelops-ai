@@ -432,8 +432,11 @@ function EditInspectionModal({ inspection, onClose, onSave, onDelete }: {
     || freq !== inspection.frequencyMonths || notes !== (inspection.notes || '')
     || lastInspected !== (inspection.lastInspectedDate || '');
 
-  const status = getStatus(inspection.dueMonth);
+  // Reactive status — reflects the current form state, not the stored value,
+  // so the colored accent updates live as the user picks a new date.
+  const status = getStatus(dueMonth);
   const cfg = STATUS_CONFIG[status];
+  const todayISO = new Date().toISOString().split('T')[0];
 
   const inputStyle: React.CSSProperties = {
     width: '100%', padding: '10px 12px', borderRadius: 'var(--radius-md)',
@@ -502,6 +505,7 @@ function EditInspectionModal({ inspection, onClose, onSave, onDelete }: {
               <input
                 type="date"
                 value={lastInspected}
+                max={todayISO}
                 onChange={e => { setLastInspected(e.target.value); setDueMonthTouched(false); }}
                 style={{ ...inputStyle, flex: 1, borderLeftWidth: '4px', borderLeftColor: cfg.color }}
               />
@@ -655,6 +659,7 @@ function AddInspectionModal({ isOpen, onClose, uid, pid, onAdded }: {
     border: '1.5px solid var(--border)', background: 'var(--bg)',
     fontSize: '14px', color: 'var(--text-primary)',
   };
+  const todayISO = new Date().toISOString().split('T')[0];
 
   if (!isOpen) return null;
 
@@ -712,6 +717,7 @@ function AddInspectionModal({ isOpen, onClose, uid, pid, onAdded }: {
               <input
                 type="date"
                 value={lastInspected}
+                max={todayISO}
                 onChange={e => { setLastInspected(e.target.value); setDueMonthTouched(false); }}
                 style={{ ...inputStyle, flex: 1 }}
               />
