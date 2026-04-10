@@ -657,12 +657,30 @@ function AddInspectionModal({ isOpen, onClose, uid, pid, onAdded }: {
           <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
             Last Inspected <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span>
           </label>
-          <input
-            type="date"
-            value={lastInspected}
-            onChange={e => { setLastInspected(e.target.value); setDueMonthTouched(false); }}
-            style={inputStyle}
-          />
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
+            <input
+              type="date"
+              value={lastInspected}
+              onChange={e => { setLastInspected(e.target.value); setDueMonthTouched(false); }}
+              style={{ ...inputStyle, flex: 1 }}
+            />
+            <button
+              type="button"
+              onClick={() => {
+                const today = new Date().toISOString().split('T')[0];
+                setLastInspected(today);
+                setDueMonthTouched(false);
+              }}
+              style={{
+                padding: '0 14px', borderRadius: 'var(--radius-md)',
+                background: 'var(--navy, #1b3a5c)', color: '#fff', border: 'none',
+                fontSize: '12px', fontWeight: 700, cursor: 'pointer',
+                whiteSpace: 'nowrap', flexShrink: 0,
+              }}
+            >
+              Today
+            </button>
+          </div>
           <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', lineHeight: 1.4 }}>
             When was this last done? Leave blank if unknown — we&apos;ll use it to auto-set the next due date.
           </div>
