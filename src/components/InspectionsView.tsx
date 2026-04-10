@@ -4,13 +4,12 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProperty } from '@/contexts/PropertyContext';
 import { useLang } from '@/contexts/LanguageContext';
-import { Modal } from '@/components/ui/Modal';
 import {
   subscribeToInspections, addInspection, updateInspection, deleteInspection,
 } from '@/lib/firestore';
 import type { Inspection } from '@/types';
 import {
-  Plus, ClipboardCheck, AlertTriangle, Check, Calendar, Trash2, ChevronRight,
+  Plus, ClipboardCheck, AlertTriangle, Check, Calendar, Trash2, ChevronRight, X,
 } from 'lucide-react';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -644,70 +643,122 @@ function AddInspectionModal({ isOpen, onClose, uid, pid, onAdded }: {
     fontSize: '14px', color: 'var(--text-primary)',
   };
 
+  if (!isOpen) return null;
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Add Inspection">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-        <div>
-          <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-            Inspection Name *
-          </label>
-          <input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Fire Extinguisher" style={inputStyle} />
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 100,
+        background: 'rgba(0,0,0,0.5)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '20px',
+      }}
+      onClick={onClose}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: 'var(--surface, #fff)', borderRadius: 'var(--radius-lg)',
+          width: '100%', maxWidth: '420px', overflow: 'hidden',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+        }}
+      >
+        <div style={{
+          padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          borderBottom: '1px solid var(--border)',
+        }}>
+          <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+            Add Inspection
+          </h2>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            style={{
+              width: '28px', height: '28px', borderRadius: '6px',
+              border: '1px solid var(--border)', background: 'var(--bg)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', color: 'var(--text-muted)',
+            }}
+          >
+            <X size={14} />
+          </button>
         </div>
-        <div>
-          <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-            Last Inspected <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span>
-          </label>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
+
+        <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div>
+            <label style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+              Inspection Name *
+            </label>
+            <input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Fire Extinguisher" style={inputStyle} />
+          </div>
+          <div>
+            <label style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+              Last Inspected <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optional)</span>
+            </label>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
+              <input
+                type="date"
+                value={lastInspected}
+                onChange={e => { setLastInspected(e.target.value); setDueMonthTouched(false); }}
+                style={{ ...inputStyle, flex: 1 }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const today = new Date().toISOString().split('T')[0];
+                  setLastInspected(today);
+                  setDueMonthTouched(false);
+                }}
+                style={{
+                  padding: '0 14px', borderRadius: 'var(--radius-md)',
+                  background: 'var(--navy, #1b3a5c)', color: '#fff', border: 'none',
+                  fontSize: '12px', fontWeight: 700, cursor: 'pointer',
+                  whiteSpace: 'nowrap', flexShrink: 0,
+                }}
+              >
+                Today
+              </button>
+            </div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', lineHeight: 1.4 }}>
+              When was this last done? Leave blank if unknown — we&apos;ll use it to auto-set the next due date.
+            </div>
+          </div>
+          <FrequencySlider value={freq} onChange={(v) => { setFreq(v); setDueMonthTouched(false); }} />
+          <div>
+            <label style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+              Due Month {lastInspected && !dueMonthTouched && (
+                <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, color: 'var(--text-muted)' }}>
+                  · auto-calculated
+                </span>
+              )}
+            </label>
             <input
-              type="date"
-              value={lastInspected}
-              onChange={e => { setLastInspected(e.target.value); setDueMonthTouched(false); }}
-              style={{ ...inputStyle, flex: 1 }}
+              type="month"
+              value={dueMonth}
+              onChange={e => { setDueMonth(e.target.value); setDueMonthTouched(true); }}
+              style={inputStyle}
             />
-            <button
-              type="button"
-              onClick={() => {
-                const today = new Date().toISOString().split('T')[0];
-                setLastInspected(today);
-                setDueMonthTouched(false);
-              }}
-              style={{
-                padding: '0 14px', borderRadius: 'var(--radius-md)',
-                background: 'var(--navy, #1b3a5c)', color: '#fff', border: 'none',
-                fontSize: '12px', fontWeight: 700, cursor: 'pointer',
-                whiteSpace: 'nowrap', flexShrink: 0,
-              }}
-            >
-              Today
-            </button>
-          </div>
-          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', lineHeight: 1.4 }}>
-            When was this last done? Leave blank if unknown — we&apos;ll use it to auto-set the next due date.
           </div>
         </div>
-        <FrequencySlider value={freq} onChange={(v) => { setFreq(v); setDueMonthTouched(false); }} />
-        <div>
-          <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-            Due Month {lastInspected && !dueMonthTouched && (
-              <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>· auto-calculated</span>
-            )}
-          </label>
-          <input
-            type="month"
-            value={dueMonth}
-            onChange={e => { setDueMonth(e.target.value); setDueMonthTouched(true); }}
-            style={inputStyle}
-          />
+
+        <div style={{ padding: '0 20px 16px' }}>
+          <button
+            onClick={handleSubmit}
+            disabled={!name.trim() || saving}
+            style={{
+              width: '100%', padding: '12px', borderRadius: 'var(--radius-md)',
+              background: 'var(--navy, #1b3a5c)', color: '#fff', border: 'none',
+              fontSize: '14px', fontWeight: 700,
+              cursor: (!name.trim() || saving) ? 'not-allowed' : 'pointer',
+              opacity: (!name.trim() || saving) ? 0.5 : 1,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+            }}
+          >
+            <Plus size={16} />
+            {saving ? 'Saving...' : 'Add Inspection'}
+          </button>
         </div>
-        <button
-          onClick={handleSubmit}
-          disabled={!name.trim() || saving}
-          className="btn btn-primary"
-          style={{ marginTop: '4px', opacity: !name.trim() || saving ? 0.5 : 1 }}
-        >
-          {saving ? 'Saving...' : 'Add Inspection'}
-        </button>
       </div>
-    </Modal>
+    </div>
   );
 }
