@@ -554,7 +554,7 @@ function ScheduleSection() {
   }, []);
 
   const onPillPointerUp = useCallback((e: React.PointerEvent<HTMLButtonElement>) => {
-    e.currentTarget.releasePointerCapture(e.pointerId);
+    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch {}
     const d = dragRef.current;
     if (d.active && d.roomId) {
       setDragState(prev => {
@@ -581,6 +581,14 @@ function ScheduleSection() {
     }
     dragRef.current = { roomId: null, roomNumber: '', roomType: '', startX: 0, startY: 0, active: false };
   }, [assignments, selectedCrew, showMoveToast]);
+
+  // If the browser cancels the pointer (e.g. interrupted by scroll, app switch),
+  // clear all drag state so the ghost doesn't stay stuck on screen.
+  const onPillPointerCancel = useCallback((e: React.PointerEvent<HTMLButtonElement>) => {
+    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch {}
+    setDragState(null);
+    dragRef.current = { roomId: null, roomNumber: '', roomType: '', startX: 0, startY: 0, active: false };
+  }, []);
 
   return (
     <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -672,6 +680,7 @@ function ScheduleSection() {
                   onPointerDown={e => onPillPointerDown(e, room)}
                   onPointerMove={onPillPointerMove}
                   onPointerUp={e => { onPillPointerUp(e); }}
+                  onPointerCancel={onPillPointerCancel}
                   style={{
                     padding: '6px 10px 4px', lineHeight: 1,
                     background: room.type === 'checkout' ? 'var(--red-dim)' : 'var(--blue-dim, #F0F9FF)',
@@ -679,7 +688,10 @@ function ScheduleSection() {
                     borderRadius: '6px', cursor: 'grab',
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1px',
                     opacity: dragState?.roomId === room.id ? 0.3 : 1,
-                    touchAction: 'pan-y',
+                    touchAction: 'none',
+                    userSelect: 'none',
+                    WebkitUserSelect: 'none',
+                    WebkitTouchCallout: 'none',
                   }}
                 >
                   <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '13px', color: 'var(--text-primary)' }}>{room.number}</span>
@@ -772,6 +784,7 @@ function ScheduleSection() {
                       onPointerDown={e => onPillPointerDown(e, room)}
                       onPointerMove={onPillPointerMove}
                       onPointerUp={e => { onPillPointerUp(e); }}
+                      onPointerCancel={onPillPointerCancel}
                       className="sched-room-pill"
                       style={{
                         padding: '6px 10px 4px', lineHeight: 1,
@@ -780,7 +793,10 @@ function ScheduleSection() {
                         borderRadius: '6px', cursor: 'grab',
                         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1px',
                         opacity: dragState?.roomId === room.id ? 0.3 : 1,
-                        touchAction: 'pan-y',
+                        touchAction: 'none',
+                        userSelect: 'none',
+                        WebkitUserSelect: 'none',
+                        WebkitTouchCallout: 'none',
                       }}
                     >
                       <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '13px', color: 'var(--text-primary)' }}>{room.number}</span>
