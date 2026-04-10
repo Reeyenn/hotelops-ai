@@ -32,7 +32,7 @@ export function BottomNav() {
       <div style={{
         display: 'flex', justifyContent: 'space-around',
         maxWidth: '600px', margin: '0 auto',
-        padding: '6px 4px 4px',
+        padding: '6px 0 4px',
       }}>
         {navItems.map(({ href, icon: Icon, key }) => {
           const isActive = pathname.startsWith(href);
@@ -41,11 +41,11 @@ export function BottomNav() {
               key={href}
               href={href}
               style={{
-                flex: 1, display: 'flex', flexDirection: 'column',
+                flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column',
                 alignItems: 'center', justifyContent: 'center',
-                padding: '6px 2px 4px',
+                padding: '6px 0 4px',
                 textDecoration: 'none',
-                gap: '2px',
+                gap: '3px',
                 position: 'relative',
                 minHeight: '44px',
                 WebkitTapHighlightColor: 'transparent',
@@ -61,17 +61,17 @@ export function BottomNav() {
               )}
 
               <Icon
-                size={22}
+                size={20}
                 strokeWidth={isActive ? 2.2 : 1.6}
                 color={isActive ? 'var(--navy)' : 'var(--text-muted)'}
                 style={{ transition: 'color 150ms' }}
               />
 
               <span style={{
-                fontSize: '10px',
+                fontSize: '9.5px',
                 fontWeight: isActive ? 700 : 500,
-                letterSpacing: '0.01em',
-                textTransform: 'uppercase',
+                letterSpacing: '0',
+                textTransform: 'none',
                 color: isActive ? 'var(--navy)' : 'var(--text-muted)',
                 transition: 'color 150ms',
                 lineHeight: 1,
@@ -80,6 +80,7 @@ export function BottomNav() {
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
                 maxWidth: '100%',
+                paddingInline: '1px',
               }}>
                 {t(key, lang)}
               </span>
