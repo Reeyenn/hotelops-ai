@@ -493,6 +493,7 @@ export default function StaffPage() {
                   return (
                     <div
                       key={member.id}
+                      className="staff-list-row"
                       style={{
                         display: 'flex', alignItems: 'center', gap: '12px',
                         padding: '12px 16px',
@@ -512,24 +513,25 @@ export default function StaffPage() {
                           <span style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{member.name}</span>
                           {member.isSenior && <Star size={11} color="var(--amber)" fill="var(--amber)" />}
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 600, color: dept.color }}>{deptLabel(dept.key, lang)}</span>
-                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>·</span>
-                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{member.language === 'es' ? 'ES' : 'EN'}</span>
-                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>·</span>
-                          <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: nearMax ? 'var(--amber)' : 'var(--text-muted)' }}>{member.weeklyHours}h/{member.maxWeeklyHours}h</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px', overflow: 'hidden' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 600, color: dept.color, whiteSpace: 'nowrap' }}>{deptLabel(dept.key, lang)}</span>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)', flexShrink: 0 }}>·</span>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)', flexShrink: 0 }}>{member.language === 'es' ? 'ES' : 'EN'}</span>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)', flexShrink: 0 }}>·</span>
+                          <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: nearMax ? 'var(--amber)' : 'var(--text-muted)', whiteSpace: 'nowrap', flexShrink: 0 }}>{member.weeklyHours}h/{member.maxWeeklyHours}h</span>
                         </div>
                       </div>
 
                       {/* Scheduled indicator */}
                       <div
+                        className="staff-list-buttons"
                         onClick={(e) => { e.stopPropagation(); toggleScheduledToday(member); }}
                         style={{
-                          padding: '6px 14px', borderRadius: '8px',
+                          padding: '6px 10px', borderRadius: '8px',
                           background: member.scheduledToday ? 'rgba(34,197,94,0.12)' : 'rgba(0,0,0,0.04)',
                           border: `1px solid ${member.scheduledToday ? 'rgba(34,197,94,0.3)' : 'var(--border)'}`,
                           cursor: 'pointer', flexShrink: 0,
-                          fontSize: '13px', fontWeight: 600,
+                          fontSize: '12px', fontWeight: 600,
                           color: member.scheduledToday ? 'var(--green)' : 'var(--text-muted)',
                           display: 'flex', alignItems: 'center', gap: '4px',
                         }}
@@ -539,12 +541,13 @@ export default function StaffPage() {
 
                       {/* Edit */}
                       <button
+                        className="staff-list-buttons"
                         onClick={(e) => { e.stopPropagation(); openEdit(member); }}
                         style={{
-                          padding: '6px 14px', borderRadius: '8px',
+                          padding: '6px 10px', borderRadius: '8px',
                           background: 'rgba(0,0,0,0.04)', border: '1px solid var(--border)',
                           cursor: 'pointer', flexShrink: 0,
-                          fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)',
+                          fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)',
                         }}
                       >
                         Edit ›

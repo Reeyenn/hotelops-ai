@@ -449,7 +449,8 @@ body {
     padding: 10px 12px !important;
   }
   .staff-list-buttons {
-    margin-left: auto !important;
+    padding: 5px 8px !important;
+    font-size: 11px !important;
   }
 }
 
