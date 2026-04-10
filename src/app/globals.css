@@ -433,6 +433,19 @@ body {
   .inv-grid > div {
     border-right: none !important;
   }
+  /* Inventory CTA: stack vertically on mobile */
+  .inv-cta {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    padding: 16px !important;
+    width: 100% !important;
+    display: flex !important;
+  }
+  .inv-cta button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
 }
 
 /* Staff: stat cards responsive */

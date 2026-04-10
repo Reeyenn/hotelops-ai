@@ -122,7 +122,7 @@ export default function FrontDeskPage() {
         </div>
 
         {/* Summary Stats */}
-        <div className="grid grid-cols-4 gap-2 p-4 bg-opacity-50" style={{ backgroundColor: 'var(--bg-card)' }}>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-4 bg-opacity-50" style={{ backgroundColor: 'var(--bg-card)' }}>
           <StatCard label={t('total', lang)} value={total} />
           <StatCard label={t('available', lang) || 'Available'} value={available} color="var(--green)" />
           <StatCard label={t('cleaning', lang) || 'Cleaning'} value={cleaning} color="var(--amber)" />

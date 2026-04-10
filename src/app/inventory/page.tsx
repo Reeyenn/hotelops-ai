@@ -204,7 +204,7 @@ export default function InventoryPage() {
         </h1>
 
         {/* Count CTA */}
-        <div style={{
+        <div className="inv-cta" style={{
           display: 'inline-flex', alignItems: 'center', gap: '20px',
           padding: '14px 24px', borderRadius: 'var(--radius-lg)',
           background: 'linear-gradient(135deg, var(--navy, #1b3a5c), var(--navy-light, #2a5a8c))',

@@ -896,8 +896,8 @@ export default function MaintenancePage() {
                     </button>
 
                     {/* Task name + season badge */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', paddingRight: '28px' }}>
-                      <p style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)', margin: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', paddingRight: '28px', minWidth: 0 }}>
+                      <p style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)', margin: 0, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {task.name}
                       </p>
                       <span style={{
