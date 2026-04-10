@@ -438,6 +438,18 @@ function EditInspectionModal({ inspection, onClose, onSave, onMarkComplete, onDe
   const [freq, setFreq] = useState(inspection.frequencyMonths);
   const [notes, setNotes] = useState(inspection.notes || '');
   const [lastInspected, setLastInspected] = useState(inspection.lastInspectedDate || '');
+  const [dueMonthTouched, setDueMonthTouched] = useState(false);
+
+  // Auto-compute Due Month from Last Inspected + Frequency.
+  // Runs whenever lastInspected or freq changes, unless user manually edits Due Month.
+  useEffect(() => {
+    if (!lastInspected || dueMonthTouched) return;
+    const [y, m] = lastInspected.split('-').map(Number);
+    if (!y || !m) return;
+    const lastYM = `${y}-${String(m).padStart(2, '0')}`;
+    const next = addMonths(lastYM, freq);
+    setDueMonth(next);
+  }, [lastInspected, freq, dueMonthTouched]);
 
   const hasChanges = name !== inspection.name || dueMonth !== (inspection.dueMonth || currentYM())
     || freq !== inspection.frequencyMonths || notes !== (inspection.notes || '')
@@ -499,19 +511,28 @@ function EditInspectionModal({ inspection, onClose, onSave, onMarkComplete, onDe
             <input
               type="date"
               value={lastInspected}
-              onChange={e => setLastInspected(e.target.value)}
+              onChange={e => { setLastInspected(e.target.value); setDueMonthTouched(false); }}
               style={inputStyle}
             />
           </div>
 
+          <FrequencySlider value={freq} onChange={(v) => { setFreq(v); setDueMonthTouched(false); }} />
+
           <div>
             <label style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-              Due Month
+              Due Month {lastInspected && !dueMonthTouched && (
+                <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, color: 'var(--text-muted)' }}>
+                  · auto-calculated
+                </span>
+              )}
             </label>
-            <input type="month" value={dueMonth} onChange={e => setDueMonth(e.target.value)} style={inputStyle} />
+            <input
+              type="month"
+              value={dueMonth}
+              onChange={e => { setDueMonth(e.target.value); setDueMonthTouched(true); }}
+              style={inputStyle}
+            />
           </div>
-
-          <FrequencySlider value={freq} onChange={setFreq} />
 
           <div>
             <label style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
@@ -662,16 +683,19 @@ function AddInspectionModal({ isOpen, onClose, uid, pid, onAdded }: {
           <input
             type="date"
             value={lastInspected}
-            onChange={e => setLastInspected(e.target.value)}
+            onChange={e => { setLastInspected(e.target.value); setDueMonthTouched(false); }}
             style={inputStyle}
           />
           <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', lineHeight: 1.4 }}>
             When was this last done? Leave blank if unknown — we&apos;ll use it to auto-set the next due date.
           </div>
         </div>
+        <FrequencySlider value={freq} onChange={(v) => { setFreq(v); setDueMonthTouched(false); }} />
         <div>
           <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-            Due Month
+            Due Month {lastInspected && !dueMonthTouched && (
+              <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>· auto-calculated</span>
+            )}
           </label>
           <input
             type="month"
@@ -680,7 +704,6 @@ function AddInspectionModal({ isOpen, onClose, uid, pid, onAdded }: {
             style={inputStyle}
           />
         </div>
-        <FrequencySlider value={freq} onChange={setFreq} />
         <button
           onClick={handleSubmit}
           disabled={!name.trim() || saving}
