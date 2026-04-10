@@ -509,3 +509,20 @@ body {
     width: 100% !important;
   }
 }
+
+/* ── Inventory category filter pills: horizontal scroll on mobile ── */
+.inv-filters::-webkit-scrollbar {
+  display: none;
+}
+.inv-filters > button {
+  flex-shrink: 0 !important;
+}
+@media (max-width: 600px) {
+  .inv-filters {
+    margin-left: -14px !important;
+    margin-right: -14px !important;
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+    width: calc(100% + 28px) !important;
+  }
+}

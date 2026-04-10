@@ -239,7 +239,7 @@ export default function InventoryPage() {
         </div>
 
         {/* Category filters */}
-        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
+        <div className="inv-filters" style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px', alignSelf: 'stretch', width: '100%', touchAction: 'pan-x', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
           {CATEGORIES.map(cat => (
             <button
               key={cat.key}
