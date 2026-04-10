@@ -7,16 +7,16 @@ import { useProperty } from '@/contexts/PropertyContext';
 import { useLang } from '@/contexts/LanguageContext';
 import { t } from '@/lib/translations';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { InspectionsView } from '@/components/InspectionsView';
 import { timeAgo } from '@/lib/utils';
 import {
   subscribeToWorkOrders, addWorkOrder, updateWorkOrder,
-  subscribeToPreventiveTasks, addPreventiveTask, updatePreventiveTask, deletePreventiveTask,
   subscribeToLandscapingTasks, addLandscapingTask, updateLandscapingTask, deleteLandscapingTask,
 } from '@/lib/firestore';
-import type { WorkOrder, WorkOrderSeverity, WorkOrderStatus, PreventiveTask, StaffMember, LandscapingTask, LandscapingSeason } from '@/types';
+import type { WorkOrder, WorkOrderSeverity, WorkOrderStatus, StaffMember, LandscapingTask, LandscapingSeason } from '@/types';
 import {
   Plus, X, Trash2, Wrench, CheckCircle2, Clock, ChevronDown, ChevronUp,
-  TreePine, Leaf, Sun, Snowflake, Flower2, ClipboardCheck, ChevronRight,
+  TreePine, Leaf, Sun, Snowflake, Flower2,
 } from 'lucide-react';
 
 // ─── Tab config ──────────────────────────────────────────────────────────────
@@ -41,19 +41,6 @@ const STATUS_STYLE: Record<WorkOrderStatus, { bg: string; color: string }> = {
   in_progress: { bg: 'var(--amber-dim, rgba(245,158,11,0.08))', color: 'var(--amber)' },
   resolved:    { bg: 'var(--green-dim, rgba(34,197,94,0.08))', color: 'var(--green)' },
 };
-
-// ─── Preventive defaults ─────────────────────────────────────────────────────
-
-const PREVENTIVE_DEFAULTS = [
-  { name: 'HVAC Filter Change', frequencyDays: 90 },
-  { name: 'Fire Extinguisher Inspection', frequencyDays: 365 },
-  { name: 'Smoke Detector Test', frequencyDays: 30 },
-  { name: 'Water Heater Flush', frequencyDays: 180 },
-  { name: 'Elevator Inspection', frequencyDays: 365 },
-  { name: 'Pool Equipment Check', frequencyDays: 7 },
-  { name: 'Ice Machine Cleaning', frequencyDays: 30 },
-  { name: 'Pest Control Service', frequencyDays: 30 },
-];
 
 // ─── Landscaping defaults ────────────────────────────────────────────────────
 
@@ -117,11 +104,9 @@ export default function MaintenancePage() {
 
   const [activeTab, setActiveTab] = useState<TabKey>('workOrders');
   const [orders, setOrders] = useState<WorkOrder[]>([]);
-  const [tasks, setTasks] = useState<PreventiveTask[]>([]);
   const [filter, setFilter] = useState<FilterKey>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showTaskModal, setShowTaskModal] = useState(false);
   const [assigningId, setAssigningId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -132,10 +117,6 @@ export default function MaintenancePage() {
   const [newSeverity, setNewSeverity] = useState<WorkOrderSeverity>('medium');
   const [newBlockRoom, setNewBlockRoom] = useState(false);
 
-  // Create task form
-  const [newTaskName, setNewTaskName] = useState('');
-  const [newTaskFreq, setNewTaskFreq] = useState('30');
-
   // Landscaping state
   const [lsTasks, setLsTasks] = useState<LandscapingTask[]>([]);
   const [lsSeasonFilter, setLsSeasonFilter] = useState<SeasonFilterKey>('all');
@@ -144,7 +125,6 @@ export default function MaintenancePage() {
   const [newLsSeason, setNewLsSeason] = useState<LandscapingSeason>('year-round');
   const [newLsFreq, setNewLsFreq] = useState('7');
 
-  const seededRef = useRef(false);
   const lsSeededRef = useRef(false);
 
   // ─── Auth guard ──────────────────────────────────────────────────────────
@@ -159,24 +139,6 @@ export default function MaintenancePage() {
   useEffect(() => {
     if (!user || !activePropertyId) return;
     return subscribeToWorkOrders(user.uid, activePropertyId, setOrders);
-  }, [user, activePropertyId]);
-
-  useEffect(() => {
-    if (!user || !activePropertyId) return;
-    return subscribeToPreventiveTasks(user.uid, activePropertyId, (incoming) => {
-      setTasks(incoming);
-      if (incoming.length === 0 && !seededRef.current) {
-        seededRef.current = true;
-        PREVENTIVE_DEFAULTS.forEach(d => {
-          addPreventiveTask(user.uid, activePropertyId, {
-            propertyId: activePropertyId,
-            name: d.name,
-            frequencyDays: d.frequencyDays,
-            lastCompletedAt: null,
-          });
-        });
-      }
-    });
   }, [user, activePropertyId]);
 
   // Landscaping subscription
@@ -227,17 +189,6 @@ export default function MaintenancePage() {
     resolved: orders.filter(o => o.status === 'resolved').length,
   }), [orders]);
 
-  // ─── Sorted preventive tasks ─────────────────────────────────────────────
-
-  const sortedTasks = useMemo(() => {
-    const now = Date.now();
-    return [...tasks].sort((a, b) => {
-      const aDue = getDaysUntilDue(a, now);
-      const bDue = getDaysUntilDue(b, now);
-      return aDue - bDue;
-    });
-  }, [tasks]);
-
   // ─── Handlers ────────────────────────────────────────────────────────────
 
   const handleCreateOrder = useCallback(async () => {
@@ -287,38 +238,6 @@ export default function MaintenancePage() {
       resolvedAt: new Date(),
     });
   }, [user, activePropertyId]);
-
-  const handleMarkTaskDone = useCallback(async (task: PreventiveTask) => {
-    if (!user || !activePropertyId) return;
-    await updatePreventiveTask(user.uid, activePropertyId, task.id, {
-      lastCompletedAt: new Date(),
-      lastCompletedBy: user.displayName ?? undefined,
-    });
-  }, [user, activePropertyId]);
-
-  const handleDeleteTask = useCallback(async (task: PreventiveTask) => {
-    if (!user || !activePropertyId) return;
-    if (!window.confirm(`Delete "${task.name}"?`)) return;
-    await deletePreventiveTask(user.uid, activePropertyId, task.id);
-  }, [user, activePropertyId]);
-
-  const handleCreateTask = useCallback(async () => {
-    if (!user || !activePropertyId || !newTaskName.trim() || submitting) return;
-    setSubmitting(true);
-    try {
-      await addPreventiveTask(user.uid, activePropertyId, {
-        propertyId: activePropertyId,
-        name: newTaskName.trim(),
-        frequencyDays: Math.max(1, parseInt(newTaskFreq, 10) || 30),
-        lastCompletedAt: null,
-      });
-      setShowTaskModal(false);
-      setNewTaskName('');
-      setNewTaskFreq('30');
-    } finally {
-      setSubmitting(false);
-    }
-  }, [user, activePropertyId, newTaskName, newTaskFreq, submitting]);
 
   // ─── Landscaping handlers ───────────────────────────────────────────────
 
@@ -683,134 +602,9 @@ export default function MaintenancePage() {
             )}
           </div>
         ) : activeTab === 'preventive' ? (
-          /* ── Preventive Maintenance Tab ── */
-          <div className="animate-in stagger-2" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-
-            {/* Inspections shortcut */}
-            <button
-              onClick={() => router.push('/inspections')}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '12px',
-                padding: '14px 16px', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)',
-                background: 'var(--bg-card)', cursor: 'pointer',
-                textAlign: 'left', width: '100%', minHeight: '56px',
-              }}
-            >
-              <div style={{
-                width: '36px', height: '36px', borderRadius: '8px',
-                background: 'var(--navy-dim, rgba(27,58,92,0.08))',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-              }}>
-                <ClipboardCheck size={18} color="var(--navy)" />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>
-                  {t('inspections', lang)}
-                </div>
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', lineHeight: 1.2 }}>
-                  {lang === 'es' ? 'Inspecciones y listas de verificación' : 'Room inspections & checklists'}
-                </div>
-              </div>
-              <ChevronRight size={16} color="var(--text-muted)" style={{ flexShrink: 0 }} />
-            </button>
-
-            {/* Add task button */}
-            <button
-              onClick={() => setShowTaskModal(true)}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                padding: '10px', border: '1px dashed var(--border)', borderRadius: 'var(--radius-md)',
-                background: 'transparent', cursor: 'pointer',
-                fontSize: '13px', fontWeight: 600, color: 'var(--navy)',
-                minHeight: '44px',
-              }}
-            >
-              <Plus size={14} />
-              {t('addTask', lang)}
-            </button>
-
-            {/* Task cards */}
-            {sortedTasks.length === 0 ? (
-              <div style={{
-                padding: '48px 20px', textAlign: 'center', borderRadius: 'var(--radius-lg)',
-                background: 'rgba(0,0,0,0.02)', border: '1px dashed var(--border)',
-              }}>
-                <CheckCircle2 size={28} color="var(--text-muted)" style={{ margin: '0 auto 10px' }} />
-                <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                  {t('noPreventiveTasks', lang)}
-                </p>
-              </div>
-            ) : (
-              sortedTasks.map(task => {
-                const daysUntil = getDaysUntilDue(task, Date.now());
-                const isOverdue = daysUntil < 0;
-                const isDueSoon = daysUntil >= 0 && daysUntil <= 7;
-                const borderColor = isOverdue ? 'var(--red)' : isDueSoon ? 'var(--amber)' : 'var(--green)';
-
-                return (
-                  <div
-                    key={task.id}
-                    className="card"
-                    style={{
-                      padding: '14px 16px', borderLeft: `3px solid ${borderColor}`,
-                      position: 'relative',
-                    }}
-                  >
-                    {/* Delete button */}
-                    <button
-                      onClick={() => handleDeleteTask(task)}
-                      aria-label={`Delete ${task.name}`}
-                      style={{
-                        position: 'absolute', top: '12px', right: '12px',
-                        background: 'none', border: 'none', cursor: 'pointer', padding: '4px',
-                      }}
-                    >
-                      <Trash2 size={14} color="var(--text-muted)" />
-                    </button>
-
-                    {/* Task name */}
-                    <p style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)', marginBottom: '4px', paddingRight: '28px' }}>
-                      {task.name}
-                    </p>
-
-                    {/* Frequency + last completed */}
-                    <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}>
-                      {lang === 'es' ? `Cada ${task.frequencyDays} días` : `Every ${task.frequencyDays} days`}
-                      {' \u00b7 '}
-                      {t('lastCompleted', lang)}: {task.lastCompletedAt ? formatShortDate(toJsDate(task.lastCompletedAt)) : t('never', lang)}
-                    </p>
-
-                    {/* Due status + mark done */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{
-                        fontSize: '12px', fontWeight: 600,
-                        color: isOverdue ? 'var(--red)' : isDueSoon ? 'var(--amber)' : 'var(--text-secondary)',
-                      }}>
-                        {isOverdue
-                          ? (lang === 'es' ? `Vencida por ${Math.abs(daysUntil)} días` : `Overdue by ${Math.abs(daysUntil)} days`)
-                          : daysUntil === 0
-                            ? t('dueToday', lang)
-                            : (lang === 'es' ? `Vence en ${daysUntil} días` : `Due in ${daysUntil} days`)
-                        }
-                      </span>
-                      <button
-                        onClick={() => handleMarkTaskDone(task)}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: '5px',
-                          padding: '7px 14px', border: 'none', borderRadius: 'var(--radius-md)',
-                          background: 'rgba(34,197,94,0.1)', color: 'var(--green)',
-                          fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                          minHeight: '36px',
-                        }}
-                      >
-                        <CheckCircle2 size={13} />
-                        {t('markDone', lang)}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })
-            )}
+          /* ── Preventive Maintenance Tab (Inspections) ── */
+          <div className="animate-in stagger-2">
+            <InspectionsView />
           </div>
         ) : (
           /* ── Landscaping Tab ── */
@@ -1151,85 +945,6 @@ export default function MaintenancePage() {
         </div>
       )}
 
-      {/* ── Add Preventive Task Modal ── */}
-      {showTaskModal && (
-        <div
-          style={{
-            position: 'fixed', inset: 0, zIndex: 50,
-            background: 'rgba(0,0,0,0.4)',
-            display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-          }}
-          onClick={e => { if (e.target === e.currentTarget) setShowTaskModal(false); }}
-        >
-          <div style={{
-            width: '100%', maxWidth: '500px',
-            background: 'var(--bg-card)', borderRadius: '16px 16px 0 0',
-            padding: '20px 20px calc(20px + env(safe-area-inset-bottom))',
-            display: 'flex', flexDirection: 'column', gap: '16px',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h2 style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: '18px', color: 'var(--text-primary)' }}>
-                {t('addTask', lang)}
-              </h2>
-              <button onClick={() => setShowTaskModal(false)} aria-label={lang === 'es' ? 'Cerrar' : 'Close'} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
-                <X size={20} color="var(--text-muted)" />
-              </button>
-            </div>
-
-            <div>
-              <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px', display: 'block' }}>
-                {t('taskName', lang)}
-              </label>
-              <input
-                type="text"
-                value={newTaskName}
-                onChange={e => setNewTaskName(e.target.value)}
-                placeholder={t('taskName', lang)}
-                style={{
-                  width: '100%', padding: '12px 14px', fontSize: '14px',
-                  border: '1px solid var(--border)', borderRadius: 'var(--radius-md)',
-                  background: 'var(--bg)', color: 'var(--text-primary)',
-                  fontFamily: 'var(--font-sans)',
-                }}
-              />
-            </div>
-
-            <div>
-              <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px', display: 'block' }}>
-                {t('frequencyDays', lang)}
-              </label>
-              <input
-                type="number"
-                value={newTaskFreq}
-                onChange={e => setNewTaskFreq(e.target.value)}
-                min="1"
-                style={{
-                  width: '100%', padding: '12px 14px', fontSize: '14px',
-                  border: '1px solid var(--border)', borderRadius: 'var(--radius-md)',
-                  background: 'var(--bg)', color: 'var(--text-primary)',
-                  fontFamily: 'var(--font-mono)',
-                }}
-              />
-            </div>
-
-            <button
-              onClick={handleCreateTask}
-              disabled={!newTaskName.trim() || submitting}
-              style={{
-                width: '100%', padding: '14px', border: 'none',
-                borderRadius: 'var(--radius-md)', cursor: newTaskName.trim() && !submitting ? 'pointer' : 'not-allowed',
-                background: newTaskName.trim() && !submitting ? 'var(--navy)' : 'var(--bg-elevated)',
-                color: newTaskName.trim() && !submitting ? '#fff' : 'var(--text-muted)',
-                fontSize: '14px', fontWeight: 700, fontFamily: 'var(--font-sans)',
-                transition: 'all 150ms', minHeight: '48px',
-              }}
-            >
-              {submitting ? '...' : t('addTask', lang)}
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* ── Add Landscaping Task Modal ── */}
       {showLsModal && (
         <div
@@ -1357,16 +1072,6 @@ export default function MaintenancePage() {
       )}
     </AppLayout>
   );
-}
-
-// ─── Helper: days until preventive task is due ─────────────────────────────
-
-function getDaysUntilDue(task: PreventiveTask, now: number): number {
-  if (!task.lastCompletedAt) return -task.frequencyDays;
-  const completed = toJsDate(task.lastCompletedAt);
-  if (!completed) return -task.frequencyDays;
-  const daysSince = Math.floor((now - completed.getTime()) / (1000 * 60 * 60 * 24));
-  return task.frequencyDays - daysSince;
 }
 
 // ─── Helper: days until landscaping task is due ─────────────────────────────
