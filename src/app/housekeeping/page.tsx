@@ -679,7 +679,7 @@ function ScheduleSection() {
                     borderRadius: '6px', cursor: 'grab',
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1px',
                     opacity: dragState?.roomId === room.id ? 0.3 : 1,
-                    touchAction: 'none',
+                    touchAction: 'pan-y',
                   }}
                 >
                   <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '13px', color: 'var(--text-primary)' }}>{room.number}</span>
@@ -715,6 +715,7 @@ function ScheduleSection() {
                 key={member.id}
                 ref={el => { crewCardRefs.current[member.id] = el; }}
                 data-crew-id={member.id}
+                className="sched-crew-row"
                 style={{
                   borderBottom: isLast ? 'none' : '1px solid var(--border)',
                   background: isDropHover ? `${color}08` : 'transparent',
@@ -723,10 +724,10 @@ function ScheduleSection() {
                   display: 'flex', gap: '12px', alignItems: 'center',
                 }}
               >
-                {/* Left: name + stats 2x2 grid side by side */}
-                <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  {/* Name — fixed width, clickable to swap */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '120px', flexShrink: 0 }}>
+                {/* Top: name + inline stats */}
+                <div className="sched-crew-info" style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  {/* Name — clickable to swap */}
+                  <div className="sched-crew-name" style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '120px', flexShrink: 0 }}>
                     <button
                       onClick={(e) => {
                         const rect = e.currentTarget.getBoundingClientRect();
@@ -742,8 +743,8 @@ function ScheduleSection() {
                       {member.name}
                     </button>
                   </div>
-                  {/* 2x2 stats grid to the right of name */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '80px 100px', gap: '1px 10px', fontSize: '12px', color: 'var(--text-secondary)', width: '190px', flexShrink: 0 }}>
+                  {/* Stats grid */}
+                  <div className="sched-crew-stats" style={{ display: 'grid', gridTemplateColumns: '80px 100px', gap: '1px 10px', fontSize: '12px', color: 'var(--text-secondary)', width: '190px', flexShrink: 0 }}>
                     <div>{lang === 'es' ? 'Estimado' : 'Est'}: <strong style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{timeLabel}</strong></div>
                     <div style={{ color: 'var(--red)' }}><strong style={{ fontWeight: 700 }}>{coCount}</strong> {lang === 'es' ? 'Salida' : 'Checkout'}{coCount !== 1 ? 's' : ''}</div>
                     <button onClick={() => {
@@ -763,14 +764,15 @@ function ScheduleSection() {
                   </div>
                 </div>
 
-                {/* Right: room pills */}
-                <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', gap: '6px', alignContent: 'flex-start' }}>
+                {/* Room pills */}
+                <div className="sched-crew-pills" style={{ flex: 1, display: 'flex', flexWrap: 'wrap', gap: '6px', alignContent: 'flex-start' }}>
                   {memberRooms.map(room => (
                     <button
                       key={room.id}
                       onPointerDown={e => onPillPointerDown(e, room)}
                       onPointerMove={onPillPointerMove}
                       onPointerUp={e => { onPillPointerUp(e); }}
+                      className="sched-room-pill"
                       style={{
                         padding: '6px 10px 4px', lineHeight: 1,
                         background: room.type === 'checkout' ? 'var(--red-dim)' : 'var(--blue-dim, #F0F9FF)',
@@ -778,7 +780,7 @@ function ScheduleSection() {
                         borderRadius: '6px', cursor: 'grab',
                         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1px',
                         opacity: dragState?.roomId === room.id ? 0.3 : 1,
-                        touchAction: 'none',
+                        touchAction: 'pan-y',
                       }}
                     >
                       <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '13px', color: 'var(--text-primary)' }}>{room.number}</span>
