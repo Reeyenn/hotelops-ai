@@ -149,7 +149,8 @@ export default function ConsentPage() {
             <p className="section-title">How Consent Is Collected</p>
             <span className="badge">Opt-In Type: Verbal</span>
             <div className="section-body">
-              <p>When hotel employees are hired or added to the Staxis platform, the hotel manager verbally reads the disclosure script below to the employee. The employee must verbally agree before their phone number is added to Staxis.</p>
+              <p>Today, the head housekeeper at each property manually texts every housekeeper every night from her own phone to tell them whether to come in the next day. Staxis replaces that manual texting with an automated message sent from the Staxis number instead.</p>
+              <p>Before a housekeeper's phone number is added to Staxis, the head housekeeper or manager tells her in person that the nightly "can you work tomorrow" text will now come from Staxis instead of from the manager's personal phone, and asks for her permission to put her number into the system. The phone number is only added after the employee verbally agrees.</p>
             </div>
           </div>
 
@@ -157,31 +158,39 @@ export default function ConsentPage() {
           <div className="section">
             <p className="section-title">Verbal Consent Script (Word-for-Word)</p>
             <div className="section-body">
-              <p>This is the exact script the hotel manager reads to each employee before adding their phone number to Staxis:</p>
+              <p>This is what the head housekeeper or property manager says to each housekeeper in person before adding her phone number to Staxis. It is delivered in English or Spanish depending on what the employee speaks.</p>
               <div className="example-box">
-                <p className="example-label">Verbatim Script Read by Hotel Manager</p>
+                <p className="example-label">Verbatim Script (English)</p>
                 <p>
-                  "As part of your job here, we use a scheduling system called Staxis to coordinate
-                  housekeeping shifts. Staxis will send you text messages from the number
-                  +1 855-514-1450 to your personal phone. Each night, you'll get one text asking if
-                  you can work tomorrow. If you reply YES, you'll get a second text confirming your
-                  shift and the rooms you're assigned to. That's it — no marketing, no
-                  advertisements, no other messages.
+                  "Starting next week, instead of me texting you at night to ask if you can work
+                  tomorrow, you're going to get a text from a system we use called Staxis. It
+                  comes from the number 855-514-1450. It's the same thing I do now — it just asks
+                  if you can work tomorrow, yes or no, and you text back YES or NO.
                 </p>
                 <p>
-                  You'll get at most two texts per day from Staxis. Standard message and data rates
-                  from your cell carrier may apply. You can stop receiving texts at any time by
-                  replying STOP to any message from Staxis, and you can reply HELP for support.
+                  If you say yes, in the morning you'll get a second text with the rooms you're
+                  assigned to for the day. That's all the texts you'll ever get from it — just
+                  those two. No ads, no other messages.
                 </p>
                 <p>
-                  Do I have your permission to add your phone number to Staxis so you can receive
-                  these scheduling texts? [Wait for verbal YES before proceeding.]"
+                  If you ever want to stop getting them, you just text back STOP and they'll stop.
+                  Is that okay with you? Can I put your number in?"
+                </p>
+                <p style={{ marginTop: '10px', color: '#6b7280', fontStyle: 'italic' }}>
+                  [Head housekeeper waits for verbal yes, then adds the employee's number to Staxis.]
                 </p>
               </div>
               <p style={{ marginTop: '14px' }}>
-                The manager logs the verbal consent in the employee's record (date, time, and
-                manager name) at the time the phone number is added to the platform. Employees who
-                decline are scheduled via non-SMS channels and their number is never added.
+                Example in practice at Comfort Suites Beaumont, TX (79-room limited-service hotel):
+                the head housekeeper, Maria, walks through the script with each housekeeper on her
+                team during the morning shift handoff. She knows every housekeeper by name and has
+                worked with most of them for years. Anyone who doesn't want to receive the texts
+                continues to be scheduled the old way (Maria texts them personally from her own
+                phone) and their number is never added to Staxis.
+              </p>
+              <p>
+                The date and name of the person who obtained consent is recorded in the employee's
+                Staxis profile at the time the phone number is added.
               </p>
             </div>
           </div>
