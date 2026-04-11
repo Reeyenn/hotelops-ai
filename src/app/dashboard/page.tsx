@@ -17,9 +17,9 @@ import { getOverdueRooms, calcDndFreedMinutes, suggestDeepCleans } from '@/lib/c
 import { todayStr } from '@/lib/utils';
 import type { Room, DeepCleanConfig, DeepCleanRecord, WorkOrder, HandoffEntry } from '@/types';
 import {
-  Clock, AlertTriangle,
+  Clock,
   DollarSign, Wrench,
-  Zap, Percent, User,
+  Zap, User,
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -224,55 +224,38 @@ export default function DashboardPage() {
         {/* ════════════════════════════════════════════════════════════
             HERO ROW — The 3 numbers that matter most at a glance
             ════════════════════════════════════════════════════════════ */}
-        <div className="animate-in stagger-1 dash-hero-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+        <div className="animate-in stagger-1 dash-hero-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
 
           {/* Occupancy — the big one */}
-          <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(27,58,92,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Percent size={15} color="var(--navy)" />
-              </div>
-              <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-muted)' }}>{t('occupancy', lang)}</span>
+          <div className="card" style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>{t('occupancy', lang)}</span>
+            <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '32px', lineHeight: 1, letterSpacing: '-0.04em', color: occupancyPct >= 80 ? 'var(--green)' : occupancyPct >= 50 ? 'var(--navy)' : 'var(--amber)' }}>
+              {occupancyPct}%
             </div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '36px', lineHeight: 1, letterSpacing: '-0.04em', color: occupancyPct >= 80 ? 'var(--green)' : occupancyPct >= 50 ? 'var(--navy)' : 'var(--amber)' }}>
-              {occupancyPct}<span style={{ fontSize: '22px', fontWeight: 600 }}>%</span>
-            </div>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
-              {lang === 'es'
-                ? `${rentedRooms} de ${totalPropertyRooms} habitaciones ocupadas`
-                : `${rentedRooms} of ${totalPropertyRooms} rooms occupied`}
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
+              {rentedRooms}/{totalPropertyRooms} {lang === 'es' ? 'ocupadas' : 'rooms'}
             </p>
           </div>
 
           {/* Dirty Rooms — action needed */}
-          <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: dirty > 0 ? 'var(--red-dim)' : 'var(--green-dim)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <AlertTriangle size={15} color={dirty > 0 ? 'var(--red)' : 'var(--green)'} />
-              </div>
-              <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-muted)' }}>{t('dirtyRooms', lang)}</span>
-            </div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '36px', lineHeight: 1, letterSpacing: '-0.04em', color: dirty > 0 ? 'var(--red)' : 'var(--green)' }}>
+          <div className="card" style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>{t('dirtyRooms', lang)}</span>
+            <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '32px', lineHeight: 1, letterSpacing: '-0.04em', color: dirty > 0 ? 'var(--red)' : 'var(--green)' }}>
               {dirty}
             </div>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
-              {clean} {t('clean', lang).toLowerCase()} · {inProgress} {t('progress', lang).toLowerCase()}
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
+              {dirty > 0 ? `${clean} ${t('clean', lang).toLowerCase()} · ${inProgress} ${t('progress', lang).toLowerCase()}` : (lang === 'es' ? 'todo limpio' : 'all clean')}
             </p>
           </div>
 
           {/* Est. Labor Cost */}
-          <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--amber-dim)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <DollarSign size={15} color="var(--amber)" />
-              </div>
-              <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-muted)' }}>{t('estLaborCost', lang)}</span>
-            </div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '36px', lineHeight: 1, letterSpacing: '-0.04em', color: 'var(--navy)' }}>
+          <div className="card" style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>{t('estLaborCost', lang)}</span>
+            <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '32px', lineHeight: 1, letterSpacing: '-0.04em', color: 'var(--navy)' }}>
               ${totalCost}
             </div>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
-              {lang === 'es' ? 'hoy' : 'today'} · {hkStaff + 3} {lang === 'es' ? 'personal' : 'staff'}
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
+              {hkStaff + 3} {lang === 'es' ? 'personal hoy' : 'staff today'}
             </p>
           </div>
         </div>
