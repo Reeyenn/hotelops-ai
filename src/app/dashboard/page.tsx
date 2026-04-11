@@ -375,13 +375,6 @@ export default function DashboardPage() {
                     {avgTurnover !== null ? `${avgTurnover}m` : '—'}
                   </span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: '16px' }}>
-                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('openWorkOrders', lang)}</span>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '15px', color: urgentOrders.length > 0 ? 'var(--red)' : 'var(--text-primary)' }}>
-                    {openOrders.length}
-                    {urgentOrders.length > 0 && <span style={{ fontSize: '10px', color: 'var(--red)', marginLeft: '4px' }}>!</span>}
-                  </span>
-                </div>
               </div>
             </div>
 
@@ -398,10 +391,6 @@ export default function DashboardPage() {
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('blockedRooms', lang)}</span>
                   <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '15px', color: blockedRooms > 0 ? 'var(--red)' : 'var(--text-primary)' }}>{blockedRooms}</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('total', lang)}</span>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, fontSize: '13px', color: 'var(--text-muted)' }}>{totalPropertyRooms}</span>
                 </div>
               </div>
             </div>
