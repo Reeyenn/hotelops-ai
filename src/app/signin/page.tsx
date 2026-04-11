@@ -17,7 +17,7 @@ export default function SignInPage() {
   const [signing, setSigning] = useState(false);
 
   useEffect(() => {
-    if (!loading && user) router.replace('/');
+    if (!loading && user) router.replace('/property-selector');
   }, [user, loading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {

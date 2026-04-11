@@ -149,12 +149,40 @@ export default function ConsentPage() {
             <p className="section-title">How Consent Is Collected</p>
             <span className="badge">Opt-In Type: Verbal</span>
             <div className="section-body">
-              <p>When hotel employees are hired, the hotel manager verbally informs them that they will receive SMS text messages from Staxis for daily scheduling purposes. This includes:</p>
-              <p>
-                • A nightly availability check asking if they can work the next day<br />
-                • A shift confirmation message with their room assignments if they confirm
+              <p>When hotel employees are hired or added to the Staxis platform, the hotel manager verbally reads the disclosure script below to the employee. The employee must verbally agree before their phone number is added to Staxis.</p>
+            </div>
+          </div>
+
+          {/* Verbal consent script - verbatim */}
+          <div className="section">
+            <p className="section-title">Verbal Consent Script (Word-for-Word)</p>
+            <div className="section-body">
+              <p>This is the exact script the hotel manager reads to each employee before adding their phone number to Staxis:</p>
+              <div className="example-box">
+                <p className="example-label">Verbatim Script Read by Hotel Manager</p>
+                <p>
+                  "As part of your job here, we use a scheduling system called Staxis to coordinate
+                  housekeeping shifts. Staxis will send you text messages from the number
+                  +1 855-514-1450 to your personal phone. Each night, you'll get one text asking if
+                  you can work tomorrow. If you reply YES, you'll get a second text confirming your
+                  shift and the rooms you're assigned to. That's it — no marketing, no
+                  advertisements, no other messages.
+                </p>
+                <p>
+                  You'll get at most two texts per day from Staxis. Standard message and data rates
+                  from your cell carrier may apply. You can stop receiving texts at any time by
+                  replying STOP to any message from Staxis, and you can reply HELP for support.
+                </p>
+                <p>
+                  Do I have your permission to add your phone number to Staxis so you can receive
+                  these scheduling texts? [Wait for verbal YES before proceeding.]"
+                </p>
+              </div>
+              <p style={{ marginTop: '14px' }}>
+                The manager logs the verbal consent in the employee's record (date, time, and
+                manager name) at the time the phone number is added to the platform. Employees who
+                decline are scheduled via non-SMS channels and their number is never added.
               </p>
-              <p>Employees are told they can reply <strong>STOP</strong> at any time to opt out of messages. Their phone number is added to the platform only after this verbal disclosure.</p>
             </div>
           </div>
 
