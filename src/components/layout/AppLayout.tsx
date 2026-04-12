@@ -12,17 +12,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { lang } = useLang();
   const { isOnline, pendingCount, isSyncing } = useSyncContext();
 
-  /* ── Determine which banner (if any) to show ── */
   const showOffline  = !isOnline;
   const showSyncing  = isOnline && isSyncing;
   const showBanner   = showOffline || showSyncing;
 
-  /* ── Build the offline label with optional pending count ── */
   const offlineLabel = pendingCount > 0
     ? `Offline - ${pendingCount} ${t('changesQueued', lang)}`
     : t('offline', lang);
 
-  // Register FCM service worker for push notifications
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker
@@ -33,18 +30,18 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', background: 'var(--bg)' }}>
-      {/* Left sidebar */}
+      {/* Left sidebar — dark, full height */}
       <Sidebar />
 
-      {/* Right: header + content */}
+      {/* Right: content area */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         <Header />
 
-        {/* ── Status banner ── */}
+        {/* Status banner */}
         {showBanner && (
           <div style={{
             borderBottom: '1px solid ' + (showSyncing ? 'var(--amber-border, rgba(251,191,36,0.3))' : 'var(--red-border, rgba(239,68,68,0.3))'),
-            background:   showSyncing ? 'var(--amber-dim)' : 'var(--red-dim)',
+            background: showSyncing ? 'var(--amber-dim)' : 'var(--red-dim)',
             padding: '8px 16px',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
           }}>
@@ -66,11 +63,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         )}
 
-        <main style={{
-          flex: 1,
-          width: '100%',
-          maxWidth: '1920px',
-        }}>
+        <main style={{ flex: 1, width: '100%' }}>
           {children}
         </main>
       </div>
