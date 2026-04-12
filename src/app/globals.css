@@ -11,40 +11,45 @@
    ───────────────────────────────────────────────────────────────────────────── */
 
 :root {
-  --bg:          #F0F2F5;
-  --bg-subtle:   #E8EBF0;
+  /* Stitch warm cream palette */
+  --bg:          #fbf9f4;
+  --bg-subtle:   #f0eee9;
   --bg-card:     #FFFFFF;
   --bg-elevated: #FFFFFF;
-  --bg-hover:    #F5F7FA;
+  --bg-hover:    #f5f3ee;
 
-  --border:        rgba(0, 0, 0, 0.08);
-  --border-bright: rgba(0, 0, 0, 0.14);
-  --border-focus:  rgba(37, 99, 235, 0.5);
+  --border:        rgba(78, 90, 122, 0.12);
+  --border-bright: rgba(78, 90, 122, 0.18);
+  --border-focus:  rgba(54, 66, 98, 0.5);
 
-  --navy:         #1B3A5C;
-  --navy-light:   #2563EB;
+  /* Stitch primary colors */
+  --navy:         #364262;
+  --navy-light:   #364262;
+  --primary:      #364262;
+  --teal:         #006565;
+  --teal-light:   #004b4b;
 
-  --amber:        #D49040;
-  --amber-dim:    rgba(212, 144, 64, 0.10);
-  --amber-border: rgba(212, 144, 64, 0.30);
+  --amber:        #ca8a04;
+  --amber-dim:    rgba(202, 138, 4, 0.10);
+  --amber-border: rgba(202, 138, 4, 0.30);
 
-  --green:      #16A34A;
-  --green-dim:  rgba(22, 163, 74, 0.08);
-  --red:        #DC2626;
-  --red-dim:    rgba(220, 38, 38, 0.08);
-  --yellow:     #CA8A04;
-  --yellow-dim: rgba(202, 138, 4, 0.08);
+  --green:        #16A34A;
+  --green-dim:    rgba(22, 163, 74, 0.08);
+  --red:          #ba1a1a;
+  --red-dim:      rgba(186, 26, 26, 0.08);
+  --yellow:       #CA8A04;
+  --yellow-dim:   rgba(202, 138, 4, 0.08);
 
-  --text-primary:   #1A1A2E;
-  --text-secondary: #6B7280;
-  --text-muted:     #9CA3AF;
+  --text-primary:   #1b1c19;
+  --text-secondary: #506071;
+  --text-muted:     #454652;
 
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
 
   --radius-sm:   6px;
   --radius-md:   8px;
-  --radius-lg:  12px;
+  --radius-lg:  16px;
   --radius-xl:  16px;
   --radius-full: 9999px;
 
@@ -247,12 +252,81 @@ body {
   font-weight: 600;
 }
 
+/* ── Bento Grid Layout ─────────────────────────────────────────────────────── */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 16px;
+}
+
+.bento-left {
+  grid-column: 1 / 9;
+}
+
+.bento-right {
+  grid-column: 9 / 13;
+}
+
+.bento-full {
+  grid-column: 1 / 13;
+}
+
+.bento-2x2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.bento-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+}
+
+.bento-card-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bento-card-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .bento-left {
+    grid-column: 1 / 13;
+  }
+
+  .bento-right {
+    grid-column: 1 / 13;
+  }
+
+  .bento-full {
+    grid-column: 1 / 13;
+  }
+
+  .bento-2x2 {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ── Stitch color tokens ──────────────────────────────────────────────────── */
 :root {
-  --teal:        #006565;
   --teal-dim:    rgba(0, 101, 101, 0.08);
   --slate-primary: #364262;
   --surface-warm: #fbf9f4;
+  --surface-container: #f0eee9;
+  --surface-container-high: #eae8e3;
+  --secondary: #506071;
+  --secondary-container: #d3e4f8;
 }
 
 /* ── Animations ────────────────────────────────────────────────────────────── */
