@@ -438,17 +438,17 @@ export default function StaffPage() {
         {activeTab === 'directory' && (
           <div className="animate-in">
 
-            {/* Stats */}
+            {/* Stats — compact strip */}
             {totalStaff > 0 && (
-              <div className="staff-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '16px' }}>
+              <div className="card" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', padding: '10px 0', marginBottom: '14px' }}>
                 {[
                   { label: t('totalStaffLabel', lang), value: totalStaff, color: 'var(--navy)' },
                   { label: t('scheduledTodayCount', lang), value: scheduledToday, color: 'var(--green)' },
                   { label: t('nearOvertime', lang), value: nearOvertime, color: nearOvertime > 0 ? 'var(--red)' : 'var(--text-muted)' },
-                ].map(({ label, value, color }) => (
-                  <div key={label} className="card" style={{ padding: '14px 12px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>{label}</div>
-                    <div className="stat-number" style={{ fontFamily: 'var(--font-mono)', fontSize: '28px', fontWeight: 700, color }}>{value}</div>
+                ].map(({ label, value, color }, i) => (
+                  <div key={label} style={{ textAlign: 'center', borderLeft: i > 0 ? '1px solid var(--border)' : 'none', padding: '0 6px' }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '20px', fontWeight: 800, color, lineHeight: 1 }}>{value}</div>
+                    <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginTop: '4px', letterSpacing: '0.03em' }}>{label}</div>
                   </div>
                 ))}
               </div>

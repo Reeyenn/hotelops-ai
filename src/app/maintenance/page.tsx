@@ -442,67 +442,49 @@ export default function MaintenancePage() {
                   <div
                     key={order.id}
                     className="card"
-                    style={{ padding: '14px 16px', cursor: 'pointer', transition: 'box-shadow 150ms' }}
+                    style={{ padding: '10px 14px', cursor: 'pointer', transition: 'box-shadow 150ms' }}
                     onClick={() => setExpandedId(isExpanded ? null : order.id)}
                   >
-                    {/* Top row: severity + blocked badge + time */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{
-                          fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em',
-                          padding: '3px 8px', borderRadius: 'var(--radius-full)',
-                          background: sev.bg, color: sev.color,
-                        }}>
-                          {sevLabel(order.severity)}
+                    {/* Row 1: severity dot + room + description + status + time */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                      <span style={{
+                        width: '8px', height: '8px', borderRadius: '50%', background: sev.color, flexShrink: 0,
+                      }} />
+                      {order.roomNumber && (
+                        <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '13px', color: 'var(--text-primary)', flexShrink: 0 }}>
+                          {order.roomNumber}
                         </span>
-                        {order.blockedRoom && (
-                          <span style={{
-                            fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em',
-                            padding: '3px 8px', borderRadius: 'var(--radius-full)',
-                            background: 'rgba(220,38,38,0.1)', color: 'var(--red)',
-                          }}>
-                            {lang === 'es' ? 'Bloqueada' : 'Blocked'}
-                          </span>
-                        )}
-                      </div>
-                      <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Clock size={11} />
-                        {timeAgo(toJsDate(order.createdAt))}
-                      </span>
-                    </div>
-
-                    {/* Room number */}
-                    {order.roomNumber && (
-                      <p style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)', marginBottom: '4px' }}>
-                        {lang === 'es' ? 'Hab' : 'Room'} {order.roomNumber}
-                      </p>
-                    )}
-
-                    {/* Description */}
-                    <p style={{
-                      fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.4, marginBottom: '10px',
-                      ...(isExpanded ? {} : { display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }),
-                    }}>
-                      {order.description}
-                    </p>
-
-                    {/* Bottom row: assignee + status */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                        {order.assignedName ? `${t('assignedTo', lang)}: ${order.assignedName}` : t('unassigned', lang)}
+                      )}
+                      <span style={{
+                        fontSize: '13px', color: 'var(--text-secondary)', flex: 1, minWidth: 0,
+                        ...(isExpanded ? { whiteSpace: 'normal' as const } : { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }),
+                      }}>
+                        {order.description}
                       </span>
                       <span style={{
-                        fontSize: '11px', fontWeight: 600,
-                        padding: '3px 10px', borderRadius: 'var(--radius-full)',
-                        background: stat.bg, color: stat.color,
+                        fontSize: '10px', fontWeight: 600,
+                        padding: '2px 8px', borderRadius: 'var(--radius-full)',
+                        background: stat.bg, color: stat.color, flexShrink: 0,
                       }}>
                         {statusLabel(order.status)}
                       </span>
                     </div>
 
-                    {/* Expand chevron */}
-                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: '6px' }}>
-                      {isExpanded ? <ChevronUp size={14} color="var(--text-muted)" /> : <ChevronDown size={14} color="var(--text-muted)" />}
+                    {/* Row 2: meta line — assignee + time + flags */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                      <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {order.assignedName ? order.assignedName : t('unassigned', lang)}
+                      </span>
+                      {order.blockedRoom && (
+                        <span style={{ fontSize: '9px', fontWeight: 700, color: 'var(--red)', textTransform: 'uppercase', flexShrink: 0 }}>
+                          {lang === 'es' ? 'Bloq' : 'Blocked'}
+                        </span>
+                      )}
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
+                        <Clock size={10} />
+                        {timeAgo(toJsDate(order.createdAt))}
+                      </span>
+                      {isExpanded ? <ChevronUp size={12} color="var(--text-muted)" /> : <ChevronDown size={12} color="var(--text-muted)" />}
                     </div>
 
                     {/* Expanded details */}

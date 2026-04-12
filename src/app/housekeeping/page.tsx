@@ -1215,7 +1215,7 @@ function RoomsSection() {
   };
 
   return (
-    <div style={{ padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div style={{ padding: '14px 14px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
       {/* Room action popup — simple status cycling only */}
       {/* Bottom sheet removed — rooms now auto-progress on click */}
@@ -1288,22 +1288,22 @@ function RoomsSection() {
       ) : (
         <>
           {/* Legend */}
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '14px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
             <div className="room-legend" style={{
-              display: 'inline-flex', alignItems: 'center', gap: '12px',
-              padding: '8px 16px',
-              background: 'linear-gradient(135deg, var(--navy) 0%, var(--navy-light, #2563EB) 100%)',
-              borderRadius: 'var(--radius-lg)',
-              boxShadow: '0 2px 10px rgba(27, 58, 92, 0.20)',
+              display: 'inline-flex', alignItems: 'center', gap: '10px',
+              padding: '5px 12px',
+              background: 'var(--bg-elevated)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-full)',
             }}>
-              <span style={{ fontSize: '12px', fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>🚪 {t('checkout', lang)}</span>
-              <span style={{ fontSize: '12px', fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>🚫 DND</span>
-              <span style={{ fontSize: '12px', fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>🔒 {t('roomOccupied', lang)}</span>
-              <span style={{ fontSize: '12px', fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>💎 {t('available', lang)}</span>
+              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}>🚪 {t('checkout', lang)}</span>
+              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}>🚫 DND</span>
+              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}>🔒 {t('roomOccupied', lang)}</span>
+              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}>💎 {t('available', lang)}</span>
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {floors.map((floor, floorIdx) => {
               const floorRooms = sorted.filter(r => getFloor(r.number) === floor);
               const floorDone  = floorRooms.filter(r => r.status === 'clean' || r.status === 'inspected').length;
