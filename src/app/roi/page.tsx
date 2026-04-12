@@ -10,7 +10,6 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { getRecentDailyLogs } from '@/lib/firestore';
 import { formatDate } from '@/lib/utils';
 import type { DailyLog } from '@/types';
-import { ChevronLeft } from 'lucide-react';
 import {
   LineChart,
   Line,
@@ -98,25 +97,10 @@ export default function ROIPage() {
     <AppLayout>
       <div className="min-h-screen" style={{ backgroundColor: 'var(--bg)' }}>
         {/* Header */}
-        <div
-          className="sticky top-0 z-40 border-b px-4 py-4 flex items-center justify-between"
-          style={{
-            backgroundColor: 'var(--bg-card)',
-            borderColor: 'var(--border)'
-          }}
-        >
-          <button
-            onClick={() => router.back()}
-            className="p-2 rounded-lg transition-colors"
-            style={{ color: 'var(--text-primary)', backgroundColor: 'var(--bg)' }}
-            aria-label={lang === 'es' ? 'Volver' : 'Go back'}
-          >
-            <ChevronLeft size={24} />
-          </button>
-          <h1 className="text-xl font-bold flex-1 text-center" style={{ color: 'var(--text-primary)' }}>
+        <div style={{ padding: '20px 24px 0' }}>
+          <h1 style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: '22px', color: 'var(--text-primary)', letterSpacing: '-0.02em', lineHeight: 1, margin: 0 }}>
             {lang === 'es' ? 'Resumen ROI' : 'ROI Summary'}
           </h1>
-          <div className="w-10" />
         </div>
 
         <div className="p-4 space-y-6 pb-8">
