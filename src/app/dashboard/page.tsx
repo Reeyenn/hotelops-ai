@@ -289,6 +289,73 @@ export default function DashboardPage() {
         )}
 
         {/* ════════════════════════════════════════════════════════════
+            GOOD MORNING HERO BANNER
+            ════════════════════════════════════════════════════════════ */}
+        <div className="animate-in stagger-1" style={{
+          position: 'relative', height: '280px', borderRadius: '16px',
+          overflow: 'hidden', marginBottom: '32px',
+        }}>
+          {/* Background image */}
+          <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZbI6Q__TgrGV68CwAljtCXlm-IIQqMH3Xp-2bJ6iCAK7czY26jVHPqSvr1eW6Jr9UzXxPWcHxnZY-vhxpsuzsHWrTmc959Y8259FEe1eFselJfyEo8TSuB3A5ousMXyxqU07-hrv_pwBIgA8BPUv8oz2UdjcLL_sZNHiuPA7ImV_kiS6oL0xM1Jdkrs6Nsv7LTW-MVg0PWv1jzCrTFmWDskwTsIebZXs0pedyHW35oLHSX4pjQ_Y8CA130SYTXxEN-ZUlVQTT94A"
+              alt=""
+              aria-hidden="true"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+            {/* Gradient overlay */}
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: 'linear-gradient(to right, rgba(54,66,98,0.80) 0%, transparent 100%)',
+            }} />
+          </div>
+          {/* Text content */}
+          <div style={{
+            position: 'relative', zIndex: 10, height: '100%',
+            display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+            padding: '48px',
+          }}>
+            <div style={{ maxWidth: '640px' }}>
+              {/* AI Insight Ready badge */}
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                padding: '4px 12px', borderRadius: '9999px',
+                background: '#006565', color: '#FFFFFF',
+                fontSize: '12px', fontWeight: 700, marginBottom: '16px',
+                letterSpacing: '0.02em',
+              }}>
+                <Sparkles size={14} />
+                AI INSIGHT READY
+              </span>
+              <h1 style={{
+                fontSize: '48px', fontWeight: 700, color: '#FFFFFF',
+                letterSpacing: '-0.02em', lineHeight: 1.1, marginBottom: '8px',
+              }}>
+                {(() => {
+                  const hour = new Date().getHours();
+                  const greeting = hour < 12
+                    ? (lang === 'es' ? 'Buenos días' : 'Good morning')
+                    : hour < 18
+                      ? (lang === 'es' ? 'Buenas tardes' : 'Good afternoon')
+                      : (lang === 'es' ? 'Buenas noches' : 'Good evening');
+                  const firstName = user?.displayName?.split(' ')[0] || '';
+                  return `${greeting}${firstName ? `, ${firstName}` : ''}.`;
+                })()}
+              </h1>
+              <p style={{
+                fontSize: '20px', fontWeight: 300, color: '#c5d1f8',
+                opacity: 0.9, margin: 0,
+              }}>
+                {activeProperty?.name || 'Your property'} {lang === 'es' ? 'está al' : 'is at'} {occupancyPct}% {lang === 'es' ? 'de ocupación hoy.' : 'occupancy today.'} {occupancyPct >= 80
+                  ? (lang === 'es' ? 'Operaciones optimizadas.' : 'Operations are optimized.')
+                  : (lang === 'es' ? 'Listo para el día.' : 'Ready for the day.')}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* ════════════════════════════════════════════════════════════
             GLASS HERO HUB — KPI Dashboard
             Occupancy | Dirty Rooms | Est. Labor Cost + Action Buttons
             ════════════════════════════════════════════════════════════ */}
