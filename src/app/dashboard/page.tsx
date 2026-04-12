@@ -19,7 +19,8 @@ import type { Room, DeepCleanConfig, DeepCleanRecord, WorkOrder, HandoffEntry } 
 import {
   Clock,
   DollarSign, Wrench,
-  Zap, User,
+  Zap, User, TrendingUp, Sparkles,
+  ChevronRight,
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -210,9 +211,43 @@ export default function DashboardPage() {
   const mtCost = Math.round(1 * wage * 8);
   const totalCost = fdCost + hkCost + mtCost;
 
+  /* ── Briefing items: combine handoffs + work orders into a timeline ── */
+  const briefingItems = useMemo(() => {
+    const items: { id: string; time: Date; dotClass: string; text: string }[] = [];
+
+    recentHandoffs.slice(0, 3).forEach(h => {
+      const d = h.createdAt instanceof Date ? h.createdAt : (h.createdAt as any).toDate?.() || new Date(h.createdAt as any);
+      items.push({
+        id: `h-${h.id}`,
+        time: d,
+        dotClass: 'concierge-dot-teal',
+        text: `${h.shiftType}: ${h.notes}`,
+      });
+    });
+
+    openOrders.slice(0, 4).forEach(o => {
+      const d = o.createdAt instanceof Date ? o.createdAt : (o.createdAt as any)?.toDate?.() || new Date();
+      items.push({
+        id: `wo-${o.id}`,
+        time: d,
+        dotClass: o.severity === 'urgent' ? 'concierge-dot-red' : o.severity === 'medium' ? 'concierge-dot-amber' : 'concierge-dot-muted',
+        text: `Rm ${o.roomNumber}: ${o.description}`,
+      });
+    });
+
+    return items.sort((a, b) => b.time.getTime() - a.time.getTime()).slice(0, 6);
+  }, [recentHandoffs, openOrders]);
+
+  const formatTime = (d: Date) => {
+    const h = d.getHours();
+    const m = d.getMinutes().toString().padStart(2, '0');
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    return `${h === 0 ? 12 : h > 12 ? h - 12 : h}:${m} ${ampm}`;
+  };
+
   return (
     <AppLayout>
-      <div className="dash-page-content" style={{ padding: '14px 16px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div className="dash-page-content" style={{ padding: '14px 16px 20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
         {/* ── Page header ── */}
         <div className="animate-in">
@@ -260,118 +295,100 @@ export default function DashboardPage() {
 
 
         {/* ════════════════════════════════════════════════════════════
-            DETAILS — Secondary stats in a compact, single card
+            GLASS HERO KPI BAR — Stitch-inspired
+            Occupancy | Dirty Rooms | Est. Labor Cost + action buttons
             ════════════════════════════════════════════════════════════ */}
-        <div className="animate-in stagger-3 card" style={{ padding: '12px 14px' }}>
-          <div className="dash-details-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0', borderBottom: '1px solid var(--border)', paddingBottom: '10px', marginBottom: '10px' }}>
+        <div className="glass-hero animate-in stagger-2" style={{ padding: '20px' }}>
+          <div className="glass-hero-bg" />
+          <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-            {/* Today section — the 3 KPIs that matter most */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingRight: '16px' }}>
-              <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', margin: 0 }}>
-                {lang === 'es' ? 'Hoy' : 'Today'}
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: '16px' }}>
-                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('occupancy', lang)}</span>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '15px', color: occupancyPct >= 80 ? 'var(--green)' : occupancyPct >= 50 ? 'var(--navy)' : 'var(--amber)' }}>
+            {/* KPI row */}
+            <div className="dash-hero-grid" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-start', gap: '32px', flexWrap: 'wrap' }}>
+              {/* Occupancy */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <p style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#454652', margin: 0 }}>
+                  {t('occupancy', lang)}
+                </p>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                  <span className="data-mono" style={{ fontSize: '36px', color: occupancyPct >= 80 ? '#006565' : occupancyPct >= 50 ? '#364262' : 'var(--amber)', lineHeight: 1 }}>
                     {occupancyPct}%
                   </span>
+                  {occupancyPct >= 80 && <TrendingUp size={18} color="#006565" />}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: '16px' }}>
-                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('dirtyRooms', lang)}</span>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '15px', color: dirty > 0 ? 'var(--red)' : 'var(--green)' }}>
+              </div>
+
+              {/* Dirty Rooms */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <p style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#454652', margin: 0 }}>
+                  {t('dirtyRooms', lang)}
+                </p>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                  <span className="data-mono" style={{ fontSize: '36px', color: dirty > 0 ? 'var(--red)' : 'var(--green)', lineHeight: 1 }}>
                     {dirty}
                   </span>
+                  {dirty > 0 && (
+                    <Wrench size={16} color="var(--red)" style={{ opacity: 0.7 }} />
+                  )}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: '16px' }}>
-                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('estLaborCost', lang)}</span>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '15px', color: 'var(--navy)' }}>
+              </div>
+
+              {/* Est. Labor Cost */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <p style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#454652', margin: 0 }}>
+                  {t('estLaborCost', lang)}
+                </p>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                  <span className="data-mono" style={{ fontSize: '36px', color: '#364262', lineHeight: 1 }}>
                     ${totalCost}
                   </span>
+                  <span style={{ fontSize: '13px', color: '#454652' }}>/shift</span>
                 </div>
               </div>
             </div>
 
-            {/* Guests section */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', borderLeft: '1px solid var(--border)', paddingLeft: '16px' }}>
-              <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', margin: 0 }}>
-                {lang === 'es' ? 'Huéspedes' : 'Guests'}
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: '16px' }}>
-                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('arrivals', lang)}</span>
-                  <InlineEdit value={arrivals} onChange={setArrivals} fieldKey="arrivals" />
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: '16px' }}>
-                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('reservations', lang)}</span>
-                  <InlineEdit value={reservationCount} onChange={setReservationCount} fieldKey="reservations" />
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: '16px' }}>
-                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('inHouse', lang)}</span>
-                  <InlineEdit value={inHouseGuests} onChange={setInHouseGuests} fieldKey="inHouse" />
-                </div>
-              </div>
-            </div>
-
-            {/* Revenue section */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', borderLeft: '1px solid var(--border)', paddingLeft: '16px' }}>
-              <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', margin: 0 }}>
-                {lang === 'es' ? 'Ingresos' : 'Revenue'}
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: '16px' }}>
-                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('adr', lang)}</span>
-                  <InlineEdit value={adr} onChange={setAdr} fieldKey="adr" prefix="$" />
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: '16px' }}>
-                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('revpar', lang)}</span>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)' }}>
-                    {adr > 0 ? `$${revpar}` : '—'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Operations section */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', borderLeft: '1px solid var(--border)', paddingLeft: '16px' }}>
-              <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', margin: 0 }}>
-                {lang === 'es' ? 'Operaciones' : 'Operations'}
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: '16px' }}>
-                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('avgTurnover', lang)}</span>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)' }}>
-                    {avgTurnover !== null ? `${avgTurnover}m` : '—'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Rooms section */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', borderLeft: '1px solid var(--border)', paddingLeft: '16px' }}>
-              <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', margin: 0 }}>
-                {lang === 'es' ? 'Habitaciones' : 'Rooms'}
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('availableRooms', lang)}</span>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '15px', color: 'var(--navy)' }}>{vacant}</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('blockedRooms', lang)}</span>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '15px', color: blockedRooms > 0 ? 'var(--red)' : 'var(--text-primary)' }}>{blockedRooms}</span>
-                </div>
-              </div>
+            {/* Action buttons */}
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <button
+                onClick={() => router.push('/front-desk')}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  padding: '12px 20px', borderRadius: '10px',
+                  background: '#364262', color: '#FFFFFF',
+                  border: 'none', cursor: 'pointer',
+                  fontFamily: 'var(--font-sans)', fontSize: '14px', fontWeight: 600,
+                  boxShadow: '0 2px 8px rgba(54,66,98,0.25)',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <Clock size={16} />
+                {lang === 'es' ? 'Recepción' : 'Front Desk Command'}
+              </button>
+              <button
+                onClick={() => router.push('/roi')}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  padding: '12px 20px', borderRadius: '10px',
+                  background: '#006565', color: '#FFFFFF',
+                  border: 'none', cursor: 'pointer',
+                  fontFamily: 'var(--font-sans)', fontSize: '14px', fontWeight: 600,
+                  boxShadow: '0 2px 8px rgba(0,101,101,0.25)',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <Sparkles size={16} />
+                {lang === 'es' ? 'Analítica ROI' : 'ROI Analytics'}
+              </button>
             </div>
 
           </div>
         </div>
 
+
         {/* ════════════════════════════════════════════════════════════
             CREW TRACKER — Who's cleaning what right now
             ════════════════════════════════════════════════════════════ */}
         {hkActivity.length > 0 && (
-          <div className="animate-in stagger-5 card" style={{ padding: '16px 18px' }}>
+          <div className="animate-in stagger-4 card" style={{ padding: '16px 18px' }}>
             <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', margin: '0 0 10px' }}>
               {lang === 'es' ? 'Equipo Ahora' : 'Crew Right Now'}
             </p>
@@ -385,26 +402,22 @@ export default function DashboardPage() {
                     borderBottom: i < hkActivity.length - 1 ? '1px solid var(--border)' : 'none',
                   }}
                 >
-                  {/* Status dot */}
                   <div style={{
                     width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0,
                     background: hk.active ? 'var(--amber)' : hk.done === hk.total ? 'var(--green)' : 'var(--text-muted)',
                     boxShadow: hk.active ? '0 0 0 3px rgba(245,158,11,0.2)' : 'none',
                   }} />
-                  {/* Name */}
                   <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {hk.name.split(' ')[0]}
                   </span>
-                  {/* What they're doing */}
                   <span style={{ fontSize: '12px', color: hk.active ? 'var(--amber)' : 'var(--text-muted)', fontWeight: hk.active ? 600 : 400, flexShrink: 0 }}>
                     {hk.active
-                      ? `${lang === 'es' ? 'Rm' : 'Rm'} ${hk.active.number}`
+                      ? `Rm ${hk.active.number}`
                       : hk.done === hk.total
                         ? (lang === 'es' ? 'Terminó' : 'Done')
                         : (lang === 'es' ? 'Libre' : 'Idle')
                     }
                   </span>
-                  {/* Progress */}
                   <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--text-muted)', flexShrink: 0 }}>
                     {hk.done}/{hk.total}
                   </span>
@@ -414,87 +427,62 @@ export default function DashboardPage() {
           </div>
         )}
 
+
         {/* ════════════════════════════════════════════════════════════
-            MORNING BRIEFING — Overnight notes + pending maintenance
+            MORNING CONCIERGE BRIEFING — Stitch-inspired timeline feed
+            Handoff notes + work orders displayed as a smart AI timeline
             ════════════════════════════════════════════════════════════ */}
-        {(recentHandoffs.length > 0 || urgentOrders.length > 0 || openOrders.length > 0) && (
-          <div className="animate-in stagger-6 card" style={{ padding: '12px 14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', margin: 0 }}>
-                {lang === 'es' ? 'Resumen de Hoy' : "Today's Briefing"}
-              </p>
-              {rooms.length > 0 && (
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                  <strong style={{ color: 'var(--text-primary)' }}>{checkouts}</strong> {lang === 'es' ? 'sal' : 'out'} · <strong style={{ color: 'var(--text-primary)' }}>{stayovers}</strong> {lang === 'es' ? 'ocup' : 'stay'}
-                </span>
-              )}
+        {(recentHandoffs.length > 0 || openOrders.length > 0) && (
+          <div className="concierge-card animate-in stagger-5" style={{ padding: '18px 16px' }}>
+            {/* Header with AI sparkle */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+              <Sparkles size={18} color="#006565" fill="#006565" />
+              <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.01em', margin: 0 }}>
+                {lang === 'es' ? 'Briefing Concierge' : 'Morning Concierge Briefing'}
+              </h3>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              {recentHandoffs.slice(0, 2).map(h => (
-                <div key={h.id} style={{ display: 'flex', alignItems: 'baseline', gap: '8px', fontSize: '12px', lineHeight: 1.4 }}>
-                  <span style={{ fontWeight: 700, color: 'var(--text-muted)', fontSize: '10px', textTransform: 'uppercase', flexShrink: 0, minWidth: '44px' }}>
-                    {h.shiftType}
-                  </span>
-                  <span style={{ color: 'var(--text-primary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {h.notes.length > 80 ? h.notes.slice(0, 80) + '…' : h.notes}
-                  </span>
+            {/* Timeline items */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {briefingItems.map(item => (
+                <div key={item.id} style={{ display: 'flex', gap: '12px' }}>
+                  <div className={`concierge-dot ${item.dotClass}`} />
+                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <p style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', fontWeight: 500, color: 'var(--text-muted)', margin: 0 }}>
+                      {formatTime(item.time)}
+                    </p>
+                    <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', margin: 0, lineHeight: 1.5 }}>
+                      {item.text.length > 120 ? item.text.slice(0, 120) + '…' : item.text}
+                    </p>
+                  </div>
                 </div>
               ))}
 
-              {openOrders.slice(0, 4).map(o => (
-                <div key={o.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
-                  <div style={{
-                    width: '6px', height: '6px', borderRadius: '50%', flexShrink: 0,
-                    background: o.severity === 'urgent' ? 'var(--red)' : o.severity === 'medium' ? 'var(--amber)' : 'var(--text-muted)',
-                  }} />
-                  <span style={{ fontWeight: 700, color: 'var(--text-muted)', fontSize: '10px', textTransform: 'uppercase', minWidth: '44px' }}>Rm {o.roomNumber}</span>
-                  <span style={{ color: 'var(--text-primary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {o.description.length > 60 ? o.description.slice(0, 60) + '…' : o.description}
-                  </span>
-                  {o.severity === 'urgent' && (
-                    <span style={{ fontSize: '9px', fontWeight: 700, color: 'var(--red)', flexShrink: 0 }}>!</span>
-                  )}
-                </div>
-              ))}
-              {openOrders.length > 4 && (
-                <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0' }}>
-                  +{openOrders.length - 4} {lang === 'es' ? 'más' : 'more'}
+              {briefingItems.length === 0 && (
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
+                  {lang === 'es' ? 'Sin novedades aún.' : 'No updates yet today.'}
                 </p>
               )}
             </div>
+
+            {/* Expand button */}
+            {(recentHandoffs.length + openOrders.length) > 6 && (
+              <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid rgba(78, 90, 122, 0.08)' }}>
+                <button style={{
+                  width: '100%', padding: '10px',
+                  borderRadius: '8px', border: 'none',
+                  background: 'rgba(0,0,0,0.03)', color: 'var(--text-secondary)',
+                  fontSize: '13px', fontWeight: 600,
+                  cursor: 'pointer', fontFamily: 'var(--font-sans)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                }}>
+                  {lang === 'es' ? 'Ver todo' : 'Expand Full Feed'}
+                  <ChevronRight size={14} />
+                </button>
+              </div>
+            )}
           </div>
         )}
-
-        {/* Quick action buttons — Front Desk + ROI */}
-        <div style={{ display: 'flex', gap: '8px', margin: '0 16px 16px' }}>
-          <button onClick={() => router.push('/front-desk')} className="active:scale-98" style={{
-            flex: 1, padding: '8px 12px', borderRadius: '10px',
-            background: 'var(--bg-card)', border: '1px solid var(--border)',
-            cursor: 'pointer', fontFamily: 'var(--font-sans)',
-            display: 'flex', alignItems: 'center', gap: '6px',
-            transition: 'all 0.15s',
-          }}>
-            <span style={{ fontSize: '13px' }}>🖥</span>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', flex: 1, textAlign: 'left' }}>
-              {lang === 'es' ? 'Recepción' : 'Front Desk'}
-            </span>
-            <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>›</span>
-          </button>
-          <button onClick={() => router.push('/roi')} className="active:scale-98" style={{
-            flex: 1, padding: '8px 12px', borderRadius: '10px',
-            background: 'var(--bg-card)', border: '1px solid var(--border)',
-            cursor: 'pointer', fontFamily: 'var(--font-sans)',
-            display: 'flex', alignItems: 'center', gap: '6px',
-            transition: 'all 0.15s',
-          }}>
-            <DollarSign size={13} color="var(--green)" style={{ flexShrink: 0 }} />
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', flex: 1, textAlign: 'left' }}>
-              {lang === 'es' ? 'Ver ROI' : 'View ROI'}
-            </span>
-            <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>›</span>
-          </button>
-        </div>
 
       </div>
     </AppLayout>

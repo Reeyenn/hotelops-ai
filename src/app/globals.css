@@ -203,6 +203,58 @@ body {
 .spinner { border: 2px solid var(--border); border-top-color: var(--navy-light); border-radius: 50%; animation: spin 0.7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ── Glass Hero (Stitch design) ────────────────────────────────────────────── */
+.glass-hero {
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  background: rgba(251, 249, 244, 0.88);
+  border: 1px solid rgba(78, 90, 122, 0.10);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  position: relative;
+}
+.glass-hero-bg {
+  position: absolute;
+  inset: 0;
+  opacity: 0.07;
+  pointer-events: none;
+  background: linear-gradient(135deg, #e8dfd0 0%, #d4c8b8 30%, #c5bfb3 60%, #bfccd6 100%);
+  background-size: 200% 200%;
+}
+
+/* ── Concierge Briefing (Stitch design) ────────────────────────────────────── */
+.concierge-card {
+  background: linear-gradient(180deg, #FFFFFF 0%, rgba(0, 101, 101, 0.03) 100%);
+  border: 1px solid rgba(78, 90, 122, 0.12);
+  border-radius: var(--radius-lg);
+}
+.concierge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 7px;
+}
+.concierge-dot-teal { background: #006565; box-shadow: 0 0 0 4px rgba(0, 101, 101, 0.10); }
+.concierge-dot-blue { background: var(--navy); }
+.concierge-dot-red  { background: var(--red); box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.10); }
+.concierge-dot-amber { background: var(--amber); box-shadow: 0 0 0 4px rgba(212, 144, 64, 0.10); }
+.concierge-dot-muted { background: var(--text-muted); }
+
+/* data-mono for KPI numbers */
+.data-mono {
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+/* ── Stitch color tokens ──────────────────────────────────────────────────── */
+:root {
+  --teal:        #006565;
+  --teal-dim:    rgba(0, 101, 101, 0.08);
+  --slate-primary: #364262;
+  --surface-warm: #fbf9f4;
+}
+
 /* ── Animations ────────────────────────────────────────────────────────────── */
 .animate-in { animation: fadeUp 180ms var(--ease) both; }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
