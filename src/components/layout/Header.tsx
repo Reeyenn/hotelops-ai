@@ -6,28 +6,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useProperty } from '@/contexts/PropertyContext';
 import { useLang } from '@/contexts/LanguageContext';
 import { t } from '@/lib/translations';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { ChevronDown, LogOut, Globe, LayoutGrid, Settings, Bell } from 'lucide-react';
-import { format } from 'date-fns';
-import { es as esLocale } from 'date-fns/locale';
+import { LogOut, Globe, Settings, Bell } from 'lucide-react';
 
 export function Header() {
   const { user, signOut } = useAuth();
   const { properties, activeProperty, setActivePropertyId } = useProperty();
   const { lang, setLang } = useLang();
   const router = useRouter();
-  const pathname = usePathname();
   const [showPropMenu, setShowPropMenu] = React.useState(false);
   const [showUserMenu, setShowUserMenu] = React.useState(false);
-
-  const navLinks = [
-    { href: '/dashboard',    label: lang === 'es' ? 'Panel' : 'Dashboard' },
-    { href: '/housekeeping', label: lang === 'es' ? 'Limpieza' : 'Housekeeping' },
-    { href: '/maintenance',  label: lang === 'es' ? 'Mantenimiento' : 'Maintenance' },
-    { href: '/inventory',    label: lang === 'es' ? 'Inventario' : 'Inventory' },
-    { href: '/staff',        label: lang === 'es' ? 'Personal' : 'Staff' },
-  ];
 
   const handleSwitchProperty = (id: string) => {
     setActivePropertyId(id);
@@ -50,45 +37,9 @@ export function Header() {
       boxShadow: '0 4px 24px -2px rgba(27,28,25,0.04)',
     }}>
       <div style={{
-        maxWidth: '1920px', margin: '0 auto',
-        padding: '0 32px', height: '64px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px',
+        padding: '0 32px', height: '56px',
+        display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '16px',
       }}>
-
-        {/* Left: Logo + Nav Links */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-          {/* Logo */}
-          <span style={{
-            fontFamily: 'var(--font-sans)', fontWeight: 600,
-            fontSize: '20px', color: '#364262', letterSpacing: '-0.02em',
-          }}>
-            Staxis
-          </span>
-
-          {/* Nav Links */}
-          <nav style={{ display: 'flex', gap: '24px' }}>
-            {navLinks.map(link => {
-              const isActive = pathname.startsWith(link.href);
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  style={{
-                    fontFamily: 'var(--font-sans)', fontWeight: 500,
-                    fontSize: '18px', letterSpacing: '-0.01em',
-                    color: isActive ? '#364262' : '#454652',
-                    textDecoration: 'none',
-                    borderBottom: isActive ? '2px solid #364262' : '2px solid transparent',
-                    paddingBottom: '4px',
-                    transition: 'color 0.15s ease',
-                  }}
-                >
-                  {link.label}
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
 
         {/* Right controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: 0 }}>
