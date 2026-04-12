@@ -333,9 +333,10 @@ export default function DashboardPage() {
           {/* Text content */}
           <div style={{
             position: 'relative', zIndex: 10, height: '100%',
-            display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+            display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end',
             padding: '48px',
           }}>
+            {/* Left side: greeting */}
             <div style={{ maxWidth: '640px' }}>
               {/* AI Insight Ready badge */}
               <span style={{
@@ -371,6 +372,32 @@ export default function DashboardPage() {
                   ? (lang === 'es' ? 'Operaciones optimizadas.' : 'Operations are optimized.')
                   : (lang === 'es' ? 'Listo para el día.' : 'Ready for the day.')}
               </p>
+            </div>
+            {/* Right side: date display */}
+            <div style={{ textAlign: 'right', flexShrink: 0, paddingLeft: '32px' }}>
+              {(() => {
+                const now = new Date();
+                const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+                const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+                return (
+                  <>
+                    <p style={{
+                      fontSize: '14px', fontWeight: 600, textTransform: 'uppercase' as const,
+                      letterSpacing: '0.15em', color: 'rgba(255,255,255,0.6)',
+                      margin: '0 0 4px',
+                    }}>{days[now.getDay()]}</p>
+                    <p className="data-mono" style={{
+                      fontSize: '42px', fontWeight: 500, color: '#FFFFFF',
+                      lineHeight: 1, margin: '0 0 2px',
+                      textShadow: '0 2px 20px rgba(0,0,0,0.3)',
+                    }}>{now.getDate()}</p>
+                    <p style={{
+                      fontSize: '15px', fontWeight: 500, color: 'rgba(255,255,255,0.7)',
+                      letterSpacing: '0.06em', margin: 0,
+                    }}>{months[now.getMonth()]} {now.getFullYear()}</p>
+                  </>
+                );
+              })()}
             </div>
           </div>
         </div>
