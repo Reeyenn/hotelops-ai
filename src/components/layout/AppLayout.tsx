@@ -2,7 +2,6 @@
 
 import React, { useEffect } from 'react';
 import { Header } from './Header';
-import { BottomNav } from './BottomNav';
 import { useLang } from '@/contexts/LanguageContext';
 import { useSyncContext } from '@/contexts/SyncContext';
 import { t } from '@/lib/translations';
@@ -64,14 +63,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <main style={{
         flex: 1,
         width: '100%',
-        maxWidth: '1280px',
+        maxWidth: '1920px',
         margin: '0 auto',
-        /* bottom padding = nav 64px + safe area + 8px breathing room */
-        paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
       }}>
         {children}
       </main>
-      <BottomNav />
     </div>
   );
 }
