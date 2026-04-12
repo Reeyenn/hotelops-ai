@@ -205,10 +205,10 @@ export default function InventoryPage() {
 
         {/* Count CTA — slim bar */}
         <div className="inv-cta" style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
-          padding: '8px 14px', borderRadius: 'var(--radius-md)',
+          display: 'inline-flex', alignItems: 'center', gap: '14px',
+          padding: '8px 16px', borderRadius: 'var(--radius-md)',
           background: 'linear-gradient(135deg, var(--navy, #1b3a5c), var(--navy-light, #2a5a8c))',
-          color: '#fff', alignSelf: 'stretch', width: '100%',
+          color: '#fff',
         }}>
           <div style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
             <Clock size={12} style={{ flexShrink: 0, opacity: 0.8 }} />
