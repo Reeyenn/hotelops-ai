@@ -222,45 +222,6 @@ export default function DashboardPage() {
         </div>
 
         {/* ════════════════════════════════════════════════════════════
-            HERO ROW — The 3 numbers that matter most at a glance
-            ════════════════════════════════════════════════════════════ */}
-        <div className="animate-in stagger-1 card dash-hero-grid" style={{ padding: '14px 18px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0' }}>
-
-          {/* Occupancy — the big one */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', paddingRight: '16px' }}>
-            <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>{t('occupancy', lang)}</span>
-            <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '32px', lineHeight: 1, letterSpacing: '-0.04em', color: occupancyPct >= 80 ? 'var(--green)' : occupancyPct >= 50 ? 'var(--navy)' : 'var(--amber)' }}>
-              {occupancyPct}%
-            </div>
-            <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
-              {rentedRooms}/{totalPropertyRooms} {lang === 'es' ? 'ocupadas' : 'rooms'}
-            </p>
-          </div>
-
-          {/* Dirty Rooms — action needed */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderLeft: '1px solid var(--border)', paddingLeft: '18px', paddingRight: '16px' }}>
-            <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>{t('dirtyRooms', lang)}</span>
-            <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '32px', lineHeight: 1, letterSpacing: '-0.04em', color: dirty > 0 ? 'var(--red)' : 'var(--green)' }}>
-              {dirty}
-            </div>
-            <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
-              {dirty > 0 ? `${clean} ${t('clean', lang).toLowerCase()} · ${inProgress} ${t('progress', lang).toLowerCase()}` : (lang === 'es' ? 'todo limpio' : 'all clean')}
-            </p>
-          </div>
-
-          {/* Est. Labor Cost */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderLeft: '1px solid var(--border)', paddingLeft: '18px' }}>
-            <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>{t('estLaborCost', lang)}</span>
-            <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '32px', lineHeight: 1, letterSpacing: '-0.04em', color: 'var(--navy)' }}>
-              ${totalCost}
-            </div>
-            <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
-              {hkStaff + 3} {lang === 'es' ? 'personal hoy' : 'staff today'}
-            </p>
-          </div>
-        </div>
-
-        {/* ════════════════════════════════════════════════════════════
             DEEP CLEAN ALERT — only shows when rooms are overdue
             ════════════════════════════════════════════════════════════ */}
         {overdueRooms.length > 0 && (
@@ -304,10 +265,37 @@ export default function DashboardPage() {
             DETAILS — Secondary stats in a compact, single card
             ════════════════════════════════════════════════════════════ */}
         <div className="animate-in stagger-3 card" style={{ padding: '18px 20px' }}>
-          <div className="dash-details-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0', borderBottom: '1px solid var(--border)', paddingBottom: '14px', marginBottom: '14px' }}>
+          <div className="dash-details-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0', borderBottom: '1px solid var(--border)', paddingBottom: '14px', marginBottom: '14px' }}>
+
+            {/* Today section — the 3 KPIs that matter most */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingRight: '16px' }}>
+              <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', margin: 0 }}>
+                {lang === 'es' ? 'Hoy' : 'Today'}
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: '16px' }}>
+                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('occupancy', lang)}</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '15px', color: occupancyPct >= 80 ? 'var(--green)' : occupancyPct >= 50 ? 'var(--navy)' : 'var(--amber)' }}>
+                    {occupancyPct}%
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: '16px' }}>
+                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('dirtyRooms', lang)}</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '15px', color: dirty > 0 ? 'var(--red)' : 'var(--green)' }}>
+                    {dirty}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: '16px' }}>
+                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('estLaborCost', lang)}</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '15px', color: 'var(--navy)' }}>
+                    ${totalCost}
+                  </span>
+                </div>
+              </div>
+            </div>
 
             {/* Guests section */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', borderLeft: '1px solid var(--border)', paddingLeft: '16px' }}>
               <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', margin: 0 }}>
                 {lang === 'es' ? 'Huéspedes' : 'Guests'}
               </p>
