@@ -309,10 +309,10 @@ export default function HousekeeperRoomPage({ params }: { params: Promise<{ id: 
 
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
           <div>
-            <h1 style={{ fontSize: '28px', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '2px', lineHeight: 1.1 }}>
+            <h1 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '2px', lineHeight: 1.1 }}>
               {lang === 'es' ? `Hola, ${firstName}` : `Hi, ${firstName}`}
             </h1>
-            <p style={{ fontSize: '13px', opacity: 0.7, fontWeight: 500 }}>
+            <p style={{ fontSize: '12px', opacity: 0.7, fontWeight: 500 }}>
               {format(new Date(), 'EEEE, MMMM d', { locale: lang === 'es' ? esLocale : undefined })}
             </p>
           </div>

@@ -196,18 +196,18 @@ export default function SchedulingPage() {
       <div style={{ padding: '16px', maxWidth: '900px', margin: '0 auto' }}>
 
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
           <h1 style={{
             fontFamily: 'var(--font-sans)',
             fontWeight: 700,
-            fontSize: '24px',
-            letterSpacing: '-0.02em',
+            fontSize: '17px',
+            letterSpacing: '-0.01em',
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
+            gap: '8px',
             margin: 0,
           }}>
-            <Calendar size={20} color="var(--navy)" />
+            <Calendar size={16} color="var(--navy)" />
             {t('schedulingTitle', lang)}
           </h1>
 
@@ -248,9 +248,9 @@ export default function SchedulingPage() {
 
         {/* Notification panel */}
         {showNotifPanel && (
-          <div className="card animate-in" style={{ padding: '16px', marginBottom: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+          <div className="card animate-in" style={{ marginBottom: '14px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
                 {t('notificationsTitle', lang)}
               </span>
               {unreadCount > 0 && (
@@ -265,7 +265,7 @@ export default function SchedulingPage() {
             {notifications.length === 0 ? (
               <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>{t('noNotifications', lang)}</p>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 {notifications.slice(0, 10).map(n => (
                   <div
                     key={n.id}
@@ -273,8 +273,8 @@ export default function SchedulingPage() {
                     style={{
                       display: 'flex',
                       alignItems: 'flex-start',
-                      gap: '10px',
-                      padding: '10px 12px',
+                      gap: '8px',
+                      padding: '7px 10px',
                       background: n.read ? 'transparent' : 'rgba(251,191,36,0.05)',
                       border: `1px solid ${n.read ? 'var(--border)' : 'rgba(251,191,36,0.2)'}`,
                       borderRadius: 'var(--radius-md)',
@@ -301,27 +301,27 @@ export default function SchedulingPage() {
         )}
 
         {/* Date selector */}
-        <div className="card" style={{ padding: '16px', marginBottom: '16px' }}>
-          <p style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', marginBottom: '10px' }}>
+        <div className="card" style={{ marginBottom: '12px' }}>
+          <p style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', marginBottom: '6px' }}>
             {t('selectShiftDate', lang)}
           </p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <button
               onClick={() => { setShiftDate(d => addDays(d, -1)); setSent(false); setSelected([]); }}
-              style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '6px 10px', cursor: 'pointer', color: 'var(--text-secondary)' }}
+              style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '4px 8px', cursor: 'pointer', color: 'var(--text-secondary)' }}
               aria-label={lang === 'es' ? 'Día anterior' : 'Previous day'}
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={14} />
             </button>
-            <span style={{ flex: 1, textAlign: 'center', fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)' }}>
+            <span style={{ flex: 1, textAlign: 'center', fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
               {formatDisplayDate(shiftDate, lang)}
             </span>
             <button
               onClick={() => { setShiftDate(d => addDays(d, 1)); setSent(false); setSelected([]); }}
-              style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '6px 10px', cursor: 'pointer', color: 'var(--text-secondary)' }}
+              style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '4px 8px', cursor: 'pointer', color: 'var(--text-secondary)' }}
               aria-label={lang === 'es' ? 'Día siguiente' : 'Next day'}
             >
-              <ChevronRight size={16} />
+              <ChevronRight size={14} />
             </button>
           </div>
         </div>

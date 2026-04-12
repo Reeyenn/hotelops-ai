@@ -37,8 +37,8 @@ export default function InspectionsPage() {
 
   return (
     <AppLayout>
-      <div style={{ padding: '16px 16px 100px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+      <div style={{ padding: '12px 14px 100px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <h1 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
           {lang === 'es' ? 'Inspecciones' : 'Inspections'}
         </h1>
         <InspectionsView />

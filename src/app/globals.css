@@ -95,8 +95,8 @@ body {
 /* ── Stat ──────────────────────────────────────────────────────────────────── */
 .stat-number {
   font-family: var(--font-mono);
-  font-size: 40px;
-  font-weight: 600;
+  font-size: 28px;
+  font-weight: 700;
   line-height: 1;
   letter-spacing: -0.03em;
 }

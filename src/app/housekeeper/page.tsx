@@ -172,19 +172,19 @@ function HousekeeperInner() {
         <div style={{
           width: '100%', maxWidth: '360px',
           background: 'var(--bg-card)', border: '1px solid var(--border)',
-          borderRadius: 'var(--radius-lg)', padding: '24px',
+          borderRadius: 'var(--radius-lg)', padding: '16px',
         }}>
-          <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px', letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px', letterSpacing: '-0.01em' }}>
             {t('setupNotifications', lang)}
           </h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '24px', lineHeight: 1.6 }}>
+          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '14px', lineHeight: 1.5 }}>
             {t('selectNameDesc', lang)}
           </p>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '14px' }}>
             {staff.map(member => (
               <button key={member.id} onClick={() => setSelectedId(member.id)} style={{
-                padding: '14px 16px',
+                padding: '10px 14px',
                 background: selectedId === member.id ? 'var(--amber-dim)' : 'var(--bg)',
                 border: `1.5px solid ${selectedId === member.id ? 'var(--amber-border)' : 'var(--border)'}`,
                 borderRadius: 'var(--radius-md)', textAlign: 'left', cursor: 'pointer',
