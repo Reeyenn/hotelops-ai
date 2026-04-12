@@ -44,8 +44,8 @@ export function Header() {
   return (
     <header style={{
       position: 'sticky', top: 0, zIndex: 40,
-      background: '#eae8e3',
-      boxShadow: '0 4px 24px -2px rgba(27,28,25,0.06)',
+      background: '#f5f3ee',
+      boxShadow: '0 4px 24px -2px rgba(27,28,25,0.04)',
     }}>
       <div style={{
         maxWidth: '1920px', margin: '0 auto',
