@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Staxis Hero Image Preview</title>
+<style>
+  body { font-family: 'Inter', sans-serif; background: #1b1c19; color: #fff; margin: 0; padding: 40px; }
+  h1 { text-align: center; margin-bottom: 8px; font-size: 28px; }
+  p.sub { text-align: center; color: #999; margin-bottom: 40px; font-size: 14px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(500px, 1fr)); gap: 24px; }
+  .card { position: relative; border-radius: 16px; overflow: hidden; height: 280px; }
+  .card img { width: 100%; height: 100%; object-fit: cover; }
+  .card .overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to right, rgba(54,66,98,0.80) 0%, transparent 100%);
+  }
+  .card .label {
+    position: absolute; bottom: 16px; left: 16px;
+    background: rgba(0,0,0,0.6); padding: 6px 14px; border-radius: 8px;
+    font-size: 14px; font-weight: 600;
+  }
+  .card .text-preview {
+    position: absolute; bottom: 60px; left: 48px; z-index: 10;
+  }
+  .card .text-preview h2 { font-size: 36px; font-weight: 700; margin: 0 0 4px; }
+  .card .text-preview p { font-size: 16px; opacity: 0.8; margin: 0; }
+</style>
+</head>
+<body>
+<h1>Staxis Dashboard — Hero Image Candidates</h1>
+<p class="sub">Each image shown with the greeting overlay so you can see how it'll actually look. Pick the ones you like.</p>
+<div class="grid">
+
+  <!-- Already in use: Stitch design 1 (glass hero bg) -->
+  <div class="card">
+    <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuAUkJ87OGqb9QZ3nLbfCbHYuNgoCRsfcrSTqcfy8LlaEm8_94XXXZc5LvqA_5T36RJJykyAlxUHbasVhW-V52jbgsdVMHhedC17vZk_Y5-TCMq6NWzbrN60mUF_bgeUYq_2wEOltK3e5GIuN5krTVz7lju3NN9ru-gTTwjtEG0ZIRdl1dGDL4FP5KjnJsNm2lw4HNq9nO7C0xSjh0WnhsNEQ0c9rQP5-Bg5ycpesyUdhDiSQPxFLzP6L1vDs-8LjUHCbvH0R4UFxyU" alt=""/>
+    <div class="overlay"></div>
+    <div class="text-preview"><h2>Good morning, Jay.</h2><p>Comfort Suites is at 92% occupancy today.</p></div>
+    <div class="label">#1 — Current (Stitch marble lobby)</div>
+  </div>
+
+  <!-- Already in use: Stitch design 2 (Good morning hero) -->
+  <div class="card">
+    <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZbI6Q__TgrGV68CwAljtCXlm-IIQqMH3Xp-2bJ6iCAK7czY26jVHPqSvr1eW6Jr9UzXxPWcHxnZY-vhxpsuzsHWrTmc959Y8259FEe1eFselJfyEo8TSuB3A5ousMXyxqU07-hrv_pwBIgA8BPUv8oz2UdjcLL_sZNHiuPA7ImV_kiS6oL0xM1Jdkrs6Nsv7LTW-MVg0PWv1jzCrTFmWDskwTsIebZXs0pedyHW35oLHSX4pjQ_Y8CA130SYTXxEN-ZUlVQTT94A" alt=""/>
+    <div class="overlay"></div>
+    <div class="text-preview"><h2>Good morning, Jay.</h2><p>Comfort Suites is at 92% occupancy today.</p></div>
+    <div class="label">#2 — Current (Stitch concierge lobby)</div>
+  </div>
+
+  <!-- Unsplash candidates -->
+  <div class="card">
+    <img src="https://images.unsplash.com/photo-1744782996368-dc5b7e697f4c?w=1200&q=80&auto=format&fit=crop" alt=""/>
+    <div class="overlay"></div>
+    <div class="text-preview"><h2>Good morning, Jay.</h2><p>Comfort Suites is at 92% occupancy today.</p></div>
+    <div class="label">#3 — Unsplash</div>
+  </div>
+
+  <div class="card">
+    <img src="https://images.unsplash.com/photo-1723465313715-586dd9689b8f?w=1200&q=80&auto=format&fit=crop" alt=""/>
+    <div class="overlay"></div>
+    <div class="text-preview"><h2>Good morning, Jay.</h2><p>Comfort Suites is at 92% occupancy today.</p></div>
+    <div class="label">#4 — Unsplash</div>
+  </div>
+
+  <div class="card">
+    <img src="https://images.unsplash.com/photo-1744782996458-df62a31777aa?w=1200&q=80&auto=format&fit=crop" alt=""/>
+    <div class="overlay"></div>
+    <div class="text-preview"><h2>Good morning, Jay.</h2><p>Comfort Suites is at 92% occupancy today.</p></div>
+    <div class="label">#5 — Unsplash</div>
+  </div>
+
+  <div class="card">
+    <img src="https://images.unsplash.com/photo-1678126581945-0de543dc46b7?w=1200&q=80&auto=format&fit=crop" alt=""/>
+    <div class="overlay"></div>
+    <div class="text-preview"><h2>Good morning, Jay.</h2><p>Comfort Suites is at 92% occupancy today.</p></div>
+    <div class="label">#6 — Unsplash</div>
+  </div>
+
+  <div class="card">
+    <img src="https://images.unsplash.com/photo-1758714919725-d2740fc99f14?w=1200&q=80&auto=format&fit=crop" alt=""/>
+    <div class="overlay"></div>
+    <div class="text-preview"><h2>Good morning, Jay.</h2><p>Comfort Suites is at 92% occupancy today.</p></div>
+    <div class="label">#7 — Unsplash</div>
+  </div>
+
+  <div class="card">
+    <img src="https://images.unsplash.com/photo-1723465302725-ff46b3e165f9?w=1200&q=80&auto=format&fit=crop" alt=""/>
+    <div class="overlay"></div>
+    <div class="text-preview"><h2>Good morning, Jay.</h2><p>Comfort Suites is at 92% occupancy today.</p></div>
+    <div class="label">#8 — Unsplash</div>
+  </div>
+
+  <div class="card">
+    <img src="https://images.unsplash.com/photo-1696766984569-a33d52748dba?w=1200&q=80&auto=format&fit=crop" alt=""/>
+    <div class="overlay"></div>
+    <div class="text-preview"><h2>Good morning, Jay.</h2><p>Comfort Suites is at 92% occupancy today.</p></div>
+    <div class="label">#9 — Unsplash</div>
+  </div>
+
+  <div class="card">
+    <img src="https://images.unsplash.com/photo-1768346564825-6f90c0b89e2e?w=1200&q=80&auto=format&fit=crop" alt=""/>
+    <div class="overlay"></div>
+    <div class="text-preview"><h2>Good morning, Jay.</h2><p>Comfort Suites is at 92% occupancy today.</p></div>
+    <div class="label">#10 — Unsplash</div>
+  </div>
+
+  <div class="card">
+    <img src="https://images.unsplash.com/photo-1771206331424-44b8ec9acdf4?w=1200&q=80&auto=format&fit=crop" alt=""/>
+    <div class="overlay"></div>
+    <div class="text-preview"><h2>Good morning, Jay.</h2><p>Comfort Suites is at 92% occupancy today.</p></div>
+    <div class="label">#11 — Unsplash</div>
+  </div>
+
+  <div class="card">
+    <img src="https://images.unsplash.com/photo-1774192621035-20d11389f781?w=1200&q=80&auto=format&fit=crop" alt=""/>
+    <div class="overlay"></div>
+    <div class="text-preview"><h2>Good morning, Jay.</h2><p>Comfort Suites is at 92% occupancy today.</p></div>
+    <div class="label">#12 — Unsplash</div>
+  </div>
+
+  <div class="card">
+    <img src="https://images.unsplash.com/photo-1759177715489-74112089de1a?w=1200&q=80&auto=format&fit=crop" alt=""/>
+    <div class="overlay"></div>
+    <div class="text-preview"><h2>Good morning, Jay.</h2><p>Comfort Suites is at 92% occupancy today.</p></div>
+    <div class="label">#13 — Unsplash</div>
+  </div>
+
+  <div class="card">
+    <img src="https://images.unsplash.com/photo-1723974915612-c9b6f524f28c?w=1200&q=80&auto=format&fit=crop" alt=""/>
+    <div class="overlay"></div>
+    <div class="text-preview"><h2>Good morning, Jay.</h2><p>Comfort Suites is at 92% occupancy today.</p></div>
+    <div class="label">#14 — Unsplash</div>
+  </div>
+
+  <div class="card">
+    <img src="https://images.unsplash.com/photo-1758194090785-8e09b7288199?w=1200&q=80&auto=format&fit=crop" alt=""/>
+    <div class="overlay"></div>
+    <div class="text-preview"><h2>Good morning, Jay.</h2><p>Comfort Suites is at 92% occupancy today.</p></div>
+    <div class="label">#15 — Unsplash</div>
+  </div>
+
+</div>
+</body>
+</html>
