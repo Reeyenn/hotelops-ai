@@ -104,31 +104,72 @@ export default function ROIPage() {
         </div>
 
         <div className="p-4 space-y-6 pb-8">
-          {/* This Week */}
-          <KPICard title={lang === 'es' ? 'Esta Semana' : 'This Week'}>
-            <KPIRow label={lang === 'es' ? 'Ahorro Laboral' : 'Labor Saved'} value={`$${thisWeekLaborSaved.toFixed(0)}`} color="var(--green)" />
-            <KPIRow
-              label={lang === 'es' ? 'Personal Promedio (Recom. vs Real)' : 'Avg Staff (Recommended vs Actual)'}
-              value={`${thisWeekStaffRecommended.toFixed(1)} vs ${thisWeekStaffActual.toFixed(1)}`}
-              color="var(--navy)"
-            />
-          </KPICard>
+          {/* Unified ROI summary table */}
+          <div
+            className="card"
+            style={{
+              padding: '18px 20px',
+              display: 'grid',
+              gridTemplateColumns: 'auto repeat(3, 1fr)',
+              columnGap: '16px',
+              rowGap: '10px',
+              alignItems: 'center',
+            }}
+          >
+            {/* Header row */}
+            <span />
+            <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', textAlign: 'right' }}>
+              {lang === 'es' ? 'Semana' : 'Week'}
+            </span>
+            <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', textAlign: 'right' }}>
+              {lang === 'es' ? 'Mes' : 'Month'}
+            </span>
+            <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', textAlign: 'right' }}>
+              {lang === 'es' ? 'Total' : 'All Time'}
+            </span>
 
-          {/* This Month */}
-          <KPICard title={lang === 'es' ? 'Este Mes' : 'This Month'}>
-            <KPIRow label={lang === 'es' ? 'Ahorro Laboral' : 'Labor Saved'} value={`$${thisMonthLaborSaved.toFixed(0)}`} color="var(--green)" />
-            <KPIRow
-              label={lang === 'es' ? 'Personal Promedio (Recom. vs Real)' : 'Avg Staff (Recommended vs Actual)'}
-              value={`${thisMonthStaffRecommended.toFixed(1)} vs ${thisMonthStaffActual.toFixed(1)}`}
-              color="var(--navy)"
-            />
-          </KPICard>
+            {/* Labor Saved row */}
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+              {lang === 'es' ? 'Ahorro Laboral' : 'Labor Saved'}
+            </span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '15px', color: 'var(--green)', textAlign: 'right' }}>
+              ${thisWeekLaborSaved.toFixed(0)}
+            </span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '15px', color: 'var(--green)', textAlign: 'right' }}>
+              ${thisMonthLaborSaved.toFixed(0)}
+            </span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '15px', color: 'var(--green)', textAlign: 'right' }}>
+              ${allTimeLaborSaved.toFixed(0)}
+            </span>
 
-          {/* All Time */}
-          <KPICard title={lang === 'es' ? 'Total' : 'All Time'}>
-            <KPIRow label={lang === 'es' ? 'Ahorro Laboral Total' : 'Total Labor Saved'} value={`$${allTimeLaborSaved.toFixed(0)}`} color="var(--green)" />
-            <KPIRow label={lang === 'es' ? 'Días Registrados' : 'Days Tracked'} value={allTimeDaysTracked.toString()} color="var(--navy)" />
-          </KPICard>
+            {/* Avg Staff row */}
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+              {lang === 'es' ? 'Personal (rec/real)' : 'Staff (rec/actual)'}
+            </span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '15px', color: 'var(--navy)', textAlign: 'right' }}>
+              {thisWeekStaffRecommended.toFixed(1)}/{thisWeekStaffActual.toFixed(1)}
+            </span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '15px', color: 'var(--navy)', textAlign: 'right' }}>
+              {thisMonthStaffRecommended.toFixed(1)}/{thisMonthStaffActual.toFixed(1)}
+            </span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '15px', color: 'var(--text-muted)', textAlign: 'right' }}>
+              —
+            </span>
+
+            {/* Days Tracked row */}
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+              {lang === 'es' ? 'Días' : 'Days'}
+            </span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '15px', color: 'var(--text-muted)', textAlign: 'right' }}>
+              {Math.min(7, allTimeDaysTracked)}
+            </span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '15px', color: 'var(--text-muted)', textAlign: 'right' }}>
+              {Math.min(30, allTimeDaysTracked)}
+            </span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '15px', color: 'var(--navy)', textAlign: 'right' }}>
+              {allTimeDaysTracked}
+            </span>
+          </div>
 
           {/* Labor Cost Trend Chart */}
           {chartData.length > 0 && (
