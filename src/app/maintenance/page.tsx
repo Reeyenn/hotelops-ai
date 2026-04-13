@@ -394,10 +394,10 @@ export default function MaintenancePage() {
         }
       `}</style>
 
-      <div style={{ maxWidth: '768px', margin: '0 auto', padding: '48px 24px 160px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      <div style={{ maxWidth: '768px', margin: '0 auto', padding: '16px 24px 160px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
         {/* ── Tabs ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '4px' }}>
           {([
             { key: 'workOrders' as TabKey, label: t('workOrders', lang) },
             { key: 'preventive' as TabKey, label: t('preventive', lang) },
