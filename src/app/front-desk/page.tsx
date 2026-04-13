@@ -118,16 +118,7 @@ export default function FrontDeskPage() {
   const [toast, setToast] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  /* ── Load Material Symbols font ── */
-  useEffect(() => {
-    if (typeof document !== 'undefined' && !document.getElementById('material-symbols-fd')) {
-      const link = document.createElement('link');
-      link.id = 'material-symbols-fd';
-      link.rel = 'stylesheet';
-      link.href = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap';
-      document.head.appendChild(link);
-    }
-  }, []);
+  // Material Symbols font is loaded globally via globals.css
 
   useEffect(() => {
     if (!authLoading && !propLoading && !user) router.replace('/signin');

@@ -276,16 +276,7 @@ export default function StaffPage() {
     return groups;
   }, [staff]);
 
-  /* ── Load Material Symbols font ── */
-  useEffect(() => {
-    if (typeof document !== 'undefined' && !document.getElementById('material-symbols-staff')) {
-      const link = document.createElement('link');
-      link.id = 'material-symbols-staff';
-      link.rel = 'stylesheet';
-      link.href = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap';
-      document.head.appendChild(link);
-    }
-  }, []);
+  // Material Symbols font is loaded globally via globals.css
 
   /* ── Derived: Schedule ── */
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -760,7 +751,7 @@ export default function StaffPage() {
                     display: 'flex', alignItems: 'center', gap: '8px',
                     transition: 'transform 0.15s',
                   }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: '20px', fontVariationSettings: "'FILL' 1" }}>colors_spark</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: '20px', fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
                     {lang === 'es' ? 'Personalizar Equipo' : 'Ask AI to Optimize'}
                   </button>
                 )}

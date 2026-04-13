@@ -168,17 +168,7 @@ export default function MaintenancePage() {
     });
   }, [user, activePropertyId]);
 
-  // ─── Load Material Symbols font for landscaping icons ────────────────────
-  useEffect(() => {
-    const id = 'material-symbols-outlined-font';
-    if (!document.getElementById(id)) {
-      const link = document.createElement('link');
-      link.id = id;
-      link.rel = 'stylesheet';
-      link.href = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap';
-      document.head.appendChild(link);
-    }
-  }, []);
+  // Material Symbols font is loaded globally via globals.css
 
   // ─── Toast auto-dismiss ──────────────────────────────────────────────────
 
