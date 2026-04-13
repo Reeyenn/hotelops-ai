@@ -179,23 +179,7 @@ export default function InventoryPage() {
     return new Date(Math.max(...timestamps));
   }, [items]);
 
-  // Loading guard
-  if (authLoading || propLoading || !user || !activePropertyId) {
-    return (
-      <AppLayout>
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-center">
-            <div className="animate-spin w-8 h-8 border-4 rounded-full mb-3 mx-auto" style={{ borderColor: 'var(--border)', borderTopColor: 'var(--navy)' }} />
-            <div className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
-              {lang === 'es' ? 'Cargando inventario...' : 'Loading inventory...'}
-            </div>
-          </div>
-        </div>
-      </AppLayout>
-    );
-  }
-
-  // ─── Computed stats for hero ───────────────────────────────────────────────
+  // ─── Computed stats for hero (must be before loading guard — hooks can't be after early returns) ──
   const stockHealthPct = useMemo(() => {
     if (items.length === 0) return 100;
     const goodItems = items.filter(i => stockStatus(i.currentStock, i.parLevel) === 'good').length;
@@ -208,10 +192,9 @@ export default function InventoryPage() {
     return Math.round((counted / items.length) * 100);
   }, [items]);
 
-  // AI Insight text
   const aiInsight = useMemo(() => {
     const criticalItems = items.filter(i => stockStatus(i.currentStock, i.parLevel) === 'out');
-    const lowItems = items.filter(i => stockStatus(i.currentStock, i.parLevel) === 'low');
+    const lowItemsList = items.filter(i => stockStatus(i.currentStock, i.parLevel) === 'low');
     if (criticalItems.length > 0) {
       const worst = criticalItems[0];
       const pct = worst.parLevel > 0 ? Math.round((worst.currentStock / worst.parLevel) * 100) : 0;
@@ -219,27 +202,41 @@ export default function InventoryPage() {
         ? `${worst.name} está ${pct}% por debajo del umbral. Se recomienda reorden inmediato.`
         : `${worst.name} ${worst.currentStock === 0 ? 'is out of stock' : `is ${100 - pct}% below threshold`}. AI recommends immediate reorder.`;
     }
-    if (lowItems.length > 0) {
+    if (lowItemsList.length > 0) {
       return lang === 'es'
-        ? `${lowItems.length} artículo(s) con stock bajo. Considere programar reorden esta semana.`
-        : `${lowItems.length} item${lowItems.length > 1 ? 's' : ''} running low. Consider scheduling reorders this week.`;
+        ? `${lowItemsList.length} artículo(s) con stock bajo. Considere programar reorden esta semana.`
+        : `${lowItemsList.length} item${lowItemsList.length > 1 ? 's' : ''} running low. Consider scheduling reorders this week.`;
     }
     return lang === 'es'
       ? 'Todos los niveles de inventario están saludables. No se requieren acciones inmediatas.'
       : 'All inventory levels are healthy. No immediate actions required.';
   }, [items, lang]);
 
-  // Items grouped by category
   const hkItems = useMemo(() => items.filter(i => i.category === 'housekeeping').sort((a, b) => a.name.localeCompare(b.name)), [items]);
   const maintItems = useMemo(() => items.filter(i => i.category === 'maintenance').sort((a, b) => a.name.localeCompare(b.name)), [items]);
   const fbItems = useMemo(() => items.filter(i => i.category === 'breakfast').sort((a, b) => a.name.localeCompare(b.name)), [items]);
 
-  // Alert counts per category
   const catAlerts = useMemo(() => ({
     housekeeping: hkItems.filter(i => stockStatus(i.currentStock, i.parLevel) !== 'good').length,
     maintenance: maintItems.filter(i => stockStatus(i.currentStock, i.parLevel) !== 'good').length,
     breakfast: fbItems.filter(i => stockStatus(i.currentStock, i.parLevel) !== 'good').length,
   }), [hkItems, maintItems, fbItems]);
+
+  // Loading guard
+  if (authLoading || propLoading || !user || !activePropertyId) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center">
+            <div className="animate-spin w-8 h-8 border-4 rounded-full mb-3 mx-auto" style={{ borderColor: '#c5c5d4', borderTopColor: '#364262' }} />
+            <div className="text-sm font-medium" style={{ color: '#757684', fontFamily: "'Inter', sans-serif" }}>
+              {lang === 'es' ? 'Cargando inventario...' : 'Loading inventory...'}
+            </div>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   // ─── MAIN VIEW — Stitch Inventory Intelligence Layout ─────────────────────
   return (
