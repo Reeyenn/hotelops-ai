@@ -853,17 +853,20 @@ function ScheduleSection() {
                           onPointerCancel={onPillPointerCancel}
                           className="sched-room-pill"
                           style={{
-                            width: '40px', height: '40px',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            width: '42px', height: '48px',
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                            gap: '1px',
                             borderRadius: '8px', background: '#eae8e3',
-                            fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '14px',
-                            color: '#364262', border: 'none', cursor: 'grab',
+                            border: 'none', cursor: 'grab',
                             opacity: dragState?.roomId === room.id ? 0.3 : 1,
                             touchAction: 'none', userSelect: 'none',
                             WebkitUserSelect: 'none', WebkitTouchCallout: 'none',
                           }}
                         >
-                          {room.number}
+                          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '14px', color: '#364262', lineHeight: 1 }}>{room.number}</span>
+                          <span style={{ fontSize: '9px', fontWeight: 700, color: room.type === 'checkout' ? '#93000a' : '#757684', lineHeight: 1, textTransform: 'uppercase' }}>
+                            {room.type === 'checkout' ? 'C' : 'S'}
+                          </span>
                         </button>
                       ))}
                       {/* Add room button */}
