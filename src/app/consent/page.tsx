@@ -230,7 +230,15 @@ export default function ConsentPage() {
           </div>
 
           <footer>
-            Staxis · hotelops-ai.vercel.app · For questions contact vxreeyen@gmail.com
+            <div style={{ marginBottom: '6px' }}>
+              Staxis — operated by Reeyen Patel (sole proprietor)
+            </div>
+            <div style={{ marginBottom: '6px' }}>
+              2215 Rio Grande St, Austin, TX 78705, United States
+            </div>
+            <div>
+              For questions contact <a href="mailto:rp@reeyenpatel.com" style={{ color: '#6b7280' }}>rp@reeyenpatel.com</a>
+            </div>
           </footer>
 
         </div>

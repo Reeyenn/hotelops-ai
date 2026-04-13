@@ -115,7 +115,7 @@ export default function PrivacyPage() {
           <p>
             Hotel employees may request access to, correction of, or deletion of their personal
             information at any time by contacting their hotel manager or by emailing{' '}
-            <a href="mailto:vxreeyen@gmail.com">vxreeyen@gmail.com</a>. Replying STOP to any
+            <a href="mailto:rp@reeyenpatel.com">rp@reeyenpatel.com</a>. Replying STOP to any
             Staxis SMS will immediately stop all further messages.
           </p>
 
@@ -136,11 +136,16 @@ export default function PrivacyPage() {
           <h2>10. Contact</h2>
           <p>
             Questions about this policy or your data can be sent to{' '}
-            <a href="mailto:vxreeyen@gmail.com">vxreeyen@gmail.com</a>.
+            <a href="mailto:rp@reeyenpatel.com">rp@reeyenpatel.com</a>.
           </p>
 
           <footer>
-            Staxis · <a href="/">Home</a> · <a href="/consent">SMS Consent</a> · <a href="/terms">Terms</a>
+            <div style={{ marginBottom: '6px' }}>
+              Staxis — operated by Reeyen Patel (sole proprietor) · 2215 Rio Grande St, Austin, TX 78705
+            </div>
+            <div>
+              <a href="/">Home</a> · <a href="/consent">SMS Consent</a> · <a href="/terms">Terms</a> · <a href="mailto:rp@reeyenpatel.com">rp@reeyenpatel.com</a>
+            </div>
           </footer>
         </div>
       </body>

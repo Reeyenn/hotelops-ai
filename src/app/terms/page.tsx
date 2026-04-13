@@ -113,11 +113,16 @@ export default function TermsPage() {
           <h2>10. Contact</h2>
           <p>
             Questions about these Terms can be sent to{' '}
-            <a href="mailto:vxreeyen@gmail.com">vxreeyen@gmail.com</a>.
+            <a href="mailto:rp@reeyenpatel.com">rp@reeyenpatel.com</a>.
           </p>
 
           <footer>
-            Staxis · <a href="/">Home</a> · <a href="/consent">SMS Consent</a> · <a href="/privacy">Privacy</a>
+            <div style={{ marginBottom: '6px' }}>
+              Staxis — operated by Reeyen Patel (sole proprietor) · 2215 Rio Grande St, Austin, TX 78705
+            </div>
+            <div>
+              <a href="/">Home</a> · <a href="/consent">SMS Consent</a> · <a href="/privacy">Privacy</a> · <a href="mailto:rp@reeyenpatel.com">rp@reeyenpatel.com</a>
+            </div>
           </footer>
         </div>
       </body>

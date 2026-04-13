@@ -235,6 +235,48 @@ export default function LandingPage() {
           </div>
         </section>
 
+        <section className="section">
+          <h2>About Staxis</h2>
+          <div className="card">
+            <p>
+              Staxis is operated by Reeyen Patel, a sole proprietor based in Austin, Texas. The
+              platform was built to solve a specific, concrete problem in the limited-service
+              hotel industry: every night, a head housekeeper at a limited-service hotel has to
+              text each housekeeper on the roster from her personal phone to ask whether they
+              can work the next day, then manually assemble a schedule from the replies. Staxis
+              replaces that manual process with a single SMS availability check sent from a
+              verified business number, with replies captured automatically in the platform.
+            </p>
+            <p>
+              <strong style={{ color: '#fff' }}>Pilot property:</strong> Comfort Suites Beaumont
+              (Beaumont, Texas) — a 78-room limited-service property. Staxis is live at the
+              property as of April 2026, sending nightly availability checks to the housekeeping
+              roster and coordinating morning room assignments.
+            </p>
+            <p>
+              <strong style={{ color: '#fff' }}>Who we serve:</strong> Limited-service and
+              select-service hotel owner-operators with 50–150 rooms who run lean housekeeping
+              teams and need a simple, practical tool to coordinate daily labor.
+            </p>
+          </div>
+        </section>
+
+        <section className="section">
+          <h2>Contact</h2>
+          <div className="card">
+            <p>
+              <strong style={{ color: '#fff' }}>Staxis</strong> — operated by Reeyen Patel (sole proprietor)<br />
+              2215 Rio Grande St, Austin, TX 78705, United States<br />
+              Email: <a href="mailto:rp@reeyenpatel.com">rp@reeyenpatel.com</a>
+            </p>
+            <p>
+              For questions about the platform, SMS consent, privacy, billing, or partnership
+              inquiries, email the address above. We respond to all inquiries within two business
+              days.
+            </p>
+          </div>
+        </section>
+
         <footer>
           <div style={{ marginBottom: '12px' }}>
             <a href="/consent">SMS Consent</a>·
@@ -242,7 +284,10 @@ export default function LandingPage() {
             <a href="/terms">Terms of Service</a>·
             <a href="/signin">Sign In</a>
           </div>
-          <div>© 2026 Staxis · Contact: vxreeyen@gmail.com</div>
+          <div style={{ marginBottom: '8px' }}>
+            Staxis · Operated by Reeyen Patel · 2215 Rio Grande St, Austin, TX 78705
+          </div>
+          <div>© 2026 Staxis · <a href="mailto:rp@reeyenpatel.com" style={{ margin: 0 }}>rp@reeyenpatel.com</a></div>
         </footer>
       </body>
     </html>
