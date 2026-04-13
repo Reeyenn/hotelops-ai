@@ -1365,10 +1365,6 @@ export default function MaintenancePage() {
             setToast(`${editLsTask.name} ${lang === 'es' ? 'actualizado' : 'updated'} ✓`);
             setEditLsTask(null);
           }}
-          onMarkDone={async () => {
-            await handleMarkLsDone(editLsTask);
-            setEditLsTask(null);
-          }}
           onDelete={async () => {
             if (!window.confirm(`${lang === 'es' ? 'Eliminar' : 'Delete'} "${editLsTask.name}"?`)) return;
             await deleteLandscapingTask(user.uid, activePropertyId, editLsTask.id);
@@ -1398,17 +1394,16 @@ export default function MaintenancePage() {
 
 // ─── Edit Landscaping Task Modal ─────────────────────────────────────────────
 
-function EditLandscapingTaskModal({ task, lang, onClose, onSave, onMarkDone, onDelete }: {
+function EditLandscapingTaskModal({ task, lang, onClose, onSave, onDelete }: {
   task: LandscapingTask;
   lang: string;
   onClose: () => void;
   onSave: (updates: Partial<LandscapingTask>) => Promise<void>;
-  onMarkDone: () => Promise<void>;
   onDelete: () => Promise<void>;
 }) {
   const [name, setName] = useState(task.name);
   const [season, setSeason] = useState<LandscapingSeason>(task.season);
-  const [freq, setFreq] = useState(String(task.frequencyDays));
+  const [freq, setFreq] = useState(task.frequencyDays);
   const [notes, setNotes] = useState(task.notes || '');
   const lastCompleted = toJsDate(task.lastCompletedAt);
   const lastCompletedISO = lastCompleted ? lastCompleted.toISOString().split('T')[0] : '';
@@ -1417,51 +1412,63 @@ function EditLandscapingTaskModal({ task, lang, onClose, onSave, onMarkDone, onD
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
 
-  const freqNum = parseInt(freq, 10);
+  // Compute live status from current form state (same pattern as Preventive modal)
+  const status = (() => {
+    if (!lastDone) return { color: 'var(--text-muted)', label: lang === 'es' ? 'Sin Fecha' : 'Never Done' };
+    const done = new Date(lastDone + 'T12:00:00');
+    const daysSince = Math.floor((Date.now() - done.getTime()) / (1000 * 60 * 60 * 24));
+    const daysUntil = freq - daysSince;
+    if (daysUntil < 0) return { color: 'var(--red)', label: lang === 'es' ? 'Vencida' : 'Overdue' };
+    if (daysUntil <= 7) return { color: 'var(--amber)', label: lang === 'es' ? 'Pendiente' : 'Due Soon' };
+    return { color: 'var(--green)', label: lang === 'es' ? 'Al Día' : 'On Track' };
+  })();
+
+  // Next-due preview (auto-derived from lastDone + freq)
+  const nextDue = (() => {
+    if (!lastDone) return null;
+    const done = new Date(lastDone + 'T12:00:00');
+    done.setDate(done.getDate() + freq);
+    return done.toLocaleDateString(lang === 'es' ? 'es-MX' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  })();
+
   const hasChanges =
     name.trim() !== task.name ||
     season !== task.season ||
-    (!isNaN(freqNum) && freqNum !== task.frequencyDays) ||
+    freq !== task.frequencyDays ||
     notes !== (task.notes || '') ||
     lastDone !== lastCompletedISO;
 
   const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '10px 12px', borderRadius: '10px',
-    border: '1.5px solid #c5c5d4', background: '#fff',
-    fontSize: '14px', color: '#1b1c19', fontFamily: "'Inter', sans-serif",
-    outline: 'none',
+    width: '100%', padding: '10px 12px', borderRadius: 'var(--radius-md)',
+    border: '1.5px solid var(--border)', background: 'var(--bg)',
+    fontSize: '14px', color: 'var(--text-primary)',
   };
-  const labelStyle: React.CSSProperties = {
-    fontSize: '11px', fontWeight: 600, textTransform: 'uppercase',
-    letterSpacing: '0.05em', color: '#757684', display: 'block', marginBottom: '4px',
-    fontFamily: "'Inter', sans-serif",
-  };
+  const todayISO = new Date().toISOString().split('T')[0];
 
   if (!mounted) return null;
 
   return createPortal(
-    <div
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 100,
+      background: 'rgba(0,0,0,0.5)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '20px',
+    }}
       onClick={onClose}
-      style={{
-        position: 'fixed', inset: 0, zIndex: 100,
-        background: 'rgba(0,0,0,0.5)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '20px',
-      }}
     >
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          background: '#fff', borderRadius: '16px',
+          background: 'var(--surface, #fff)', borderRadius: 'var(--radius-lg)',
           width: '100%', maxWidth: '420px', overflow: 'hidden',
           boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
         }}
       >
         <div style={{
           padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          borderBottom: '1px solid #eae8e3',
+          borderBottom: '1px solid var(--border)',
         }}>
-          <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#1b1c19', margin: 0, fontFamily: "'Inter', sans-serif" }}>
+          <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             {lang === 'es' ? 'Editar Tarea' : 'Edit Task'}
           </h2>
           <button
@@ -1469,9 +1476,9 @@ function EditLandscapingTaskModal({ task, lang, onClose, onSave, onMarkDone, onD
             aria-label="Close"
             style={{
               width: '28px', height: '28px', borderRadius: '6px',
-              border: '1px solid #c5c5d4', background: '#f5f3ee',
+              border: '1px solid var(--border)', background: 'var(--bg)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', color: '#757684',
+              cursor: 'pointer', color: 'var(--text-muted)',
             }}
           >
             <X size={14} />
@@ -1480,12 +1487,82 @@ function EditLandscapingTaskModal({ task, lang, onClose, onSave, onMarkDone, onD
 
         <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div>
-            <label style={labelStyle}>{lang === 'es' ? 'Nombre' : 'Task Name'}</label>
+            <label style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+              {lang === 'es' ? 'Nombre de la Tarea' : 'Task Name'}
+            </label>
             <input value={name} onChange={e => setName(e.target.value)} style={inputStyle} />
           </div>
 
           <div>
-            <label style={labelStyle}>{lang === 'es' ? 'Temporada' : 'Season'}</label>
+            <label style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+              <span style={{
+                width: '8px', height: '8px', borderRadius: '99px',
+                background: status.color, flexShrink: 0,
+              }} />
+              {lang === 'es' ? 'Última Completada' : 'Last Completed'}
+              <span style={{ fontWeight: 500, textTransform: 'none', letterSpacing: 0, color: status.color }}>
+                · {status.label}
+              </span>
+            </label>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
+              <input
+                type="date"
+                value={lastDone}
+                max={todayISO}
+                onChange={e => setLastDone(e.target.value)}
+                style={{ ...inputStyle, flex: 1, borderLeftWidth: '4px', borderLeftColor: status.color }}
+              />
+              <button
+                type="button"
+                onClick={() => setLastDone(todayISO)}
+                style={{
+                  padding: '0 14px', borderRadius: 'var(--radius-md)',
+                  background: 'var(--navy, #1b3a5c)', color: '#fff', border: 'none',
+                  fontSize: '12px', fontWeight: 700, cursor: 'pointer',
+                  whiteSpace: 'nowrap', flexShrink: 0,
+                }}
+              >
+                {lang === 'es' ? 'Hoy' : 'Today'}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+              {lang === 'es' ? 'Frecuencia' : 'Frequency'}
+              <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, color: 'var(--text-muted)', marginLeft: '6px' }}>
+                · {freq} {lang === 'es' ? 'días' : 'days'}
+              </span>
+            </label>
+            <input
+              type="range" min="1" max="365" step="1"
+              value={freq}
+              onChange={e => setFreq(parseInt(e.target.value, 10) || 1)}
+              style={{ width: '100%', accentColor: 'var(--navy, #1b3a5c)' }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px', fontFamily: "'JetBrains Mono', monospace" }}>
+              <span>1d</span><span>90d</span><span>180d</span><span>365d</span>
+            </div>
+          </div>
+
+          <div>
+            <label style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+              {lang === 'es' ? 'Próxima Programada' : 'Next Due'}
+              {lastDone && (
+                <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, color: 'var(--text-muted)', marginLeft: '6px' }}>
+                  · {lang === 'es' ? 'auto-calculado' : 'auto-calculated'}
+                </span>
+              )}
+            </label>
+            <div style={{ ...inputStyle, background: 'var(--bg)', color: nextDue ? 'var(--text-primary)' : 'var(--text-muted)', fontFamily: "'JetBrains Mono', monospace" }}>
+              {nextDue || (lang === 'es' ? 'Marca "Última Completada" para ver' : 'Set "Last Completed" to see')}
+            </div>
+          </div>
+
+          <div>
+            <label style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+              {lang === 'es' ? 'Temporada' : 'Season'}
+            </label>
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               {(['year-round', 'spring', 'summer', 'fall', 'winter'] as LandscapingSeason[]).map(s => {
                 const cfg = SEASON_CONFIG[s];
@@ -1496,15 +1573,15 @@ function EditLandscapingTaskModal({ task, lang, onClose, onSave, onMarkDone, onD
                     onClick={() => setSeason(s)}
                     style={{
                       display: 'flex', alignItems: 'center', gap: '5px',
-                      padding: '7px 12px', border: 'none', borderRadius: '9999px',
+                      padding: '6px 11px', border: '1.5px solid var(--border)', borderRadius: '9999px',
                       fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                      fontFamily: "'Inter', sans-serif",
-                      background: isSelected ? '#006565' : '#f0eee9',
-                      color: isSelected ? '#fff' : '#454652',
+                      background: isSelected ? 'var(--navy, #1b3a5c)' : 'var(--bg)',
+                      color: isSelected ? '#fff' : 'var(--text-muted)',
+                      borderColor: isSelected ? 'var(--navy, #1b3a5c)' : 'var(--border)',
                       transition: 'all 150ms',
                     }}
                   >
-                    {React.createElement(cfg.icon, { size: 13 })}
+                    {React.createElement(cfg.icon, { size: 12 })}
                     {lang === 'es' ? cfg.labelEs : cfg.label}
                   </button>
                 );
@@ -1513,99 +1590,48 @@ function EditLandscapingTaskModal({ task, lang, onClose, onSave, onMarkDone, onD
           </div>
 
           <div>
-            <label style={labelStyle}>{lang === 'es' ? 'Frecuencia (días)' : 'Frequency (days)'}</label>
-            <input
-              type="number" min="1"
-              value={freq} onChange={e => setFreq(e.target.value)}
-              style={{ ...inputStyle, fontFamily: "'JetBrains Mono', monospace" }}
-            />
-          </div>
-
-          <div>
-            <label style={labelStyle}>{lang === 'es' ? 'Última completada' : 'Last Completed'}</label>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
-              <input
-                type="date"
-                value={lastDone}
-                max={new Date().toISOString().split('T')[0]}
-                onChange={e => setLastDone(e.target.value)}
-                style={{ ...inputStyle, flex: 1 }}
-              />
-              <button
-                type="button"
-                onClick={() => setLastDone(new Date().toISOString().split('T')[0])}
-                style={{
-                  padding: '0 14px', borderRadius: '10px',
-                  background: '#364262', color: '#fff', border: 'none',
-                  fontSize: '12px', fontWeight: 700, cursor: 'pointer',
-                  whiteSpace: 'nowrap', flexShrink: 0, fontFamily: "'Inter', sans-serif",
-                }}
-              >
-                {lang === 'es' ? 'Hoy' : 'Today'}
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <label style={labelStyle}>{lang === 'es' ? 'Notas' : 'Notes'}</label>
+            <label style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+              {lang === 'es' ? 'Notas' : 'Notes'}
+            </label>
             <textarea
               value={notes} onChange={e => setNotes(e.target.value)}
-              placeholder={lang === 'es' ? 'Proveedor, detalles...' : 'Vendor, details...'}
+              placeholder={lang === 'es' ? 'Proveedor, contacto, detalles...' : 'Vendor, contact, details...'}
               rows={2}
-              style={{ ...inputStyle, resize: 'vertical', fontFamily: "'Inter', sans-serif" }}
+              style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }}
             />
           </div>
         </div>
 
         <div style={{ padding: '0 20px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <button
-            onClick={() => {
-              const f = parseInt(freq, 10);
-              onSave({
-                name: name.trim(),
-                season,
-                frequencyDays: !isNaN(f) && f > 0 ? f : task.frequencyDays,
-                notes: notes.trim() || undefined,
-                ...(lastDone ? { lastCompletedAt: new Date(lastDone + 'T12:00:00') } : { lastCompletedAt: null }),
-              });
-            }}
+            onClick={() => onSave({
+              name: name.trim(),
+              season,
+              frequencyDays: freq > 0 ? freq : task.frequencyDays,
+              notes: notes.trim() || undefined,
+              ...(lastDone ? { lastCompletedAt: new Date(lastDone + 'T12:00:00') } : { lastCompletedAt: null }),
+            })}
             disabled={!hasChanges || !name.trim()}
             style={{
-              width: '100%', padding: '12px', borderRadius: '10px',
-              background: '#364262', color: '#fff', border: 'none',
+              width: '100%', padding: '12px', borderRadius: 'var(--radius-md)',
+              background: 'var(--navy, #1b3a5c)', color: '#fff', border: 'none',
               fontSize: '14px', fontWeight: 700, cursor: hasChanges && name.trim() ? 'pointer' : 'not-allowed',
               opacity: hasChanges && name.trim() ? 1 : 0.5,
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-              fontFamily: "'Inter', sans-serif",
             }}
           >
             <Check size={16} />
-            {lang === 'es' ? 'Guardar' : 'Save Changes'}
-          </button>
-
-          <button
-            onClick={onMarkDone}
-            style={{
-              width: '100%', padding: '10px', borderRadius: '10px',
-              background: 'rgba(0,101,101,0.08)', color: '#006565', border: '1px solid rgba(0,101,101,0.2)',
-              fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-              fontFamily: "'Inter', sans-serif",
-            }}
-          >
-            <CheckCircle2 size={14} />
-            {lang === 'es' ? 'Marcar completada hoy' : 'Mark done today'}
+            {lang === 'es' ? 'Guardar Cambios' : 'Save Changes'}
           </button>
 
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
               onClick={onDelete}
               style={{
-                flex: 1, padding: '10px', borderRadius: '10px',
-                background: '#ffdad6', color: '#93000a', border: '1px solid rgba(147,0,10,0.15)',
+                flex: 1, padding: '10px', borderRadius: 'var(--radius-md)',
+                background: 'var(--red-dim)', color: 'var(--red)', border: '1px solid var(--red-border, rgba(220,38,38,0.2))',
                 fontSize: '12px', fontWeight: 600, cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
-                fontFamily: "'Inter', sans-serif",
               }}
             >
               <Trash2 size={13} />
@@ -1614,10 +1640,9 @@ function EditLandscapingTaskModal({ task, lang, onClose, onSave, onMarkDone, onD
             <button
               onClick={onClose}
               style={{
-                flex: 1, padding: '10px', borderRadius: '10px',
-                background: '#f5f3ee', color: '#757684', border: '1px solid #c5c5d4',
+                flex: 1, padding: '10px', borderRadius: 'var(--radius-md)',
+                background: 'var(--bg)', color: 'var(--text-muted)', border: '1px solid var(--border)',
                 fontSize: '12px', fontWeight: 500, cursor: 'pointer',
-                fontFamily: "'Inter', sans-serif",
               }}
             >
               {lang === 'es' ? 'Cancelar' : 'Cancel'}
