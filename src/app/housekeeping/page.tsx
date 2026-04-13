@@ -3924,9 +3924,9 @@ export default function HousekeepingPage() {
       {/* ── Sub-tab bar (Stitch pill style) ── */}
       <div style={{ padding: '16px 24px 0', position: 'sticky', top: 64, zIndex: 10, background: 'var(--bg)' }}>
         <nav style={{
-          display: 'flex', gap: '4px', padding: '4px',
-          background: 'rgba(148,163,184,0.12)', borderRadius: '8px',
-          width: 'fit-content',
+          display: 'flex', alignItems: 'center', gap: '32px',
+          borderBottom: '1px solid rgba(197,197,212,0.25)',
+          paddingBottom: '0',
         }}>
           {TABS.map(tab => {
             const isActive = activeTab === tab.key;
@@ -3938,18 +3938,21 @@ export default function HousekeepingPage() {
                 className="hk-tab-btn"
                 onClick={() => setActiveTab(tab.key)}
                 style={{
-                  padding: '6px 16px',
-                  border: isActive ? '1px solid rgba(226,232,240,0.5)' : '1px solid transparent',
-                  borderRadius: '6px',
-                  background: isActive ? '#ffffff' : 'transparent',
-                  color: isActive ? '#0f172a' : '#64748b',
-                  fontWeight: isActive ? 700 : 600,
-                  fontSize: '12px',
+                  padding: '8px 0 12px',
+                  border: 'none',
+                  borderRadius: 0,
+                  background: 'none',
+                  color: isActive ? '#1b1c19' : '#757684',
+                  fontWeight: isActive ? 600 : 400,
+                  fontSize: '15px',
                   cursor: 'pointer',
                   whiteSpace: 'nowrap',
-                  fontFamily: 'var(--font-sans)',
-                  transition: 'all 120ms',
-                  boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                  fontFamily: "'Inter', sans-serif",
+                  transition: 'all 150ms',
+                  boxShadow: 'none',
+                  borderBottom: isActive ? '2px solid #1b1c19' : '2px solid transparent',
+                  letterSpacing: '-0.01em',
+                  marginBottom: '-1px',
                 }}
               >
                 {tabLabel ?? (tabLabelKey ? t(tabLabelKey, lang) : '')}
