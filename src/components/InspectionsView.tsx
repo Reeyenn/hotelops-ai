@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProperty } from '@/contexts/PropertyContext';
 import { useLang } from '@/contexts/LanguageContext';
@@ -651,6 +652,12 @@ function EditInspectionModal({ inspection, onClose, onSave, onDelete }: {
   const [lastInspected, setLastInspected] = useState(inspection.lastInspectedDate || '');
   const [dueMonthTouched, setDueMonthTouched] = useState(false);
 
+  // SSR-safe portal mount guard. The modal is portaled to <body> so its
+  // position:fixed is relative to the viewport, not any ancestor with a
+  // transform/filter that would create a new containing block.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   // Auto-compute Due Month from Last Inspected + Frequency.
   // Runs whenever lastInspected or freq changes, unless user manually edits Due Month.
   useEffect(() => {
@@ -678,7 +685,9 @@ function EditInspectionModal({ inspection, onClose, onSave, onDelete }: {
     fontSize: '14px', color: 'var(--text-primary)',
   };
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div style={{
       position: 'fixed', inset: 0, zIndex: 100,
       background: 'rgba(0,0,0,0.5)',
@@ -835,7 +844,8 @@ function EditInspectionModal({ inspection, onClose, onSave, onDelete }: {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -854,6 +864,10 @@ function AddInspectionModal({ isOpen, onClose, uid, pid, onAdded }: {
   const [lastInspected, setLastInspected] = useState('');
   const [dueMonthTouched, setDueMonthTouched] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // SSR-safe portal mount guard (same rationale as EditInspectionModal).
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   // When "last inspected" is provided, auto-compute the next due month
   // from lastInspected + frequency (unless user has manually edited dueMonth).
@@ -895,9 +909,9 @@ function AddInspectionModal({ isOpen, onClose, uid, pid, onAdded }: {
   };
   const todayISO = new Date().toISOString().split('T')[0];
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
+  return createPortal(
     <div
       style={{
         position: 'fixed', inset: 0, zIndex: 100,
@@ -1012,6 +1026,7 @@ function AddInspectionModal({ isOpen, onClose, uid, pid, onAdded }: {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
