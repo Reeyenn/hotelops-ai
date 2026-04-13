@@ -744,104 +744,63 @@ export default function MaintenancePage() {
 
               return (
                 <div style={{
+                  background: '#f5f3ee', padding: '24px 32px', borderRadius: '16px',
                   position: 'relative', overflow: 'hidden',
-                  borderRadius: '24px', background: '#f5f3ee',
-                  padding: '32px', marginBottom: '8px',
+                  border: '1px solid rgba(78,90,122,0.06)',
                 }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px' }}>
-                    {/* Left — season info + hero text */}
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                        <span style={{
-                          background: '#d3e4f8', color: '#394858',
-                          padding: '4px 14px', borderRadius: '9999px',
-                          fontSize: '12px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase',
-                        }}>
-                          {lang === 'es' ? 'Temporada' : 'Season'}: {seasonLabel.toUpperCase()} {new Date().getFullYear()}
-                        </span>
-                        <span style={{
-                          fontFamily: "'JetBrains Mono', monospace", fontSize: '12px',
-                          color: '#454652', letterSpacing: '0.1em', textTransform: 'uppercase',
-                        }}>
-                          {cyclePhase}
+                  {/* Atmospheric blur */}
+                  <div style={{
+                    position: 'absolute', top: '-80px', right: '-80px', width: '240px', height: '240px',
+                    background: 'rgba(0,101,101,0.04)', borderRadius: '50%', filter: 'blur(60px)',
+                  }} />
+                  <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '8px' }}>
+                        <span style={{ fontSize: '14px' }}>⚡</span>
+                        <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#006565' }}>
+                          {lang === 'es' ? 'Salud del Paisaje' : 'Landscape Health'}
                         </span>
                       </div>
-
-                      <h1 style={{
-                        fontFamily: "'Inter', sans-serif", fontSize: '42px', fontWeight: 600,
-                        color: '#364262', letterSpacing: '-0.02em', lineHeight: 1.1,
-                        marginBottom: '16px',
-                      }}>
-                        {lang === 'es' ? 'Equilibrio del' : 'Grounds'}<br/>
-                        {lang === 'es' ? 'Jardín' : 'Operations'}
-                      </h1>
-
-                      <p style={{
-                        fontFamily: "'Inter', sans-serif", fontSize: '16px', lineHeight: 1.6,
-                        color: '#454652', maxWidth: '480px', marginBottom: '24px',
-                      }}>
+                      <h2 style={{ fontFamily: "'Inter', sans-serif", fontSize: '26px', fontWeight: 600, color: '#1b1c19', lineHeight: 1.2, margin: 0 }}>
+                        {lang === 'es' ? 'Temporada' : 'Season'}:{' '}
+                        <span style={{ fontFamily: "'JetBrains Mono', monospace", color: '#364262' }}>{seasonLabel}</span> · {healthPct}% {lang === 'es' ? 'Sano' : 'Healthy'}
+                      </h2>
+                      <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: '#454652', margin: '6px 0 0', lineHeight: 1.5 }}>
                         {heroText}
                       </p>
-
-                      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                        <button
-                          onClick={() => setShowLsModal(true)}
-                          style={{
-                            background: '#364262', color: '#fff',
-                            padding: '14px 28px', borderRadius: '9999px', border: 'none',
-                            fontFamily: "'Inter', sans-serif", fontSize: '14px', fontWeight: 600,
-                            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
-                            transition: 'transform 150ms',
-                          }}
-                        >
-                          <Plus size={16} />
-                          {t('addLandscapingTask', lang)}
-                        </button>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: '#454652', marginBottom: '6px' }}>
+                        {cyclePhase}
+                      </p>
+                      <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                        {overdueTasks.length > 0 && (
+                          <div style={{
+                            padding: '5px 12px', background: '#fff', borderRadius: '9999px',
+                            border: '1px solid rgba(197,197,212,0.2)',
+                            display: 'flex', alignItems: 'center', gap: '6px',
+                          }}>
+                            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ba1a1a' }} />
+                            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '12px', color: '#1b1c19' }}>
+                              {overdueTasks.length} {lang === 'es' ? 'Vencidas' : 'Overdue'}
+                            </span>
+                          </div>
+                        )}
+                        {dueSoonTasks.length > 0 && (
+                          <div style={{
+                            padding: '5px 12px', background: '#fff', borderRadius: '9999px',
+                            border: '1px solid rgba(197,197,212,0.2)',
+                            display: 'flex', alignItems: 'center', gap: '6px',
+                          }}>
+                            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#d3e4f8' }} />
+                            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '12px', color: '#1b1c19' }}>
+                              {dueSoonTasks.length} {lang === 'es' ? 'Esta semana' : 'This week'}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
-
-                  {/* AI Landscape Health Summary — overlaid card */}
-                  <div style={{
-                    position: 'absolute', right: '32px', top: '32px',
-                    width: '280px', background: 'rgba(255,255,255,0.7)',
-                    backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
-                    borderRadius: '24px', padding: '24px',
-                    border: '1px solid rgba(197,197,212,0.2)',
-                    boxShadow: '0 0 40px rgba(0,75,75,0.1)',
-                    display: 'none',
-                  }} className="ls-ai-card">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#006565', marginBottom: '20px' }}>
-                      <span style={{ fontSize: '18px' }}>⚡</span>
-                      <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-                        {lang === 'es' ? 'Salud del Paisaje' : 'AI Landscape Health'}
-                      </span>
-                    </div>
-                    <div style={{ borderBottom: '1px solid rgba(197,197,212,0.2)', paddingBottom: '16px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                      <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '14px', color: '#454652' }}>
-                        {lang === 'es' ? 'Salud General' : 'Overall Health'}
-                      </span>
-                      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '24px', fontWeight: 500, color: '#364262' }}>
-                        {healthPct}%
-                      </span>
-                    </div>
-                    <div style={{ borderBottom: '1px solid rgba(197,197,212,0.2)', paddingBottom: '16px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                      <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '14px', color: '#454652' }}>
-                        {lang === 'es' ? 'Tasa de Completado' : 'Completion Rate'}
-                      </span>
-                      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '24px', fontWeight: 500, color: '#364262' }}>
-                        {completionRate}%
-                      </span>
-                    </div>
-                    {overdueTasks.length > 0 && (
-                      <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '14px', lineHeight: 1.5, color: '#1b1c19', fontStyle: 'italic' }}>
-                        &ldquo;{overdueTasks[0].name} {lang === 'es' ? 'necesita atención urgente para mantener los estándares de la propiedad.' : 'needs urgent attention to maintain property standards.'}&rdquo;
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Ambient glow */}
-                  <div style={{ position: 'absolute', right: '-40px', bottom: '-40px', width: '160px', height: '160px', background: 'rgba(0,101,101,0.05)', filter: 'blur(60px)', borderRadius: '50%', pointerEvents: 'none' }} />
                 </div>
               );
             })()}
