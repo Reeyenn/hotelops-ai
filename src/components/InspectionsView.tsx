@@ -247,11 +247,11 @@ export function InspectionsView() {
   })();
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
       {/* ── Asset Health Hero Card ── */}
       <div style={{
-        background: '#f5f3ee', padding: '40px 48px', borderRadius: '20px',
+        background: '#f5f3ee', padding: '18px 24px', borderRadius: '14px',
         position: 'relative', overflow: 'hidden',
         border: '1px solid rgba(78,90,122,0.06)',
       }}>
@@ -260,44 +260,44 @@ export function InspectionsView() {
           position: 'absolute', top: '-80px', right: '-80px', width: '240px', height: '240px',
           background: 'rgba(0,101,101,0.04)', borderRadius: '50%', filter: 'blur(60px)',
         }} />
-        <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '24px' }}>
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-              <span style={{ fontSize: '18px' }}>⚡</span>
-              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#006565' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+              <span style={{ fontSize: '13px' }}>⚡</span>
+              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#006565' }}>
                 {lang === 'es' ? 'Inteligencia de Mantenimiento' : 'Maintenance Intelligence'}
               </span>
             </div>
-            <h2 style={{ fontFamily: "'Inter', sans-serif", fontSize: '36px', fontWeight: 600, color: '#1b1c19', lineHeight: 1.15, margin: 0 }}>
-              {lang === 'es' ? 'Salud de Activos' : 'Asset Health'}<br />
+            <h2 style={{ fontFamily: "'Inter', sans-serif", fontSize: '22px', fontWeight: 600, color: '#1b1c19', lineHeight: 1.2, margin: 0 }}>
+              {lang === 'es' ? 'Salud de Activos' : 'Asset Health'}:{' '}
               <span style={{ fontFamily: "'JetBrains Mono', monospace", color: '#364262' }}>{healthPct}%</span> {lang === 'es' ? 'Óptimo' : 'Optimal'}
             </h2>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '15px', color: '#454652', marginBottom: '8px' }}>
+            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: '#454652', marginBottom: '4px' }}>
               {lang === 'es' ? 'Estado del Sistema' : 'System Status'}: {overdueCount > 0 ? (lang === 'es' ? 'Atención' : 'Attention') : (lang === 'es' ? 'Activo' : 'Active')}
             </p>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
               {overdueCount > 0 && (
                 <div style={{
-                  padding: '6px 14px', background: '#fff', borderRadius: '9999px',
+                  padding: '4px 10px', background: '#fff', borderRadius: '9999px',
                   border: '1px solid rgba(197,197,212,0.2)',
-                  display: 'flex', alignItems: 'center', gap: '8px',
+                  display: 'flex', alignItems: 'center', gap: '6px',
                 }}>
-                  <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#ba1a1a' }} />
-                  <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '13px', color: '#1b1c19' }}>
+                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ba1a1a' }} />
+                  <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', color: '#1b1c19' }}>
                     {overdueCount} {lang === 'es' ? 'Crítico' : 'Critical'}
                   </span>
                 </div>
               )}
               {(dueCount + goodCount + notsetCount) > 0 && (
                 <div style={{
-                  padding: '6px 14px', background: '#fff', borderRadius: '9999px',
+                  padding: '4px 10px', background: '#fff', borderRadius: '9999px',
                   border: '1px solid rgba(197,197,212,0.2)',
-                  display: 'flex', alignItems: 'center', gap: '8px',
+                  display: 'flex', alignItems: 'center', gap: '6px',
                 }}>
-                  <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#d3e4f8' }} />
-                  <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '13px', color: '#1b1c19' }}>
+                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#d3e4f8' }} />
+                  <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', color: '#1b1c19' }}>
                     {dueCount + goodCount + notsetCount} {lang === 'es' ? 'Próximas' : 'Upcoming'}
                   </span>
                 </div>
@@ -308,19 +308,19 @@ export function InspectionsView() {
       </div>
 
       {/* ── Section Title + Sort ── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-        <h2 style={{ fontFamily: "'Inter', sans-serif", fontSize: '24px', fontWeight: 500, letterSpacing: '-0.02em', color: '#1b1c19', margin: 0 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '2px' }}>
+        <h2 style={{ fontFamily: "'Inter', sans-serif", fontSize: '17px', fontWeight: 600, letterSpacing: '-0.01em', color: '#1b1c19', margin: 0 }}>
           {lang === 'es' ? 'Mantenimiento Preventivo' : 'Preventive Maintenance'}
         </h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#454652' }}>
-          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', fontWeight: 500 }}>
+          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', fontWeight: 500 }}>
             {lang === 'es' ? 'Ordenar por: Prioridad' : 'Sort by: Priority'}
           </span>
         </div>
       </div>
 
       {/* ── Inspection Cards Feed ── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {sorted.length === 0 ? (
           <div style={{
             background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(12px)',
@@ -343,45 +343,45 @@ export function InspectionsView() {
                 onClick={() => setEditModal(item)}
                 style={{
                   background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(24px)',
-                  borderRadius: '16px', padding: '28px 32px',
+                  borderRadius: '12px', padding: '12px 16px',
                   border: '1px solid rgba(197,197,212,0.2)',
                   borderLeft: isBorderLeft ? `4px solid ${getIconColor(status)}` : undefined,
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  gap: '24px', cursor: 'pointer',
-                  transition: 'transform 200ms cubic-bezier(0.2,0,0,1)',
+                  gap: '14px', cursor: 'pointer',
+                  transition: 'transform 150ms cubic-bezier(0.2,0,0,1)',
                 }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; }}
               >
                 {/* Left: Icon + Info */}
-                <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: 1, minWidth: 0 }}>
                   <div style={{
-                    width: '56px', height: '56px', borderRadius: '16px',
+                    width: '38px', height: '38px', borderRadius: '10px',
                     background: getIconBg(status),
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     flexShrink: 0,
                   }}>
                     <span className="material-symbols-outlined" style={{
-                      fontSize: '26px', color: getIconColor(status),
+                      fontSize: '20px', color: getIconColor(status),
                       fontVariationSettings: status === 'overdue' ? "'FILL' 1" : "'FILL' 0",
                     }}>
                       {getInspectionIcon(item.name)}
                     </span>
                   </div>
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '3px' }}>
-                      <h3 style={{ fontFamily: "'Inter', sans-serif", fontSize: '18px', fontWeight: 600, color: '#1b1c19', margin: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '1px' }}>
+                      <h3 style={{ fontFamily: "'Inter', sans-serif", fontSize: '14px', fontWeight: 600, color: '#1b1c19', margin: 0 }}>
                         {item.name}
                       </h3>
                       <span style={{
-                        padding: '3px 10px', borderRadius: '9999px',
-                        fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
+                        padding: '2px 8px', borderRadius: '9999px',
+                        fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
                         background: pill.bg, color: pill.color,
                       }}>
                         {lang === 'es' ? pill.labelEs : pill.label}
                       </span>
                     </div>
-                    <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: '#454652', margin: 0 }}>
+                    <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', color: '#454652', margin: 0 }}>
                       {lang === 'es' ? 'Frecuencia' : 'Frequency'}: <span style={{ fontFamily: "'JetBrains Mono', monospace" }}>{getFreqLabel(item.frequencyMonths)}</span>
                       {item.lastInspectedDate && (
                         <span> · {lang === 'es' ? 'Última' : 'Last'}: <span style={{ fontFamily: "'JetBrains Mono', monospace" }}>{item.lastInspectedDate}</span></span>
@@ -391,25 +391,25 @@ export function InspectionsView() {
                 </div>
 
                 {/* Right: Due date + action */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
                   <div style={{ textAlign: 'right' }}>
-                    <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#757684', marginBottom: '3px' }}>
+                    <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#757684', marginBottom: '1px' }}>
                       {item.dueMonth ? (lang === 'es' ? 'Próxima' : 'Next Due') : (lang === 'es' ? 'Frecuencia' : 'Frequency')}
                     </p>
                     <p style={{
-                      fontFamily: "'JetBrains Mono', monospace", fontSize: '16px',
+                      fontFamily: "'JetBrains Mono', monospace", fontSize: '13px',
                       color: status === 'overdue' ? '#ba1a1a' : '#1b1c19', margin: 0,
                     }}>
                       {item.dueMonth ? item.dueMonth.replace('-', '.') : getFreqLabel(item.frequencyMonths)}
                     </p>
                   </div>
                   <div style={{
-                    width: '44px', height: '44px', borderRadius: '50%',
+                    width: '32px', height: '32px', borderRadius: '50%',
                     background: getActionBg(status), color: getActionColor(status),
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     transition: 'box-shadow 200ms',
                   }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
                       {getActionIcon(status)}
                     </span>
                   </div>
