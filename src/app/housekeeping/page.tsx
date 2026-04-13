@@ -651,28 +651,6 @@ function ScheduleSection() {
               </div>
             </div>
 
-            {/* Send Confirmations button — centered below stats */}
-            {!sent && selectedCrew.length > 0 && (
-              <button onClick={(e) => { e.stopPropagation(); handleSend(); }} disabled={sending} style={{
-                padding: '20px 32px', background: '#006565', color: '#82e2e1',
-                borderRadius: '9999px', fontWeight: 600, fontSize: '15px',
-                border: 'none', cursor: sending ? 'not-allowed' : 'pointer',
-                display: 'flex', alignItems: 'center', gap: '12px',
-                boxShadow: '0 10px 30px -10px rgba(0,101,101,0.3)',
-                opacity: sending ? 0.7 : 1,
-                fontFamily: 'var(--font-sans)',
-                position: 'relative', overflow: 'hidden',
-              }}>
-                <Zap size={18} />
-                {sending ? (lang === 'es' ? 'Enviando…' : 'Sending…') : (lang === 'es' ? 'Enviar Confirmaciones' : 'Send Confirmations')}
-              </button>
-            )}
-            {sent && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '16px 28px', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '9999px' }}>
-                <CheckCircle2 size={18} color="#10b981" />
-                <span style={{ fontSize: '14px', fontWeight: 600, color: '#059669' }}>{t('confirmationsSent', lang)}</span>
-              </div>
-            )}
           </div>
         )}
       </section>
@@ -916,6 +894,33 @@ function ScheduleSection() {
               {lang === 'es' ? 'Prioridad' : 'Priority'}
             </button>
           </div>
+
+          {/* Send Confirmations — centered below crew */}
+          {!sent && selectedCrew.length > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '8px' }}>
+              <button onClick={(e) => { e.stopPropagation(); handleSend(); }} disabled={sending} style={{
+                padding: '20px 32px', background: '#006565', color: '#82e2e1',
+                borderRadius: '9999px', fontWeight: 600, fontSize: '15px',
+                border: 'none', cursor: sending ? 'not-allowed' : 'pointer',
+                display: 'flex', alignItems: 'center', gap: '12px',
+                boxShadow: '0 10px 30px -10px rgba(0,101,101,0.3)',
+                opacity: sending ? 0.7 : 1,
+                fontFamily: 'var(--font-sans)',
+                position: 'relative', overflow: 'hidden',
+              }}>
+                <Zap size={18} />
+                {sending ? (lang === 'es' ? 'Enviando…' : 'Sending…') : (lang === 'es' ? 'Enviar Confirmaciones' : 'Send Confirmations')}
+              </button>
+            </div>
+          )}
+          {sent && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '16px 28px', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '9999px' }}>
+                <CheckCircle2 size={18} color="#10b981" />
+                <span style={{ fontSize: '14px', fontWeight: 600, color: '#059669' }}>{t('confirmationsSent', lang)}</span>
+              </div>
+            </div>
+          )}
         </section>
       )}
 
