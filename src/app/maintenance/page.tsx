@@ -1014,23 +1014,6 @@ export default function MaintenancePage() {
                         )}
                       </div>
 
-                      {/* Action buttons */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-                        {inSeason && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleMarkLsDone(task); }}
-                            title={lang === 'es' ? 'Marcar completada' : 'Mark done'}
-                            style={{
-                              width: '38px', height: '38px', borderRadius: '50%', border: 'none',
-                              background: '#006565', color: '#fff', cursor: 'pointer',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              transition: 'all 150ms',
-                            }}
-                          >
-                            <CheckCircle2 size={16} />
-                          </button>
-                        )}
-                      </div>
                     </div>
                   </div>
                 );
