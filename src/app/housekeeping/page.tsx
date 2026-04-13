@@ -594,7 +594,7 @@ function ScheduleSection() {
   const staffDeficit = recommendedStaff - selectedCrew.length;
 
   return (
-    <div style={{ padding: '24px', paddingBottom: '120px', background: 'var(--bg)', minHeight: 'calc(100vh - 180px)', display: 'flex', flexDirection: 'column', gap: '40px' }}>
+    <div style={{ padding: '16px 24px 120px', background: 'var(--bg)', minHeight: 'calc(100vh - 180px)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
       {/* ── Date picker ── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
@@ -612,7 +612,7 @@ function ScheduleSection() {
       {/* ── Prediction Hero Card (glass) ── */}
       <section className="glass-hero" style={{
         border: '1px solid rgba(197,197,212,0.2)', borderRadius: '16px',
-        padding: '40px', position: 'relative', overflow: 'hidden',
+        padding: '24px 32px', position: 'relative', overflow: 'hidden',
         cursor: 'pointer', margin: '0 auto', width: 'fit-content', minWidth: '320px',
       }} onClick={() => setShowPredictionSettings(true)}>
         {/* Background image — same as dashboard hero */}
@@ -636,20 +636,20 @@ function ScheduleSection() {
             <p style={{ fontSize: '12px', color: '#94a3b8', margin: '4px 0 0' }}>{t('pmsSync15Min', lang)}</p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '32px', position: 'relative', zIndex: 10 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, auto)', gap: '48px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', position: 'relative', zIndex: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, auto)', gap: '40px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <p style={{ fontSize: '14px', color: '#454652', fontWeight: 500, margin: 0 }}>{lang === 'es' ? 'Salidas Activas' : 'Active Checkouts'}</p>
-                <p style={{ fontFamily: 'var(--font-mono)', fontSize: '48px', fontWeight: 500, color: '#364262', lineHeight: 1, margin: 0 }}>{checkouts}</p>
+                <p style={{ fontFamily: 'var(--font-mono)', fontSize: '36px', fontWeight: 500, color: '#364262', lineHeight: 1, margin: 0 }}>{checkouts}</p>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <p style={{ fontSize: '14px', color: '#454652', fontWeight: 500, margin: 0 }}>{lang === 'es' ? 'Continuaciones' : 'Stayovers'}</p>
-                <p style={{ fontFamily: 'var(--font-mono)', fontSize: '48px', fontWeight: 500, color: '#364262', lineHeight: 1, margin: 0 }}>{stayovers}</p>
+                <p style={{ fontFamily: 'var(--font-mono)', fontSize: '36px', fontWeight: 500, color: '#364262', lineHeight: 1, margin: 0 }}>{stayovers}</p>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <p style={{ fontSize: '14px', color: '#454652', fontWeight: 500, margin: 0 }}>{lang === 'es' ? 'Personal Necesario' : 'Staff Needed'}</p>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                  <p style={{ fontFamily: 'var(--font-mono)', fontSize: '48px', fontWeight: 500, color: '#364262', lineHeight: 1, margin: 0 }}>{recommendedStaff}</p>
+                  <p style={{ fontFamily: 'var(--font-mono)', fontSize: '36px', fontWeight: 500, color: '#364262', lineHeight: 1, margin: 0 }}>{recommendedStaff}</p>
                   {staffDeficit > 0 && (
                     <span style={{ fontFamily: 'var(--font-mono)', fontSize: '14px', fontWeight: 600, color: '#ba1a1a' }}>+{staffDeficit} Deficit</span>
                   )}
@@ -663,9 +663,9 @@ function ScheduleSection() {
 
       {/* ── Unassigned Rooms Pool ── */}
       {!predictionLoading && totalRooms > 0 && (
-        <section style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <section style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#364262', margin: 0 }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#364262', margin: 0 }}>
               {lang === 'es' ? 'Habitaciones Sin Asignar' : 'Unassigned Rooms'}
             </h3>
             <span style={{ fontSize: '14px', fontFamily: 'var(--font-mono)', color: '#454652' }}>
@@ -720,8 +720,8 @@ function ScheduleSection() {
 
       {/* ── Active Crew ── */}
       {!predictionLoading && totalRooms > 0 && (
-        <section style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#364262', margin: 0 }}>
+        <section style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#364262', margin: 0 }}>
             {lang === 'es' ? 'Equipo Activo' : 'Active Crew'}
           </h3>
 
