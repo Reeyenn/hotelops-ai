@@ -590,300 +590,363 @@ function ScheduleSection() {
     dragRef.current = { roomId: null, roomNumber: '', roomType: '', startX: 0, startY: 0, active: false };
   }, []);
 
+  // Compute deficit
+  const staffDeficit = recommendedStaff - selectedCrew.length;
+
   return (
-    <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div style={{ padding: '24px', paddingBottom: '120px', background: '#f4f7fa', minHeight: 'calc(100vh - 180px)', display: 'flex', flexDirection: 'column', gap: '40px' }}>
 
       {/* ── Date picker ── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
-        <button onClick={() => { setShiftDate(d => addDays(d, -1)); setSent(false); setCrewOverride([]); }} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '6px 10px', cursor: 'pointer', color: 'var(--text-secondary)' }} aria-label={lang === 'es' ? 'Día anterior' : 'Previous day'}>
-          <ChevronLeft size={16} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+        <button onClick={() => { setShiftDate(d => addDays(d, -1)); setSent(false); setCrewOverride([]); }} style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(24px)', border: '1px solid rgba(197,197,212,0.2)', borderRadius: '12px', padding: '8px 12px', cursor: 'pointer', color: '#454652' }} aria-label={lang === 'es' ? 'Día anterior' : 'Previous day'}>
+          <ChevronLeft size={18} />
         </button>
-        <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+        <span style={{ fontSize: '16px', fontWeight: 600, color: '#364262', letterSpacing: '-0.01em' }}>
           {formatDisplayDate(shiftDate, lang)}
         </span>
-        <button onClick={() => { setShiftDate(d => addDays(d, 1)); setSent(false); setCrewOverride([]); }} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '6px 10px', cursor: 'pointer', color: 'var(--text-secondary)' }} aria-label={lang === 'es' ? 'Día siguiente' : 'Next day'}>
-          <ChevronRight size={16} />
+        <button onClick={() => { setShiftDate(d => addDays(d, 1)); setSent(false); setCrewOverride([]); }} style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(24px)', border: '1px solid rgba(197,197,212,0.2)', borderRadius: '12px', padding: '8px 12px', cursor: 'pointer', color: '#454652' }} aria-label={lang === 'es' ? 'Día siguiente' : 'Next day'}>
+          <ChevronRight size={18} />
         </button>
       </div>
 
-      {/* ── STEP 1: Prediction ── */}
-      <div className="card animate-in" onClick={() => setShowPredictionSettings(true)} style={{
-        padding: '24px 20px 20px', textAlign: 'center',
-        background: 'linear-gradient(135deg, var(--navy) 0%, var(--navy-light, #2563EB) 100%)',
-        border: 'none', borderRadius: 'var(--radius-xl)',
-        boxShadow: '0 4px 24px rgba(27, 58, 92, 0.25)', cursor: 'pointer',
-      }}>
+      {/* ── Prediction Hero Card (glass) ── */}
+      <section style={{
+        background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(24px)',
+        border: '1px solid rgba(197,197,212,0.2)', borderRadius: '16px',
+        padding: '40px', position: 'relative', overflow: 'hidden',
+        cursor: 'pointer',
+      }} onClick={() => setShowPredictionSettings(true)}>
+        {/* Background glow */}
+        <div style={{ position: 'absolute', top: '-96px', right: '-96px', width: '256px', height: '256px', background: '#006565', opacity: 0.05, filter: 'blur(100px)', borderRadius: '50%' }} />
+
         {predictionLoading ? (
-          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', margin: 0 }}>{t('roomDataLoading', lang)}</p>
+          <div style={{ textAlign: 'center' }}>
+            <div className="spinner" style={{ width: '28px', height: '28px', margin: '0 auto 12px' }} />
+            <p style={{ fontSize: '14px', color: '#454652', margin: 0 }}>{t('roomDataLoading', lang)}</p>
+          </div>
         ) : totalRooms === 0 ? (
-          <div>
-            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', margin: 0 }}>{t('noRoomDataYet', lang)}</p>
-            <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', margin: '4px 0 0' }}>{t('pmsSync15Min', lang)}</p>
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontSize: '14px', color: '#454652', margin: 0 }}>{t('noRoomDataYet', lang)}</p>
+            <p style={{ fontSize: '12px', color: '#94a3b8', margin: '4px 0 0' }}>{t('pmsSync15Min', lang)}</p>
           </div>
         ) : (
-          <>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '14px' }}>
-              <div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '28px', fontWeight: 800, color: '#fff' }}>{checkouts}</div>
-                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>{lang === 'es' ? 'Salidas' : 'Checkouts'}</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', position: 'relative', zIndex: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '24px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, auto)', gap: '48px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <p style={{ fontSize: '14px', color: '#454652', fontWeight: 500, margin: 0 }}>{lang === 'es' ? 'Salidas Activas' : 'Active Checkouts'}</p>
+                  <p style={{ fontFamily: 'var(--font-mono)', fontSize: '48px', fontWeight: 500, color: '#364262', lineHeight: 1, margin: 0 }}>{checkouts}</p>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <p style={{ fontSize: '14px', color: '#454652', fontWeight: 500, margin: 0 }}>{lang === 'es' ? 'Continuaciones' : 'Stayovers'}</p>
+                  <p style={{ fontFamily: 'var(--font-mono)', fontSize: '48px', fontWeight: 500, color: '#364262', lineHeight: 1, margin: 0 }}>{stayovers}</p>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <p style={{ fontSize: '14px', color: '#454652', fontWeight: 500, margin: 0 }}>{lang === 'es' ? 'Personal Necesario' : 'Staff Needed'}</p>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                    <p style={{ fontFamily: 'var(--font-mono)', fontSize: '48px', fontWeight: 500, color: '#364262', lineHeight: 1, margin: 0 }}>{recommendedStaff}</p>
+                    {staffDeficit > 0 && (
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '14px', fontWeight: 600, color: '#ba1a1a' }}>+{staffDeficit} Deficit</span>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div style={{ width: '1px', background: 'rgba(255,255,255,0.15)' }} />
-              <div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '28px', fontWeight: 800, color: '#fff' }}>{stayovers}</div>
-                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>{lang === 'es' ? 'Continuación' : 'Stayovers'}</div>
-              </div>
-              <div style={{ width: '1px', background: 'rgba(255,255,255,0.15)' }} />
-              <div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '28px', fontWeight: 800, color: 'var(--amber-light, #FCD34D)' }}>{recommendedStaff}</div>
-                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>{lang === 'es' ? 'Personal' : 'Staff needed'}</div>
-              </div>
-            </div>
-          </>
-        )}
-      </div>
 
-      {/* ── Unassigned rooms box ── */}
+              {/* Auto-Optimize button — sends confirmations */}
+              {!sent && selectedCrew.length > 0 && (
+                <button onClick={(e) => { e.stopPropagation(); handleSend(); }} disabled={sending} style={{
+                  padding: '20px 32px', background: '#006565', color: '#82e2e1',
+                  borderRadius: '9999px', fontWeight: 600, fontSize: '15px',
+                  border: 'none', cursor: sending ? 'not-allowed' : 'pointer',
+                  display: 'flex', alignItems: 'center', gap: '12px',
+                  boxShadow: '0 10px 30px -10px rgba(0,101,101,0.3)',
+                  opacity: sending ? 0.7 : 1,
+                  fontFamily: 'var(--font-sans)',
+                  position: 'relative', overflow: 'hidden',
+                }}>
+                  <Zap size={18} />
+                  {sending ? (lang === 'es' ? 'Enviando…' : 'Sending…') : (lang === 'es' ? 'Enviar Confirmaciones' : 'Send Confirmations')}
+                </button>
+              )}
+              {sent && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '16px 28px', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '9999px' }}>
+                  <CheckCircle2 size={18} color="#10b981" />
+                  <span style={{ fontSize: '14px', fontWeight: 600, color: '#059669' }}>{t('confirmationsSent', lang)}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* ── Unassigned Rooms Pool ── */}
       {!predictionLoading && totalRooms > 0 && (
-        <div
-          ref={unassignedRef}
-          style={{
-            background: dragState?.dropTarget === '__unassigned__' ? 'rgba(37,99,235,0.06)' : 'var(--bg-card)',
-            border: dragState?.dropTarget === '__unassigned__' ? '2px dashed var(--navy)' : '1.5px dashed var(--border)',
-            borderRadius: '14px', padding: '12px 16px',
-            transition: 'all 0.15s',
-            minHeight: '48px',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: unassignedRooms.length > 0 ? '10px' : '0' }}>
-            <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)' }}>
-              {lang === 'es' ? 'Sin asignar' : 'Unassigned'}
-            </span>
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-              {unassignedRooms.length} {lang === 'es' ? 'habitaciones' : 'rooms'}
+        <section style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#364262', margin: 0 }}>
+              {lang === 'es' ? 'Habitaciones Sin Asignar' : 'Unassigned Rooms'}
+            </h3>
+            <span style={{ fontSize: '14px', fontFamily: 'var(--font-mono)', color: '#454652' }}>
+              {unassignedRooms.length} {lang === 'es' ? 'Restantes' : 'Rooms Remaining'}
             </span>
           </div>
-          {unassignedRooms.length > 0 && (
-            <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '8px', fontStyle: 'italic' }}>
-              {lang === 'es' ? 'Arrastra las habitaciones al personal para asignar' : 'Drag rooms to crew members to assign'}
-            </p>
-          )}
-          {unassignedRooms.length === 0 && totalRooms > 0 && (
-            <p style={{ fontSize: '12px', color: 'var(--green)', fontWeight: 600, marginTop: '4px' }}>
-              {lang === 'es' ? '✓ Todas asignadas' : '✓ All rooms assigned'}
-            </p>
-          )}
-          {unassignedRooms.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-              {unassignedRooms.map(room => (
-                <button
-                  key={room.id}
-                  onPointerDown={e => onPillPointerDown(e, room)}
-                  onPointerMove={onPillPointerMove}
-                  onPointerUp={e => { onPillPointerUp(e); }}
-                  onPointerCancel={onPillPointerCancel}
-                  style={{
-                    padding: '6px 10px 4px', lineHeight: 1,
-                    background: room.type === 'checkout' ? 'var(--red-dim)' : 'var(--blue-dim, #F0F9FF)',
-                    border: room.type === 'checkout' ? '1.5px solid var(--red-border, #FECACA)' : '1.5px solid var(--blue-border, #BAE6FD)',
-                    borderRadius: '6px', cursor: 'grab',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1px',
-                    opacity: dragState?.roomId === room.id ? 0.3 : 1,
-                    touchAction: 'none',
-                    userSelect: 'none',
-                    WebkitUserSelect: 'none',
-                    WebkitTouchCallout: 'none',
-                  }}
-                >
-                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '13px', color: 'var(--text-primary)' }}>{room.number}</span>
-                  <span style={{ fontSize: '8px', fontWeight: 600, color: room.type === 'checkout' ? 'var(--red)' : 'var(--navy)', letterSpacing: '0.02em' }}>
-                    {room.type === 'checkout' ? 'C' : 'S'}
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── STEP 2: Crew list ── */}
-      {!predictionLoading && totalRooms > 0 && (
-        <div style={{
-          background: 'var(--bg-card)', border: '1px solid var(--border)',
-          borderRadius: '14px', overflow: 'hidden',
-        }}>
-          {selectedCrew.map((member, idx) => {
-            const { rooms: memberRooms, mins } = getStaffWorkload(member.id);
-            const hrs = Math.floor(mins / 60);
-            const remMins = mins % 60;
-            const timeLabel = hrs > 0 ? `${hrs}h${remMins > 0 ? ` ${remMins}m` : ''}` : `${mins}m`;
-            const color = STAFF_COLORS[idx % STAFF_COLORS.length];
-            const isDropHover = dragState?.dropTarget === member.id && dragState?.roomId && assignments[dragState.roomId] !== member.id;
-            const isLast = idx === selectedCrew.length - 1;
-            const coCount = memberRooms.filter(r => r.type === 'checkout').length;
-            const soCount = memberRooms.length - coCount;
-
-            return (
-              <div
-                key={member.id}
-                ref={el => { crewCardRefs.current[member.id] = el; }}
-                data-crew-id={member.id}
-                className="sched-crew-row"
+          <div
+            ref={unassignedRef}
+            style={{
+              display: 'flex', flexWrap: 'wrap', gap: '12px',
+              minHeight: '48px',
+              padding: unassignedRooms.length === 0 ? '12px' : '0',
+              background: dragState?.dropTarget === '__unassigned__' ? 'rgba(54,66,98,0.04)' : 'transparent',
+              borderRadius: '16px',
+              border: dragState?.dropTarget === '__unassigned__' ? '2px dashed #364262' : '2px dashed transparent',
+              transition: 'all 0.15s',
+            }}
+          >
+            {unassignedRooms.length === 0 && totalRooms > 0 && (
+              <p style={{ fontSize: '14px', color: '#10b981', fontWeight: 600, margin: 0 }}>
+                ✓ {lang === 'es' ? 'Todas asignadas' : 'All rooms assigned'}
+              </p>
+            )}
+            {unassignedRooms.map(room => (
+              <button
+                key={room.id}
+                onPointerDown={e => onPillPointerDown(e, room)}
+                onPointerMove={onPillPointerMove}
+                onPointerUp={e => { onPillPointerUp(e); }}
+                onPointerCancel={onPillPointerCancel}
                 style={{
-                  borderBottom: isLast ? 'none' : '1px solid var(--border)',
-                  background: isDropHover ? `${color}08` : 'transparent',
-                  transition: 'background 0.15s',
-                  padding: '12px 16px',
-                  display: 'flex', gap: '12px', alignItems: 'center',
+                  padding: '12px 20px', borderRadius: '9999px',
+                  background: room.type === 'checkout' ? '#ffdad6' : '#d3e4f8',
+                  color: room.type === 'checkout' ? '#93000a' : '#0c1d2b',
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  border: 'none', cursor: 'grab',
+                  opacity: dragState?.roomId === room.id ? 0.3 : 1,
+                  touchAction: 'none', userSelect: 'none',
+                  WebkitUserSelect: 'none', WebkitTouchCallout: 'none',
+                  fontFamily: 'var(--font-sans)',
                 }}
               >
-                {/* Top: name + inline stats */}
-                <div className="sched-crew-info" style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  {/* Name — clickable to swap */}
-                  <div className="sched-crew-name" style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '120px', flexShrink: 0 }}>
-                    <button
-                      onClick={(e) => {
-                        const rect = e.currentTarget.getBoundingClientRect();
-                        setSwapAnchor({ top: rect.bottom + 4, left: rect.left });
-                        setSwapOpenFor(prev => prev === member.id ? null : member.id);
-                      }}
-                      style={{
-                        background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--font-sans)',
-                        fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap',
-                        overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left',
-                      }}
-                    >
-                      {member.name}
-                    </button>
-                  </div>
-                  {/* Stats grid */}
-                  <div className="sched-crew-stats" style={{ display: 'grid', gridTemplateColumns: '80px 100px', gap: '1px 10px', fontSize: '12px', color: 'var(--text-secondary)', width: '190px', flexShrink: 0 }}>
-                    <div>{lang === 'es' ? 'Estimado' : 'Est'}: <strong style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{timeLabel}</strong></div>
-                    <div style={{ color: 'var(--red)' }}><strong style={{ fontWeight: 700 }}>{coCount}</strong> {lang === 'es' ? 'Salida' : 'Checkout'}{coCount !== 1 ? 's' : ''}</div>
-                    <button onClick={() => {
-                      const roomCount = Object.values(assignments).filter(sid => sid === member.id).length;
-                      const msg = lang === 'es'
-                        ? `¿Quitar a ${member.name} y desasignar sus ${roomCount} habitaciones?`
-                        : `Remove ${member.name} and unassign their ${roomCount} room${roomCount !== 1 ? 's' : ''}?`;
-                      if (confirm(msg)) toggleCrewMember(member.id);
-                    }} style={{
-                      background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-sans)',
-                      fontSize: '11px', fontWeight: 600, color: 'var(--red)', padding: '0', textAlign: 'left',
-                      opacity: 0.6,
-                    }}>
-                      {lang === 'es' ? 'Quitar' : 'Remove'}
-                    </button>
-                    <div style={{ color: 'var(--navy)' }}><strong style={{ fontWeight: 700 }}>{soCount}</strong> {lang === 'es' ? 'Continuación' : 'Stayover'}{soCount !== 1 ? 's' : ''}</div>
-                  </div>
-                </div>
-
-                {/* Room pills */}
-                <div className="sched-crew-pills" style={{ flex: 1, display: 'flex', flexWrap: 'wrap', gap: '6px', alignContent: 'flex-start' }}>
-                  {memberRooms.map(room => (
-                    <button
-                      key={room.id}
-                      onPointerDown={e => onPillPointerDown(e, room)}
-                      onPointerMove={onPillPointerMove}
-                      onPointerUp={e => { onPillPointerUp(e); }}
-                      onPointerCancel={onPillPointerCancel}
-                      className="sched-room-pill"
-                      style={{
-                        padding: '6px 10px 4px', lineHeight: 1,
-                        background: room.type === 'checkout' ? 'var(--red-dim)' : 'var(--blue-dim, #F0F9FF)',
-                        border: room.type === 'checkout' ? '1.5px solid var(--red-border, #FECACA)' : '1.5px solid var(--blue-border, #BAE6FD)',
-                        borderRadius: '6px', cursor: 'grab',
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1px',
-                        opacity: dragState?.roomId === room.id ? 0.3 : 1,
-                        touchAction: 'none',
-                        userSelect: 'none',
-                        WebkitUserSelect: 'none',
-                        WebkitTouchCallout: 'none',
-                      }}
-                    >
-                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '13px', color: 'var(--text-primary)' }}>{room.number}</span>
-                      <span style={{ fontSize: '8px', fontWeight: 600, color: room.type === 'checkout' ? 'var(--red)' : 'var(--navy)', letterSpacing: '0.02em' }}>
-                        {room.type === 'checkout' ? 'C' : 'S'}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-
-          {/* Add staff row */}
-          {/* Bottom row: Add staff + Priority side by side */}
-          <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '16px', borderTop: '1px solid var(--border)' }}>
-            {eligiblePool.filter(s => !selectedCrew.find(c => c.id === s.id)).length > 0 && (
-              <div onClick={() => setShowAddStaff(true)} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                <Plus size={14} color="var(--text-muted)" />
-                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)' }}>
-                  {lang === 'es' ? 'Agregar personal' : 'Add staff'}
+                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '14px' }}>{room.number}</span>
+                <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700, opacity: 0.7 }}>
+                  {room.type === 'checkout' ? (lang === 'es' ? 'Salida' : 'Checkout') : (lang === 'es' ? 'Cont.' : 'Stayover')}
                 </span>
-              </div>
-            )}
-            <div onClick={() => setShowPrioritySettings(true)} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-              <Settings size={14} color="var(--text-muted)" />
-              <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)' }}>
-                {lang === 'es' ? 'Prioridad' : 'Priority'}
-              </span>
-            </div>
+              </button>
+            ))}
           </div>
-        </div>
+        </section>
       )}
 
-      {/* ── STEP 3: Send confirmations ── */}
-      {!predictionLoading && totalRooms > 0 && selectedCrew.length > 0 && (
-        sent ? (
-          <div className="animate-in" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 'var(--radius-md)' }}>
-            <CheckCircle2 size={16} color="var(--green)" />
-            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--green)' }}>{t('confirmationsSent', lang)}</span>
+      {/* ── Active Crew ── */}
+      {!predictionLoading && totalRooms > 0 && (
+        <section style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#364262', margin: 0 }}>
+            {lang === 'es' ? 'Equipo Activo' : 'Active Crew'}
+          </h3>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {selectedCrew.map((member, idx) => {
+              const { rooms: memberRooms, mins } = getStaffWorkload(member.id);
+              const hrs = Math.floor(mins / 60);
+              const remMins = mins % 60;
+              const timeLabel = hrs > 0 ? `${hrs}h ${remMins > 0 ? `${remMins}m` : ''}`.trim() : `${mins}m`;
+              const isDropHover = dragState?.dropTarget === member.id && dragState?.roomId && assignments[dragState.roomId] !== member.id;
+              const coCount = memberRooms.filter(r => r.type === 'checkout').length;
+              const soCount = memberRooms.length - coCount;
+              const isNearCapacity = mins > shiftLen * 0.85;
+              const statusLabel = memberRooms.length === 0
+                ? (lang === 'es' ? 'Disponible' : 'Available')
+                : isNearCapacity
+                  ? (lang === 'es' ? 'Casi lleno' : 'Near Capacity')
+                  : (lang === 'es' ? 'Asignado' : 'Assigned');
+              const statusBg = memberRooms.length === 0 ? '#d3e4f8' : isNearCapacity ? '#ffdad6' : '#eae8e3';
+              const statusColor = memberRooms.length === 0 ? '#0c1d2b' : isNearCapacity ? '#93000a' : '#454652';
+
+              return (
+                <div
+                  key={member.id}
+                  ref={el => { crewCardRefs.current[member.id] = el; }}
+                  data-crew-id={member.id}
+                  className="sched-crew-row"
+                  style={{
+                    background: isDropHover ? 'rgba(54,66,98,0.04)' : 'rgba(255,255,255,0.7)',
+                    backdropFilter: 'blur(24px)',
+                    border: isDropHover ? '2px solid #364262' : '1px solid rgba(197,197,212,0.2)',
+                    borderRadius: '16px',
+                    padding: '24px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    gap: '24px', transition: 'all 0.15s',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  {/* Left: avatar + info */}
+                  <div className="sched-crew-info" style={{ display: 'flex', alignItems: 'center', gap: '24px', flexShrink: 0 }}>
+                    <div style={{ position: 'relative' }}>
+                      <div style={{
+                        width: '64px', height: '64px', borderRadius: '50%',
+                        background: 'linear-gradient(135deg, #364262 0%, #4e5a7a 100%)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: '#dae2ff', fontWeight: 700, fontSize: '20px',
+                        fontFamily: 'var(--font-sans)',
+                      }}>
+                        {member.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                      </div>
+                      <div style={{
+                        position: 'absolute', bottom: 0, right: 0,
+                        width: '16px', height: '16px', borderRadius: '50%',
+                        background: memberRooms.length === 0 ? '#22c55e' : isNearCapacity ? '#ef4444' : '#f59e0b',
+                        border: '4px solid #fff',
+                      }} />
+                    </div>
+                    <div>
+                      <button
+                        className="sched-crew-name"
+                        onClick={(e) => {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          setSwapAnchor({ top: rect.bottom + 4, left: rect.left });
+                          setSwapOpenFor(prev => prev === member.id ? null : member.id);
+                        }}
+                        style={{
+                          background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                          fontFamily: 'var(--font-sans)', fontSize: '20px', fontWeight: 700,
+                          color: '#1b1c19', textAlign: 'left',
+                        }}
+                      >
+                        {member.name}
+                      </button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                        <span style={{
+                          padding: '2px 8px', borderRadius: '9999px',
+                          background: statusBg, color: statusColor,
+                          fontSize: '12px', fontWeight: 600,
+                        }}>
+                          {statusLabel}
+                        </span>
+                        <button onClick={() => {
+                          const roomCount = Object.values(assignments).filter(sid => sid === member.id).length;
+                          const msg = lang === 'es'
+                            ? `¿Quitar a ${member.name} y desasignar sus ${roomCount} habitaciones?`
+                            : `Remove ${member.name} and unassign their ${roomCount} room${roomCount !== 1 ? 's' : ''}?`;
+                          if (confirm(msg)) toggleCrewMember(member.id);
+                        }} style={{
+                          background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-sans)',
+                          fontSize: '11px', fontWeight: 600, color: '#ba1a1a', padding: '0',
+                          opacity: 0.5,
+                        }}>
+                          {lang === 'es' ? 'Quitar' : 'Remove'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right: workload + room tiles */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '48px', flexWrap: 'wrap' }}>
+                    <div className="sched-crew-stats" style={{ textAlign: 'right' }}>
+                      <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700, color: '#454652', margin: '0 0 2px' }}>
+                        {lang === 'es' ? 'Carga' : 'Workload'}
+                      </p>
+                      <p style={{
+                        fontFamily: 'var(--font-mono)', fontSize: '20px', fontWeight: 500,
+                        color: isNearCapacity ? '#ba1a1a' : '#364262', margin: 0,
+                      }}>
+                        {timeLabel}
+                      </p>
+                    </div>
+                    <div className="sched-crew-pills" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignContent: 'flex-start' }}>
+                      {memberRooms.map(room => (
+                        <button
+                          key={room.id}
+                          onPointerDown={e => onPillPointerDown(e, room)}
+                          onPointerMove={onPillPointerMove}
+                          onPointerUp={e => { onPillPointerUp(e); }}
+                          onPointerCancel={onPillPointerCancel}
+                          className="sched-room-pill"
+                          style={{
+                            width: '40px', height: '40px',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            borderRadius: '8px', background: '#eae8e3',
+                            fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '14px',
+                            color: '#364262', border: 'none', cursor: 'grab',
+                            opacity: dragState?.roomId === room.id ? 0.3 : 1,
+                            touchAction: 'none', userSelect: 'none',
+                            WebkitUserSelect: 'none', WebkitTouchCallout: 'none',
+                          }}
+                        >
+                          {room.number}
+                        </button>
+                      ))}
+                      {/* Add room button */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); }}
+                        style={{
+                          width: '40px', height: '40px',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          borderRadius: '8px', border: '2px dashed rgba(197,197,212,0.5)',
+                          background: 'transparent', color: '#757684', cursor: 'default',
+                        }}
+                      >
+                        <Plus size={16} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        ) : (
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <button onClick={handleSend} disabled={sending} style={{
-              padding: '12px 28px',
-              background: sending ? 'var(--bg-input)' : 'linear-gradient(135deg, var(--navy) 0%, var(--navy-light, #2563EB) 100%)',
-              color: sending ? 'var(--text-muted)' : '#fff',
-              border: 'none', borderRadius: '12px',
-              fontWeight: 700, fontSize: '15px', cursor: sending ? 'not-allowed' : 'pointer',
-              fontFamily: 'var(--font-sans)',
+
+          {/* Add staff + Priority row */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+            {eligiblePool.filter(s => !selectedCrew.find(c => c.id === s.id)).length > 0 && (
+              <button onClick={() => setShowAddStaff(true)} style={{
+                padding: '10px 20px', background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(24px)',
+                border: '1px solid rgba(197,197,212,0.2)', borderRadius: '12px',
+                cursor: 'pointer', fontFamily: 'var(--font-sans)',
+                display: 'flex', alignItems: 'center', gap: '8px',
+                fontSize: '14px', fontWeight: 600, color: '#454652',
+              }}>
+                <Plus size={16} />
+                {lang === 'es' ? 'Agregar personal' : 'Add Staff'}
+              </button>
+            )}
+            <button onClick={() => setShowPrioritySettings(true)} style={{
+              padding: '10px 20px', background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(24px)',
+              border: '1px solid rgba(197,197,212,0.2)', borderRadius: '12px',
+              cursor: 'pointer', fontFamily: 'var(--font-sans)',
               display: 'flex', alignItems: 'center', gap: '8px',
-              boxShadow: '0 2px 12px rgba(27, 58, 92, 0.25)',
+              fontSize: '14px', fontWeight: 600, color: '#454652',
             }}>
-              <Send size={16} />
-              {sending ? (lang === 'es' ? 'Enviando…' : 'Sending…') : (lang === 'es' ? `Enviar Confirmaciones (${selectedCrew.length})` : `Send Confirmations (${selectedCrew.length})`)}
+              <Settings size={16} />
+              {lang === 'es' ? 'Prioridad' : 'Priority'}
             </button>
           </div>
-        )
+        </section>
       )}
 
       {/* ── Move toast ── */}
       {moveToast && (
         <div style={{
-          position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)', zIndex: 10000,
-          background: 'linear-gradient(135deg, var(--navy) 0%, var(--navy-light, #2563EB) 100%)', color: '#fff', padding: '10px 20px', borderRadius: '10px',
-          fontSize: '13px', fontWeight: 600, boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
-          animation: 'toastIn 0.2s ease-out',
-          whiteSpace: 'nowrap',
+          position: 'fixed', bottom: '100px', left: '50%', transform: 'translateX(-50%)', zIndex: 10000,
+          background: '#364262', color: '#fff', padding: '12px 24px', borderRadius: '12px',
+          fontSize: '14px', fontWeight: 600, boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+          animation: 'toastIn 0.2s ease-out', whiteSpace: 'nowrap',
         }}>
           {moveToast}
         </div>
       )}
       <style>{`@keyframes toastIn { from { transform: translateX(-50%) translateY(10px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }`}</style>
 
-      {/* ── Swap dropdown (rendered outside card to avoid overflow clip) ── */}
+      {/* ── Swap dropdown ── */}
       {swapOpenFor && (
         <>
           <div style={{ position: 'fixed', inset: 0, zIndex: 9990 }} onClick={() => setSwapOpenFor(null)} />
           <div style={{
             position: 'fixed', top: swapAnchor.top, left: swapAnchor.left, zIndex: 9991,
-            background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '10px',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.15)', padding: '4px', minWidth: '160px',
+            background: '#fff', border: '1px solid rgba(197,197,212,0.2)', borderRadius: '12px',
+            boxShadow: '0 8px 30px rgba(0,0,0,0.12)', padding: '4px', minWidth: '180px',
+            backdropFilter: 'blur(24px)',
           }}>
             {eligiblePool.filter(s => !selectedCrew.find(c => c.id === s.id)).map(s => (
               <button key={s.id} onClick={() => {
                 const oldId = swapOpenFor!;
-                // Transfer all room assignments from old person to new person
                 setAssignments(a => {
                   const updated = { ...a };
                   for (const [roomId, staffId] of Object.entries(updated)) {
@@ -899,18 +962,18 @@ function ScheduleSection() {
                 showMoveToast(lang === 'es' ? `${oldName} reemplazado por ${s.name}` : `Replaced ${oldName} with ${s.name}`);
                 setSwapOpenFor(null);
               }} style={{
-                display: 'block', width: '100%', padding: '8px 12px', border: 'none', borderRadius: '8px',
+                display: 'block', width: '100%', padding: '10px 14px', border: 'none', borderRadius: '8px',
                 background: 'transparent', cursor: 'pointer', fontFamily: 'var(--font-sans)',
-                fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', textAlign: 'left',
+                fontSize: '14px', fontWeight: 600, color: '#1b1c19', textAlign: 'left',
               }}
-                onMouseEnter={e => { (e.target as HTMLElement).style.background = 'var(--bg-elevated)'; }}
+                onMouseEnter={e => { (e.target as HTMLElement).style.background = '#f5f3ee'; }}
                 onMouseLeave={e => { (e.target as HTMLElement).style.background = 'transparent'; }}
               >
                 {s.name}
               </button>
             ))}
             {eligiblePool.filter(s => !selectedCrew.find(c => c.id === s.id)).length === 0 && (
-              <div style={{ padding: '8px 12px', fontSize: '12px', color: 'var(--text-muted)' }}>
+              <div style={{ padding: '10px 14px', fontSize: '13px', color: '#454652' }}>
                 {lang === 'es' ? 'Sin personal disponible' : 'No available staff'}
               </div>
             )}
@@ -924,39 +987,39 @@ function ScheduleSection() {
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 9997 }} onClick={() => setShowPrioritySettings(false)} />
           <div style={{
             position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 9998,
-            background: 'var(--bg-card)', borderRadius: '16px', padding: '20px',
-            boxShadow: '0 8px 40px rgba(0,0,0,0.2)', width: '340px', maxHeight: '80vh', overflowY: 'auto',
+            background: '#fff', borderRadius: '16px', padding: '24px',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.2)', width: '380px', maxHeight: '80vh', overflowY: 'auto',
             animation: 'popIn 0.15s ease-out',
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <p style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+              <p style={{ fontSize: '18px', fontWeight: 700, color: '#1b1c19', margin: 0 }}>
                 {lang === 'es' ? 'Prioridad del Personal' : 'Staff Priority'}
               </p>
-              <button onClick={() => setShowPrioritySettings(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: 'var(--text-muted)' }} aria-label={lang === 'es' ? 'Cerrar' : 'Close'}>✕</button>
+              <button onClick={() => setShowPrioritySettings(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: '#454652' }} aria-label="Close">✕</button>
             </div>
-            <div style={{ display: 'flex', gap: '6px', marginBottom: '14px', fontSize: '11px', color: 'var(--text-muted)' }}>
-              <span style={{ padding: '3px 8px', background: 'var(--blue-dim, #DBEAFE)', color: 'var(--navy)', borderRadius: '6px', fontWeight: 600 }}>{lang === 'es' ? 'Prioridad' : 'Priority'}</span>
-              <span>{lang === 'es' ? '= primera selección' : '= picked first'}</span>
+            <div style={{ display: 'flex', gap: '6px', marginBottom: '14px', fontSize: '12px', color: '#454652' }}>
+              <span style={{ padding: '4px 10px', background: '#d3e4f8', color: '#0c1d2b', borderRadius: '8px', fontWeight: 600 }}>{lang === 'es' ? 'Prioridad' : 'Priority'}</span>
+              <span style={{ display: 'flex', alignItems: 'center' }}>{lang === 'es' ? '= primera selección' : '= picked first'}</span>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {staff.filter(s => s.isActive !== false && (s.department === 'housekeeping' || !s.department)).map(s => {
                 const pri = s.schedulePriority ?? 'normal';
                 return (
-                  <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: 'var(--bg-elevated)', borderRadius: '10px' }}>
-                    <span style={{ flex: 1, fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{s.name}</span>
+                  <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', background: '#f5f3ee', borderRadius: '12px' }}>
+                    <span style={{ flex: 1, fontSize: '14px', fontWeight: 600, color: '#1b1c19' }}>{s.name}</span>
                     <div style={{ display: 'flex', gap: '4px' }}>
                       {(['priority', 'normal', 'excluded'] as const).map(level => (
                         <button key={level} onClick={async () => {
                           await updateStaffMember(uid!, pid!, s.id, { schedulePriority: level } as Partial<StaffMember>);
                         }} style={{
-                          padding: '4px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer',
-                          fontFamily: 'var(--font-sans)', fontSize: '11px', fontWeight: 600,
+                          padding: '4px 10px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                          fontFamily: 'var(--font-sans)', fontSize: '12px', fontWeight: 600,
                           background: pri === level
-                            ? level === 'priority' ? 'var(--blue-dim, #DBEAFE)' : level === 'normal' ? 'var(--bg-elevated, #F3F4F6)' : 'var(--red-dim)'
+                            ? level === 'priority' ? '#d3e4f8' : level === 'normal' ? '#eae8e3' : '#ffdad6'
                             : 'transparent',
                           color: pri === level
-                            ? level === 'priority' ? 'var(--navy)' : level === 'normal' ? 'var(--text-secondary)' : 'var(--red)'
-                            : 'var(--text-muted)',
+                            ? level === 'priority' ? '#0c1d2b' : level === 'normal' ? '#454652' : '#93000a'
+                            : '#757684',
                         }}>
                           {level === 'priority' ? (lang === 'es' ? 'Prior.' : 'Priority') : level === 'normal' ? 'Normal' : (lang === 'es' ? 'Excluir' : 'Exclude')}
                         </button>
@@ -966,7 +1029,7 @@ function ScheduleSection() {
                 );
               })}
             </div>
-            <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '14px 0 0', lineHeight: 1.5 }}>
+            <p style={{ fontSize: '12px', color: '#757684', margin: '16px 0 0', lineHeight: 1.5 }}>
               {lang === 'es'
                 ? 'Prioridad = seleccionado automáticamente primero. Normal = respaldo. Excluir = nunca seleccionado automáticamente.'
                 : 'Priority = auto-selected first. Normal = backup when needed. Exclude = never auto-selected.'}
@@ -982,30 +1045,30 @@ function ScheduleSection() {
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 9997 }} onClick={() => setShowAddStaff(false)} />
           <div style={{
             position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 9998,
-            background: 'var(--bg-card)', borderRadius: '16px',
+            background: '#fff', borderRadius: '16px',
             boxShadow: '0 8px 40px rgba(0,0,0,0.2)',
-            padding: '20px', width: '520px', maxWidth: 'calc(100vw - 40px)', maxHeight: '70vh', overflowY: 'auto',
+            padding: '24px', width: '520px', maxWidth: 'calc(100vw - 40px)', maxHeight: '70vh', overflowY: 'auto',
             animation: 'popIn 0.15s ease-out',
           }}>
-            <p style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 12px' }}>
+            <p style={{ fontSize: '18px', fontWeight: 700, color: '#1b1c19', margin: '0 0 16px' }}>
               {lang === 'es' ? 'Agregar Personal' : 'Add Staff'}
             </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
               {eligiblePool.filter(s => !selectedCrew.find(c => c.id === s.id)).map(member => (
                 <button key={member.id} onClick={() => { toggleCrewMember(member.id); setShowAddStaff(false); }} style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
-                  padding: '12px 6px', background: 'var(--bg-elevated)', border: '1.5px solid var(--border)',
-                  borderRadius: '12px', cursor: 'pointer', fontFamily: 'var(--font-sans)',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
+                  padding: '16px 8px', background: '#f5f3ee', border: '1px solid rgba(197,197,212,0.2)',
+                  borderRadius: '16px', cursor: 'pointer', fontFamily: 'var(--font-sans)',
                 }}>
                   <div style={{
-                    width: '40px', height: '40px', borderRadius: '10px',
-                    background: 'linear-gradient(135deg, var(--navy) 0%, var(--navy-light, #2563EB) 100%)',
+                    width: '48px', height: '48px', borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #364262 0%, #4e5a7a 100%)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: '#fff', fontWeight: 700, fontSize: '14px',
+                    color: '#dae2ff', fontWeight: 700, fontSize: '16px',
                   }}>
                     {member.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                   </div>
-                  <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', textAlign: 'center', lineHeight: 1.2 }}>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#1b1c19', textAlign: 'center', lineHeight: 1.2 }}>
                     {member.name}
                   </span>
                 </button>
@@ -1019,42 +1082,42 @@ function ScheduleSection() {
       {/* Prediction Settings Modal */}
       {showPredictionSettings && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 9998, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }} onClick={() => setShowPredictionSettings(false)}>
-          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-card)', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '380px', boxShadow: '0 20px 60px rgba(0,0,0,0.25)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '400px', boxShadow: '0 20px 60px rgba(0,0,0,0.25)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div>
-              <p style={{ fontWeight: 700, fontSize: '17px', color: 'var(--text-primary)', margin: 0 }}>
+              <p style={{ fontWeight: 700, fontSize: '18px', color: '#1b1c19', margin: 0 }}>
                 {lang === 'es' ? 'Ajustes de Predicción' : 'Prediction Settings'}
               </p>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '4px 0 0' }}>
+              <p style={{ fontSize: '13px', color: '#757684', margin: '6px 0 0' }}>
                 {lang === 'es' ? 'Ajusta los tiempos de limpieza.' : 'Adjust cleaning times.'}
               </p>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {[
                 { label: lang === 'es' ? 'Habitación de salida' : 'Checkout room', key: 'checkoutMinutes' as const },
                 { label: lang === 'es' ? 'Habitación de continuación' : 'Stayover room', key: 'stayoverMinutes' as const },
                 { label: lang === 'es' ? 'Entre habitaciones' : 'Between rooms', key: 'prepMinutesPerActivity' as const },
               ].map(({ label, key }) => (
                 <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>{label}</span>
+                  <span style={{ fontSize: '14px', fontWeight: 500, color: '#1b1c19' }}>{label}</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <input className="input" type="number" min={key === 'prepMinutesPerActivity' ? 0 : 1} value={settingsForm[key]} onChange={e => setSettingsForm(p => ({ ...p, [key]: Number(e.target.value) || 0 }))} style={{ width: '64px', textAlign: 'center', padding: '8px 4px' }} />
-                    <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>min</span>
+                    <span style={{ fontSize: '13px', color: '#757684' }}>min</span>
                   </div>
                 </div>
               ))}
             </div>
             <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-              <button onClick={() => setShowPredictionSettings(false)} style={{ flex: 1, padding: '12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-muted)', fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>{t('cancel', lang)}</button>
-              <button onClick={handleSaveSettings} disabled={savingSettings} style={{ flex: 1, padding: '12px', borderRadius: '10px', border: 'none', background: 'var(--navy)', color: '#fff', fontWeight: 600, fontSize: '14px', cursor: 'pointer', opacity: savingSettings ? 0.6 : 1 }}>{savingSettings ? t('saving', lang) : t('save', lang)}</button>
+              <button onClick={() => setShowPredictionSettings(false)} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid rgba(197,197,212,0.2)', background: '#fff', color: '#454652', fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>{t('cancel', lang)}</button>
+              <button onClick={handleSaveSettings} disabled={savingSettings} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: '#364262', color: '#fff', fontWeight: 600, fontSize: '14px', cursor: 'pointer', opacity: savingSettings ? 0.6 : 1 }}>{savingSettings ? t('saving', lang) : t('save', lang)}</button>
             </div>
             <button onClick={() => { setShowPredictionSettings(false); setShowPublicAreas(true); }} style={{
-              width: '100%', padding: '14px 16px', marginTop: '4px',
+              width: '100%', padding: '16px', marginTop: '4px',
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              background: 'rgba(27,58,92,0.06)', border: '1px solid var(--border)', borderRadius: '10px',
+              background: '#f5f3ee', border: '1px solid rgba(197,197,212,0.2)', borderRadius: '12px',
               cursor: 'pointer', fontFamily: 'var(--font-sans)',
             }}>
-              <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{lang === 'es' ? 'Áreas Comunes' : 'Public Areas'}</span>
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{areasDueToday.length} {lang === 'es' ? 'para hoy' : 'due today'} · {publicAreaMinutes}m →</span>
+              <span style={{ fontSize: '14px', fontWeight: 600, color: '#1b1c19' }}>{lang === 'es' ? 'Áreas Comunes' : 'Public Areas'}</span>
+              <span style={{ fontSize: '12px', color: '#757684' }}>{areasDueToday.length} {lang === 'es' ? 'para hoy' : 'due today'} · {publicAreaMinutes}m →</span>
             </button>
           </div>
         </div>
@@ -1070,19 +1133,59 @@ function ScheduleSection() {
           top: dragState.ghost.y - 40,
           zIndex: 10000,
           pointerEvents: 'none',
-          padding: '6px 12px',
-          background: 'var(--navy)',
+          padding: '8px 14px',
+          background: '#364262',
           border: '2px solid rgba(255,255,255,0.5)',
-          borderRadius: '8px',
+          borderRadius: '10px',
           boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
           transform: 'scale(1.15)',
           display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1,
         }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '13px', color: '#fff' }}>{dragState.roomNumber}</span>
-          <span style={{ fontSize: '8px', fontWeight: 700, color: 'rgba(255,255,255,0.6)' }}>{dragState.roomType === 'checkout' ? 'C' : 'S'}</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '14px', color: '#fff' }}>{dragState.roomNumber}</span>
+          <span style={{ fontSize: '9px', fontWeight: 700, color: 'rgba(255,255,255,0.6)' }}>{dragState.roomType === 'checkout' ? 'C' : 'S'}</span>
         </div>
       )}
 
+      {/* ── Glass Metrics Footer ── */}
+      {!predictionLoading && totalRooms > 0 && (
+        <footer style={{
+          position: 'fixed', bottom: 0, left: 0, width: '100%', zIndex: 50,
+          padding: '16px 24px',
+        }}>
+          <div style={{
+            maxWidth: '768px', margin: '0 auto',
+            background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(24px) saturate(200%)',
+            border: '1px solid rgba(197,197,212,0.2)',
+            borderRadius: '9999px', padding: '16px 40px',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.08)',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-around',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <BedDouble size={18} color="#364262" />
+              <span style={{ fontSize: '14px', fontWeight: 600, letterSpacing: '0.02em', color: '#454652' }}>{lang === 'es' ? 'Ocupación' : 'Occupancy'}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '18px', fontWeight: 700, color: '#364262' }}>
+                {totalRooms > 0 ? Math.round((totalRooms / (activeProperty?.totalRooms ?? totalRooms)) * 100) : 0}%
+              </span>
+            </div>
+            <div style={{ height: '24px', width: '1px', background: 'rgba(197,197,212,0.3)' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <AlertTriangle size={18} color="#ba1a1a" />
+              <span style={{ fontSize: '14px', fontWeight: 600, letterSpacing: '0.02em', color: '#454652' }}>{lang === 'es' ? 'Sin Asignar' : 'Unassigned'}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '18px', fontWeight: 700, color: unassignedRooms.length > 0 ? '#ba1a1a' : '#10b981' }}>
+                {unassignedRooms.length}
+              </span>
+            </div>
+            <div style={{ height: '24px', width: '1px', background: 'rgba(197,197,212,0.3)' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <Clock size={18} color="#006565" />
+              <span style={{ fontSize: '14px', fontWeight: 600, letterSpacing: '0.02em', color: '#454652' }}>{lang === 'es' ? 'Est. Total' : 'Est. Labor'}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '18px', fontWeight: 700, color: '#364262' }}>
+                {fmtMins(workloadMinutes)}
+              </span>
+            </div>
+          </div>
+        </footer>
+      )}
     </div>
   );
 }
