@@ -594,7 +594,7 @@ function ScheduleSection() {
   const staffDeficit = recommendedStaff - selectedCrew.length;
 
   return (
-    <div style={{ padding: '24px', paddingBottom: '120px', background: '#f4f7fa', minHeight: 'calc(100vh - 180px)', display: 'flex', flexDirection: 'column', gap: '40px' }}>
+    <div style={{ padding: '24px', paddingBottom: '120px', background: 'var(--bg)', minHeight: 'calc(100vh - 180px)', display: 'flex', flexDirection: 'column', gap: '40px' }}>
 
       {/* ── Date picker ── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
@@ -1348,7 +1348,7 @@ function RoomsSection() {
   };
 
   return (
-    <div style={{ padding: '24px', paddingBottom: '140px', background: '#f4f7fa', minHeight: 'calc(100vh - 180px)' }}>
+    <div style={{ padding: '24px', paddingBottom: '140px', background: 'var(--bg)', minHeight: 'calc(100vh - 180px)' }}>
 
       {/* Backup staff picker popup */}
       {backupRoom && (
