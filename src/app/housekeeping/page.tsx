@@ -817,6 +817,16 @@ function ScheduleSection() {
                           {lang === 'es' ? 'Quitar' : 'Remove'}
                         </button>
                       </div>
+                      {memberRooms.length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', marginTop: '6px' }}>
+                          <span style={{ fontSize: '12px', fontWeight: 600, color: '#364262', fontFamily: 'var(--font-sans)' }}>
+                            {coCount} {lang === 'es' ? 'Salidas' : 'Checkout'}{coCount !== 1 && lang !== 'es' ? 's' : ''}
+                          </span>
+                          <span style={{ fontSize: '12px', fontWeight: 600, color: '#757684', fontFamily: 'var(--font-sans)' }}>
+                            {soCount} {lang === 'es' ? 'Continuaciones' : 'Stayover'}{soCount !== 1 && lang !== 'es' ? 's' : ''}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
