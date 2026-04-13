@@ -1343,7 +1343,6 @@ function RoomsSection() {
     if (room.isDnd) return '⊘';
     if (room.type === 'checkout') return '↗';
     if (room.type === 'stayover') return '🔒';
-    if (room.type === 'vacant') return '◇';
     return null;
   };
 
