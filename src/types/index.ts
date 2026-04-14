@@ -152,7 +152,8 @@ export interface Inspection {
   propertyId: string;
   name: string;                   // e.g. "Fire Extinguisher Inspection"
   dueMonth: string;               // "YYYY-MM" — month the inspection is due
-  frequencyMonths: number;        // how many months between inspections (e.g. 12 = annual)
+  frequencyMonths: number;        // legacy: months between inspections (kept for backward compat)
+  frequencyDays?: number;         // canonical: days between inspections (preferred when set, supports weekly/biweekly)
   lastInspectedDate?: string;     // ISO date YYYY-MM-DD of last completed inspection
   notes?: string;
   createdAt: Date | null;

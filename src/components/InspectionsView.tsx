@@ -46,6 +46,37 @@ function addMonths(ym: string, months: number): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 }
 
+// Add a number of days to a YYYY-MM-DD ISO date and return YYYY-MM
+function addDaysToISO(iso: string, days: number): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  date.setDate(date.getDate() + days);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
+// Resolve days from an Inspection (prefers frequencyDays, falls back to months*30)
+function resolveFreqDays(item: { frequencyMonths: number; frequencyDays?: number }): number {
+  if (typeof item.frequencyDays === 'number' && item.frequencyDays > 0) return item.frequencyDays;
+  return Math.max(1, item.frequencyMonths) * 30;
+}
+
+// Format a frequency expressed in days into a human-friendly label.
+function freqLabelDays(days: number): string {
+  if (days <= 0) return '—';
+  if (days === 7) return 'Weekly';
+  if (days === 14) return 'Biweekly';
+  if (days < 30) return `Every ${days} days`;
+  if (days === 30 || days === 31) return 'Monthly';
+  if (days >= 89 && days <= 92) return 'Quarterly';
+  if (days >= 180 && days <= 186) return 'Semi-Annual';
+  if (days >= 360 && days <= 370) return 'Annual';
+  // Multi-week if it cleanly divides
+  if (days % 7 === 0 && days < 60) return `Every ${days / 7} weeks`;
+  // Otherwise express in months (rounded)
+  const months = Math.round(days / 30);
+  return `Every ${months} months`;
+}
+
 type InspectionStatus = 'overdue' | 'due' | 'upcoming' | 'notset';
 
 function getStatus(dueMonth: string): InspectionStatus {
@@ -196,7 +227,9 @@ export function InspectionsView() {
     }
   };
 
-  const getFreqLabel = (months: number): string => {
+  const getFreqLabel = (months: number, days?: number): string => {
+    // Prefer day-precise label if frequencyDays is set (supports weekly/biweekly/etc.)
+    if (typeof days === 'number' && days > 0) return freqLabelDays(days);
     if (months === 1) return 'Monthly';
     if (months === 3) return 'Quarterly';
     if (months === 6) return 'Semi-Annual';
@@ -382,7 +415,7 @@ export function InspectionsView() {
                       </span>
                     </div>
                     <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: '#454652', margin: 0 }}>
-                      {lang === 'es' ? 'Frecuencia' : 'Frequency'}: <span style={{ fontFamily: "'JetBrains Mono', monospace" }}>{getFreqLabel(item.frequencyMonths)}</span>
+                      {lang === 'es' ? 'Frecuencia' : 'Frequency'}: <span style={{ fontFamily: "'JetBrains Mono', monospace" }}>{getFreqLabel(item.frequencyMonths, item.frequencyDays)}</span>
                       {item.lastInspectedDate && (
                         <span> · {lang === 'es' ? 'Última' : 'Last'}: <span style={{ fontFamily: "'JetBrains Mono', monospace" }}>{item.lastInspectedDate}</span></span>
                       )}
@@ -400,7 +433,7 @@ export function InspectionsView() {
                       fontFamily: "'JetBrains Mono', monospace", fontSize: '14px',
                       color: status === 'overdue' ? '#ba1a1a' : '#1b1c19', margin: 0,
                     }}>
-                      {item.dueMonth ? item.dueMonth.replace('-', '.') : getFreqLabel(item.frequencyMonths)}
+                      {item.dueMonth ? item.dueMonth.replace('-', '.') : getFreqLabel(item.frequencyMonths, item.frequencyDays)}
                     </p>
                   </div>
                   <div style={{
@@ -527,26 +560,55 @@ export function InspectionsView() {
 }
 
 // ─── Frequency Slider ────────────────────────────────────────────────────────
+// Operates in DAYS (canonical unit). Presets: Monthly, Quarterly, Semi-Annual,
+// Annual, Custom. In custom mode, user picks a unit (days / weeks / months)
+// for fully arbitrary intervals like weekly, twice a week, etc.
 
-const FREQ_STOPS = [1, 3, 6, 12];
+type FreqUnit = 'days' | 'weeks' | 'months';
+
+const FREQ_STOPS_DAYS = [30, 91, 182, 365];
 const SLIDER_LABELS = ['1mo', '3mo', '6mo', '1yr', 'Custom'];
 
-function freqLabel(months: number, isCustom: boolean): string {
-  if (isCustom) return 'Custom';
-  if (months === 1) return 'Monthly';
-  if (months === 3) return 'Quarterly';
-  if (months === 6) return 'Every 6 months';
-  if (months === 12) return 'Annual';
-  return `Every ${months}mo`;
+// Convert a value+unit into days
+function toDays(value: number, unit: FreqUnit): number {
+  if (unit === 'days') return value;
+  if (unit === 'weeks') return value * 7;
+  return Math.round(value * 30.44); // months → days
 }
 
-function FrequencySlider({ value, onChange }: { value: number; onChange: (v: number) => void }) {
-  const presetIdx = FREQ_STOPS.indexOf(value);
-  const [isCustom, setIsCustom] = useState(presetIdx === -1);
-  const [customValue, setCustomValue] = useState(String(presetIdx === -1 ? value : 18));
-  const sliderIdx = isCustom ? FREQ_STOPS.length : (presetIdx >= 0 ? presetIdx : FREQ_STOPS.length);
-  const maxIdx = FREQ_STOPS.length;
+// Pick the most natural display unit + count for a given days value
+function bestUnit(days: number): { value: number; unit: FreqUnit } {
+  if (days % 7 === 0 && days < 60) return { value: days / 7, unit: 'weeks' };
+  if (days < 30) return { value: days, unit: 'days' };
+  // Round-trip months
+  const months = Math.round(days / 30.44);
+  if (Math.abs(toDays(months, 'months') - days) <= 1) return { value: months, unit: 'months' };
+  return { value: days, unit: 'days' };
+}
+
+function FrequencySlider({ valueDays, onChange }: { valueDays: number; onChange: (days: number) => void }) {
+  const presetIdx = FREQ_STOPS_DAYS.indexOf(valueDays);
+  const initialIsCustom = presetIdx === -1;
+  const initialBest = initialIsCustom ? bestUnit(valueDays) : { value: 0, unit: 'months' as FreqUnit };
+
+  const [isCustom, setIsCustom] = useState(initialIsCustom);
+  const [customUnit, setCustomUnit] = useState<FreqUnit>(initialBest.unit);
+  const [customValue, setCustomValue] = useState(String(initialIsCustom ? initialBest.value : 1));
+
+  const sliderIdx = isCustom ? FREQ_STOPS_DAYS.length : (presetIdx >= 0 ? presetIdx : FREQ_STOPS_DAYS.length);
+  const maxIdx = FREQ_STOPS_DAYS.length;
   const fillPct = (sliderIdx / maxIdx) * 100;
+
+  const headerLabel = isCustom
+    ? freqLabelDays(valueDays)
+    : freqLabelDays(valueDays);
+
+  const handleCustomChange = (rawVal: string, unit: FreqUnit) => {
+    setCustomValue(rawVal);
+    setCustomUnit(unit);
+    const n = parseInt(rawVal);
+    if (n && n > 0) onChange(toDays(n, unit));
+  };
 
   return (
     <div>
@@ -557,7 +619,7 @@ function FrequencySlider({ value, onChange }: { value: number; onChange: (v: num
           Frequency
         </span>
         <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--navy, #1b3a5c)' }}>
-          {isCustom ? `Every ${value} months` : freqLabel(value, false)}
+          {headerLabel}
         </span>
       </div>
       <input
@@ -569,12 +631,13 @@ function FrequencySlider({ value, onChange }: { value: number; onChange: (v: num
         aria-label="Inspection frequency"
         onChange={e => {
           const i = parseInt(e.target.value);
-          if (i < FREQ_STOPS.length) {
+          if (i < FREQ_STOPS_DAYS.length) {
             setIsCustom(false);
-            onChange(FREQ_STOPS[i]);
+            onChange(FREQ_STOPS_DAYS[i]);
           } else {
             setIsCustom(true);
-            onChange(parseInt(customValue) || 18);
+            const n = parseInt(customValue) || 1;
+            onChange(toDays(n, customUnit));
           }
         }}
         style={{
@@ -589,8 +652,14 @@ function FrequencySlider({ value, onChange }: { value: number; onChange: (v: num
           <span
             key={label}
             onClick={() => {
-              if (i < FREQ_STOPS.length) { setIsCustom(false); onChange(FREQ_STOPS[i]); }
-              else { setIsCustom(true); onChange(parseInt(customValue) || 18); }
+              if (i < FREQ_STOPS_DAYS.length) {
+                setIsCustom(false);
+                onChange(FREQ_STOPS_DAYS[i]);
+              } else {
+                setIsCustom(true);
+                const n = parseInt(customValue) || 1;
+                onChange(toDays(n, customUnit));
+              }
             }}
             style={{
               fontSize: '10px',
@@ -609,19 +678,16 @@ function FrequencySlider({ value, onChange }: { value: number; onChange: (v: num
           display: 'flex', alignItems: 'center', gap: '8px', marginTop: '12px',
           padding: '10px 12px', borderRadius: 'var(--radius-md)',
           border: '1.5px solid var(--border)', background: 'var(--bg)',
+          flexWrap: 'wrap',
         }}>
           <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Every</span>
           <input
             type="number"
             min="1"
-            max="120"
+            max="999"
             value={customValue}
-            aria-label="Custom frequency in months"
-            onChange={e => {
-              setCustomValue(e.target.value);
-              const v = parseInt(e.target.value);
-              if (v && v > 0) onChange(v);
-            }}
+            aria-label="Custom frequency value"
+            onChange={e => handleCustomChange(e.target.value, customUnit)}
             autoFocus
             style={{
               width: '60px', padding: '6px 8px', borderRadius: '6px',
@@ -630,7 +696,25 @@ function FrequencySlider({ value, onChange }: { value: number; onChange: (v: num
               textAlign: 'center', color: 'var(--navy, #1b3a5c)', outline: 'none',
             }}
           />
-          <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>months</span>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            {(['days', 'weeks', 'months'] as FreqUnit[]).map(u => (
+              <button
+                key={u}
+                type="button"
+                onClick={() => handleCustomChange(customValue, u)}
+                style={{
+                  padding: '6px 12px', borderRadius: '999px',
+                  border: customUnit === u ? 'none' : '1.5px solid var(--border)',
+                  background: customUnit === u ? 'var(--navy, #1b3a5c)' : 'var(--bg)',
+                  color: customUnit === u ? '#fff' : 'var(--text-secondary)',
+                  fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                  textTransform: 'capitalize',
+                }}
+              >
+                {u}
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -647,7 +731,7 @@ function EditInspectionModal({ inspection, onClose, onSave, onDelete }: {
 }) {
   const [name, setName] = useState(inspection.name);
   const [dueMonth, setDueMonth] = useState(inspection.dueMonth || currentYM());
-  const [freq, setFreq] = useState(inspection.frequencyMonths);
+  const [freqDays, setFreqDays] = useState(resolveFreqDays(inspection));
   const [notes, setNotes] = useState(inspection.notes || '');
   const [lastInspected, setLastInspected] = useState(inspection.lastInspectedDate || '');
   const [dueMonthTouched, setDueMonthTouched] = useState(false);
@@ -658,19 +742,16 @@ function EditInspectionModal({ inspection, onClose, onSave, onDelete }: {
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
 
-  // Auto-compute Due Month from Last Inspected + Frequency.
+  // Auto-compute Due Month from Last Inspected + Frequency (in days).
   // Runs whenever lastInspected or freq changes, unless user manually edits Due Month.
   useEffect(() => {
     if (!lastInspected || dueMonthTouched) return;
-    const [y, m] = lastInspected.split('-').map(Number);
-    if (!y || !m) return;
-    const lastYM = `${y}-${String(m).padStart(2, '0')}`;
-    const next = addMonths(lastYM, freq);
-    setDueMonth(next);
-  }, [lastInspected, freq, dueMonthTouched]);
+    setDueMonth(addDaysToISO(lastInspected, freqDays));
+  }, [lastInspected, freqDays, dueMonthTouched]);
 
+  const originalFreqDays = resolveFreqDays(inspection);
   const hasChanges = name !== inspection.name || dueMonth !== (inspection.dueMonth || currentYM())
-    || freq !== inspection.frequencyMonths || notes !== (inspection.notes || '')
+    || freqDays !== originalFreqDays || notes !== (inspection.notes || '')
     || lastInspected !== (inspection.lastInspectedDate || '');
 
   // Reactive status — reflects the current form state, not the stored value,
@@ -771,7 +852,7 @@ function EditInspectionModal({ inspection, onClose, onSave, onDelete }: {
             </div>
           </div>
 
-          <FrequencySlider value={freq} onChange={(v) => { setFreq(v); setDueMonthTouched(false); }} />
+          <FrequencySlider valueDays={freqDays} onChange={(d) => { setFreqDays(d); setDueMonthTouched(false); }} />
 
           <div>
             <label style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
@@ -804,7 +885,14 @@ function EditInspectionModal({ inspection, onClose, onSave, onDelete }: {
 
         <div style={{ padding: '0 20px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <button
-            onClick={() => onSave({ name: name.trim(), dueMonth, frequencyMonths: freq, notes: notes.trim() || undefined, ...(lastInspected ? { lastInspectedDate: lastInspected } : {}) })}
+            onClick={() => onSave({
+              name: name.trim(),
+              dueMonth,
+              frequencyMonths: Math.max(1, Math.round(freqDays / 30.44)),
+              frequencyDays: freqDays,
+              notes: notes.trim() || undefined,
+              ...(lastInspected ? { lastInspectedDate: lastInspected } : {}),
+            })}
             disabled={!hasChanges}
             style={{
               width: '100%', padding: '12px', borderRadius: 'var(--radius-md)',
@@ -860,7 +948,7 @@ function AddInspectionModal({ isOpen, onClose, uid, pid, onAdded }: {
 }) {
   const [name, setName] = useState('');
   const [dueMonth, setDueMonth] = useState(currentYM());
-  const [freq, setFreq] = useState(12);
+  const [freqDays, setFreqDays] = useState(365); // default: annual
   const [lastInspected, setLastInspected] = useState('');
   const [dueMonthTouched, setDueMonthTouched] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -873,11 +961,8 @@ function AddInspectionModal({ isOpen, onClose, uid, pid, onAdded }: {
   // from lastInspected + frequency (unless user has manually edited dueMonth).
   useEffect(() => {
     if (!lastInspected || dueMonthTouched) return;
-    const [y, m] = lastInspected.split('-').map(Number);
-    if (!y || !m) return;
-    const lastYM = `${y}-${String(m).padStart(2, '0')}`;
-    setDueMonth(addMonths(lastYM, freq));
-  }, [lastInspected, freq, dueMonthTouched]);
+    setDueMonth(addDaysToISO(lastInspected, freqDays));
+  }, [lastInspected, freqDays, dueMonthTouched]);
 
   const handleSubmit = async () => {
     if (!name.trim() || saving) return;
@@ -887,14 +972,15 @@ function AddInspectionModal({ isOpen, onClose, uid, pid, onAdded }: {
         propertyId: pid,
         name: name.trim(),
         dueMonth,
-        frequencyMonths: freq,
+        frequencyMonths: Math.max(1, Math.round(freqDays / 30.44)),
+        frequencyDays: freqDays,
         ...(lastInspected ? { lastInspectedDate: lastInspected } : {}),
       });
       onAdded();
       onClose();
       setName('');
       setDueMonth(currentYM());
-      setFreq(12);
+      setFreqDays(365);
       setLastInspected('');
       setDueMonthTouched(false);
     } finally {
@@ -990,7 +1076,7 @@ function AddInspectionModal({ isOpen, onClose, uid, pid, onAdded }: {
               When was this last done? Leave blank if unknown — we&apos;ll use it to auto-set the next due date.
             </div>
           </div>
-          <FrequencySlider value={freq} onChange={(v) => { setFreq(v); setDueMonthTouched(false); }} />
+          <FrequencySlider valueDays={freqDays} onChange={(d) => { setFreqDays(d); setDueMonthTouched(false); }} />
           <div>
             <label style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
               Due Month {lastInspected && !dueMonthTouched && (
