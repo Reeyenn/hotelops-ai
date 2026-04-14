@@ -398,53 +398,11 @@ export default function StaffPage() {
         .staff-add-inline { transition: all 0.15s; }
         .staff-add-inline:hover { background: rgba(0,101,101,0.06) !important; border-color: #006565 !important; }
       `}</style>
-      <div style={{ padding: '24px 28px 28px', maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ padding: '16px 28px 28px', maxWidth: '1200px', margin: '0 auto' }}>
 
-        {/* ── Stitch Hero ── */}
-        <div className="animate-in" style={{ marginBottom: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-            <div>
-              <h1 style={{ fontFamily: 'Inter, sans-serif', fontWeight: 700, fontSize: '26px', letterSpacing: '-0.02em', margin: 0, color: '#1b1c19' }}>
-                {lang === 'es' ? 'Operaciones de Personal' : 'Staff Operations'}
-              </h1>
-              <p style={{ margin: '4px 0 0', fontSize: '14px', color: '#757684', fontFamily: 'Inter, sans-serif' }}>
-                {totalStaff} {lang === 'es' ? 'miembros del equipo' : 'team members'} · {onDutyCount} {lang === 'es' ? 'en turno' : 'on duty'}
-              </p>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              {/* Notification bell (schedule tab) */}
-              {activeTab === 'schedule' && (
-                <button
-                  onClick={() => setShowNotifPanel(v => !v)}
-                  style={{ position: 'relative', background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: unreadCount > 0 ? '#006565' : '#757684' }}
-                >
-                  <Bell size={20} strokeWidth={unreadCount > 0 ? 2.2 : 1.6} />
-                  {unreadCount > 0 && (
-                    <span style={{ position: 'absolute', top: '2px', right: '2px', width: '16px', height: '16px', background: '#ba1a1a', color: '#fff', borderRadius: '50%', fontSize: '9px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {unreadCount > 9 ? '9+' : unreadCount}
-                    </span>
-                  )}
-                </button>
-              )}
-
-              {/* Add staff button */}
-              {activeTab === 'directory' && (
-                <button onClick={openAdd} style={{
-                  display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px',
-                  background: '#364262', color: '#FFFFFF', border: 'none', borderRadius: '9999px',
-                  fontWeight: 600, fontSize: '14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>person_add</span>
-                  {t('addStaff', lang)}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* ── Stitch Tab bar ── */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
+        {/* ── Tab bar + actions row ── */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '8px' }}>
           {(['directory', 'schedule'] as const).map(tab => {
             const isActive = activeTab === tab;
             return (
@@ -476,6 +434,34 @@ export default function StaffPage() {
               </button>
             );
           })}
+          </div>
+
+          {/* Right-side actions */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {activeTab === 'schedule' && (
+              <button
+                onClick={() => setShowNotifPanel(v => !v)}
+                style={{ position: 'relative', background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: unreadCount > 0 ? '#006565' : '#757684' }}
+              >
+                <Bell size={20} strokeWidth={unreadCount > 0 ? 2.2 : 1.6} />
+                {unreadCount > 0 && (
+                  <span style={{ position: 'absolute', top: '2px', right: '2px', width: '16px', height: '16px', background: '#ba1a1a', color: '#fff', borderRadius: '50%', fontSize: '9px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+            )}
+            {activeTab === 'directory' && (
+              <button onClick={openAdd} style={{
+                display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px',
+                background: '#364262', color: '#FFFFFF', border: 'none', borderRadius: '9999px',
+                fontWeight: 600, fontSize: '14px', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+              }}>
+                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>person_add</span>
+                {t('addStaff', lang)}
+              </button>
+            )}
+          </div>
         </div>
 
         {/* ════════════════════════════════════════════════════════════════
