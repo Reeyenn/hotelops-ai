@@ -272,21 +272,48 @@ async function writeRoomsToFirestore(rooms) {
   // NOTE: While housekeepers aren't yet using the app to mark rooms clean,
   // CA condition is the source of truth for status. Once HKs are live on the
   // app, flip this back to preserve status on existing docs.
+  //
+  // TYPE LATCHING — critical for operational value:
+  // CA's "Service" field reflects the *current* state of a room, not the
+  // day's history. A checkout guest leaves → CA clears service from
+  // "Check Out" → "None". If we blindly overwrite `type`, the count of
+  // "checkouts today" decays to ~0 by afternoon, which destroys the number
+  // the Morning Setup page and scheduler rely on.
+  //
+  // Rule: once a room is classified as checkout or stayover for the day,
+  // it stays that way. Only upgrades are allowed (stayover → checkout,
+  // vacant → stayover/checkout). Downgrades to vacant are rejected.
+  // `status` (clean/dirty) keeps updating live — that's correct.
   const batch = db.batch();
 
   refs.forEach(({ room, ref }, i) => {
-    const isNew = !snaps[i].exists;
+    const isNew       = !snaps[i].exists;
+    const existing    = isNew ? null : snaps[i].data();
+    const scrapedType = mapRoomType(room.service, room.roomStatus); // checkout|stayover|vacant
+
+    // Latch: never demote a room's work-classification mid-day.
+    // Priority order (highest → lowest): checkout > stayover > vacant.
+    let finalType = scrapedType;
+    if (existing && existing.type) {
+      if (existing.type === 'checkout') {
+        finalType = 'checkout'; // checkout is sticky for the day
+      } else if (existing.type === 'stayover' && scrapedType === 'vacant') {
+        finalType = 'stayover'; // don't downgrade stayover → vacant
+      }
+      // All other transitions (including upgrades) use scrapedType.
+    }
+
     const syncData = {
       number:        room.number,
-      type:          mapRoomType(room.service, room.roomStatus), // checkout|stayover|vacant
-      status:        mapRoomStatus(room.condition),              // clean|dirty — from CA condition
+      type:          finalType,                        // checkout|stayover|vacant (latched)
+      status:        mapRoomStatus(room.condition),    // clean|dirty — live from CA
       priority:      'standard',
       date:          today,
       propertyId:    CONFIG.PROPERTY_ID,
       isDnd:         room.isDnd || false,
       _caRoomType:   room.roomType,    // SNK, SNQQ, HSNK, etc.
       _caRoomStatus: room.roomStatus,  // Occupied / Vacant
-      _caService:    room.service,     // Check Out / Stay Over / None
+      _caService:    room.service,     // Check Out / Stay Over / None (raw, for debugging)
       _caCondition:  room.condition,   // Clean / Dirty
       _lastSyncedAt: now,
     };
@@ -295,7 +322,7 @@ async function writeRoomsToFirestore(rooms) {
       // First sync of the day — initialize with no assignment
       batch.set(ref, { ...syncData, assignedTo: null, assignedName: null });
     } else {
-      // Already exists — merge all fields including status
+      // Already exists — merge all fields (type is now latched above)
       batch.set(ref, syncData, { merge: true });
     }
   });
