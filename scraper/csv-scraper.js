@@ -109,7 +109,9 @@ function parseCSVLine(line) {
  * Build a planSnapshot document from parsed room data.
  */
 function buildSnapshot(rooms, pullType, dateISO, timezone) {
-  const checkoutRooms = rooms.filter(r => r.stayType === 'C/O' || (r.status === 'VAC' && r.condition === 'Dirty' && !r.stayType));
+  // All rooms with C/O flag (checked out today, regardless of clean/dirty)
+  const checkoutRooms = rooms.filter(r => r.stayType === 'C/O');
+  // Stayovers: occupied rooms staying
   const stayoverRooms = rooms.filter(r => r.status === 'OCC' && r.stayType === 'Stay');
   const fullServiceRooms = stayoverRooms.filter(r => r.service === 'Full');
   const noneServiceRooms = stayoverRooms.filter(r => r.service === 'None');
@@ -120,15 +122,30 @@ function buildSnapshot(rooms, pullType, dateISO, timezone) {
   // Arrivals: OCC rooms with blank stayType (just checked in, no Stay/C/O yet)
   const arrivalRooms = rooms.filter(r => r.status === 'OCC' && !r.stayType);
 
-  // Calculate cleaning workload
-  // Checkouts: full turnover clean
-  // Full-service stayovers: full clean
-  // None-service stayovers: light touch (but still need some attention)
-  const checkoutMinutes = checkoutRooms.length * CLEANING_TIMES.checkout;
-  const stayoverMinutes = fullServiceRooms.length * CLEANING_TIMES.stayover;
-  // Vacant dirty rooms also need turnover
-  const vacantDirtyMinutes = vacantDirty.length * CLEANING_TIMES.checkout;
-  const totalCleaningMinutes = checkoutMinutes + stayoverMinutes + vacantDirtyMinutes;
+  // ── Calculate cleaning workload ──────────────────────────────────────────
+  // Only count DIRTY rooms — clean ones are already done.
+  //
+  // Checkout/turnover cleans (30 min each):
+  //   - C/O rooms that are still Dirty
+  //   - Vacant Dirty rooms (no C/O flag but need turnover)
+  // Stayover full-service cleans (20 min each):
+  //   - Stay rooms with Service=Full that are Dirty
+  // Stayover light-touch (10 min each):
+  //   - Stay rooms with Service=None that are Dirty
+  //   - These still need trash, towels, quick tidy
+  //
+  // NOTE: On the 6am morning pull, most rooms show Dirty (nobody's cleaned yet).
+  // That gives the accurate workload. Mid-day pulls show partially cleaned counts.
+
+  const dirtyCheckouts = checkoutRooms.filter(r => r.condition === 'Dirty');
+  const dirtyFullService = fullServiceRooms.filter(r => r.condition === 'Dirty');
+  const dirtyLightService = noneServiceRooms.filter(r => r.condition === 'Dirty');
+
+  const checkoutMinutes = dirtyCheckouts.length * CLEANING_TIMES.checkout;        // 30 min
+  const fullServiceMinutes = dirtyFullService.length * CLEANING_TIMES.stayover;   // 20 min
+  const lightServiceMinutes = dirtyLightService.length * 10;                      // 10 min light touch
+  const vacantDirtyMinutes = vacantDirty.length * CLEANING_TIMES.checkout;        // 30 min turnover
+  const totalCleaningMinutes = checkoutMinutes + fullServiceMinutes + lightServiceMinutes + vacantDirtyMinutes;
   const recommendedHKs = Math.max(1, Math.ceil(totalCleaningMinutes / SHIFT_MINUTES));
 
   return {
@@ -225,114 +242,43 @@ async function downloadCSVFromCA(page, log) {
   await page.waitForTimeout(1000); // CA forms can be slow
 
   // ── Set all filters explicitly (never trust defaults / sticky state) ──
+  // Element names confirmed from live CA DOM inspection 2026-04-16:
+  //   select[name="status"]              → "*" = Select All, "O" = Occupied, "OOO" = Out of Order, "V" = Vacant
+  //   select[name="condition"]           → "*" = Select All, "D" = Dirty, "C" = Clean
+  //   select[name="housekeeper"]         → "*" = Select All
+  //   input[name="roomRangeStartField"] → "101"
+  //   input[name="roomRangeEndField"]   → "422"
+  //   select[name="sort"]               → "room_number" = Room Number
+  //   input#CSVcheckbox                  → check to get CSV
+  //   a:has-text("Submit")              → submit (it's a link, not a button)
 
-  // Room Range: 101 to 422
-  try {
-    const roomFrom = page.locator('input[name="roomFrom"], input[name="startRoom"], #roomFrom, #startRoom').first();
-    const roomTo = page.locator('input[name="roomTo"], input[name="endRoom"], #roomTo, #endRoom').first();
-    if (await roomFrom.count() > 0) {
-      await roomFrom.fill('101');
-      log('[CSV] Set room range start: 101');
-    }
-    if (await roomTo.count() > 0) {
-      await roomTo.fill('422');
-      log('[CSV] Set room range end: 422');
-    }
-  } catch (e) {
-    log(`[CSV] Room range fields not found (may use different names): ${e.message}`);
-  }
+  // Status: Select All
+  await page.selectOption('select[name="status"]', '*');
+  log('[CSV] Set Status → Select All');
 
-  // Status dropdown: "Select All" (not just OCC or VAC)
-  try {
-    const statusSelect = page.locator('select[name="roomStatus"], select[name="status"], #roomStatus, #status').first();
-    if (await statusSelect.count() > 0) {
-      // Try common values for "all"
-      const options = await statusSelect.locator('option').allTextContents();
-      log(`[CSV] Status options: ${options.join(', ')}`);
-      const allOption = options.find(o => /select all|all/i.test(o));
-      if (allOption) {
-        await statusSelect.selectOption({ label: allOption });
-      } else {
-        // Just select the first option which is usually "Select All" or blank
-        await statusSelect.selectOption({ index: 0 });
-      }
-      log('[CSV] Set Status to Select All');
-    }
-  } catch (e) {
-    log(`[CSV] Status select issue: ${e.message}`);
-  }
+  // Condition: Select All (default is "Dirty" — must override)
+  await page.selectOption('select[name="condition"]', '*');
+  log('[CSV] Set Condition → Select All');
 
-  // Condition dropdown: "Select All" (not just Dirty)
-  try {
-    const condSelect = page.locator('select[name="condition"], select[name="roomCondition"], #condition, #roomCondition').first();
-    if (await condSelect.count() > 0) {
-      const options = await condSelect.locator('option').allTextContents();
-      log(`[CSV] Condition options: ${options.join(', ')}`);
-      const allOption = options.find(o => /select all|all/i.test(o));
-      if (allOption) {
-        await condSelect.selectOption({ label: allOption });
-      } else {
-        await condSelect.selectOption({ index: 0 });
-      }
-      log('[CSV] Set Condition to Select All');
-    }
-  } catch (e) {
-    log(`[CSV] Condition select issue: ${e.message}`);
-  }
+  // Housekeeper: Select All
+  await page.selectOption('select[name="housekeeper"]', '*');
+  log('[CSV] Set Housekeeper → Select All');
 
-  // Housekeeper dropdown: "Select All"
-  try {
-    const hkSelect = page.locator('select[name="housekeeper"], select[name="assignedTo"], #housekeeper, #assignedTo').first();
-    if (await hkSelect.count() > 0) {
-      const options = await hkSelect.locator('option').allTextContents();
-      const allOption = options.find(o => /select all|all/i.test(o));
-      if (allOption) {
-        await hkSelect.selectOption({ label: allOption });
-      } else {
-        await hkSelect.selectOption({ index: 0 });
-      }
-      log('[CSV] Set Housekeeper to Select All');
-    }
-  } catch (e) {
-    log(`[CSV] Housekeeper select issue: ${e.message}`);
-  }
+  // Room Range: 101 – 422
+  await page.fill('input[name="roomRangeStartField"]', '101');
+  await page.fill('input[name="roomRangeEndField"]', '422');
+  log('[CSV] Set Room Range → 101–422');
 
-  // Sort by Room Number
-  try {
-    const sortSelect = page.locator('select[name="sort"], select[name="sortBy"], #sort, #sortBy').first();
-    if (await sortSelect.count() > 0) {
-      const options = await sortSelect.locator('option').allTextContents();
-      const roomOpt = options.find(o => /room/i.test(o));
-      if (roomOpt) {
-        await sortSelect.selectOption({ label: roomOpt });
-      }
-      log('[CSV] Set Sort to Room Number');
-    }
-  } catch (e) {
-    log(`[CSV] Sort select issue: ${e.message}`);
-  }
+  // Sort: Room Number
+  await page.selectOption('select[name="sort"]', 'room_number');
+  log('[CSV] Set Sort → Room Number');
 
-  // Check the "Generate report as .CSV file" checkbox
-  try {
-    const csvCheckbox = page.locator('input[type="checkbox"][name*="csv"], input[type="checkbox"][name*="CSV"], input[type="checkbox"][id*="csv"], input[type="checkbox"][id*="CSV"]').first();
-    if (await csvCheckbox.count() > 0) {
-      if (!(await csvCheckbox.isChecked())) {
-        await csvCheckbox.check();
-      }
-      log('[CSV] Checked CSV export box');
-    } else {
-      // Try finding by label text
-      const csvLabel = page.locator('label:has-text("CSV"), label:has-text("csv")').first();
-      if (await csvLabel.count() > 0) {
-        await csvLabel.click();
-        log('[CSV] Clicked CSV label');
-      } else {
-        log('[CSV] WARNING: Could not find CSV checkbox — report may come as HTML');
-      }
-    }
-  } catch (e) {
-    log(`[CSV] CSV checkbox issue: ${e.message}`);
+  // CSV export checkbox
+  const csvBox = page.locator('#CSVcheckbox');
+  if (!(await csvBox.isChecked())) {
+    await csvBox.check();
   }
+  log('[CSV] Checked CSV export box');
 
   // Screenshot for debugging before submit
   await page.screenshot({ path: path.join(__dirname, 'csv-report-form.png') });
@@ -345,8 +291,8 @@ async function downloadCSVFromCA(page, log) {
   // Also listen for new popup window (CA sometimes opens CSV in new tab)
   const popupPromise = page.waitForEvent('popup', { timeout: 30000 }).catch(() => null);
 
-  // Click Submit
-  const submitBtn = page.locator('input[type="submit"], button[type="submit"], input[value="Submit"], a:has-text("Submit")').first();
+  // Click Submit (CA uses an <a> link, not a <button>)
+  const submitBtn = page.locator('a:has-text("Submit")').first();
   await submitBtn.click();
   log('[CSV] Clicked Submit');
 
