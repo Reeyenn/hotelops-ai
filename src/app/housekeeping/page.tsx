@@ -16,7 +16,9 @@ import {
   updateProperty,
   getDeepCleanConfig, setDeepCleanConfig, getDeepCleanRecords,
   markRoomDeepCleaned, assignRoomDeepClean, completeRoomDeepClean,
+  subscribeToPlanSnapshot,
 } from '@/lib/firestore';
+import type { PlanSnapshot } from '@/lib/firestore';
 import { getPublicAreasDueToday, calcPublicAreaMinutes, autoAssignRooms, getOverdueRooms, calcDndFreedMinutes, suggestDeepCleans } from '@/lib/calculations';
 import { getDefaultPublicAreas } from '@/lib/defaults';
 import type { PublicArea } from '@/types';
@@ -27,7 +29,7 @@ import {
   Calendar, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, CheckCircle2, Clock,
   AlertTriangle, Users, Send, Zap, BedDouble, Plus, Pencil, Trash2, Star, Check,
   Trophy, TrendingUp, TrendingDown, Minus, Upload, Settings,
-  Search, XCircle,
+  Search, XCircle, Home, ArrowRightLeft, Sparkles, Ban,
 } from 'lucide-react';
 
 // ─── Tab config ──────────────────────────────────────────────────────────────
@@ -290,6 +292,9 @@ function ScheduleSection() {
   const [settingsForm, setSettingsForm] = useState({ checkoutMinutes: 30, stayoverMinutes: 20, prepMinutesPerActivity: 5 });
   const [savingSettings, setSavingSettings] = useState(false);
 
+  // Plan snapshot from CSV scraper (7pm / 6am pulls)
+  const [planSnapshot, setPlanSnapshot] = useState<PlanSnapshot | null>(null);
+
   // Prediction model state
   const [shiftRooms, setShiftRooms] = useState<Room[]>([]);
   const [publicAreas, setPublicAreas] = useState<PublicArea[]>([]);
@@ -337,6 +342,12 @@ function ScheduleSection() {
       console.error('Error fetching rooms for date:', err);
       setPredictionLoading(false);
     });
+  }, [uid, pid, shiftDate]);
+
+  // Subscribe to plan snapshot (CSV data from 7pm/6am pulls)
+  useEffect(() => {
+    if (!uid || !pid) return;
+    return subscribeToPlanSnapshot(uid, pid, shiftDate, setPlanSnapshot);
   }, [uid, pid, shiftDate]);
 
   useEffect(() => {
@@ -629,6 +640,56 @@ function ScheduleSection() {
           <div style={{ textAlign: 'center' }}>
             <div className="spinner" style={{ width: '28px', height: '28px', margin: '0 auto 12px' }} />
             <p style={{ fontSize: '14px', color: '#454652', margin: 0 }}>{t('roomDataLoading', lang)}</p>
+          </div>
+        ) : totalRooms === 0 && planSnapshot ? (
+          /* ── Plan Snapshot Card (CSV data from 7pm/6am) ── */
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', position: 'relative', zIndex: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+              <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {planSnapshot.pullType === 'evening' ? (lang === 'es' ? 'Plan Nocturno' : 'Evening Plan') : (lang === 'es' ? 'Plan Matutino' : 'Morning Plan')}
+              </span>
+              <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                {planSnapshot.pulledAt ? new Date(planSnapshot.pulledAt).toLocaleTimeString(lang === 'es' ? 'es' : 'en', { hour: 'numeric', minute: '2-digit' }) : ''}
+              </span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, auto)', gap: '40px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <p style={{ fontSize: '14px', color: '#454652', fontWeight: 500, margin: 0 }}>{lang === 'es' ? 'Salidas' : 'Checkouts'}</p>
+                <p style={{ fontFamily: 'var(--font-mono)', fontSize: '36px', fontWeight: 500, color: '#364262', lineHeight: 1, margin: 0 }}>{planSnapshot.checkouts}</p>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <p style={{ fontSize: '14px', color: '#454652', fontWeight: 500, margin: 0 }}>{lang === 'es' ? 'Continuaciones' : 'Stayovers'}</p>
+                <p style={{ fontFamily: 'var(--font-mono)', fontSize: '36px', fontWeight: 500, color: '#364262', lineHeight: 1, margin: 0 }}>
+                  {planSnapshot.stayovers}
+                  <span style={{ fontSize: '14px', color: '#64748b', fontWeight: 400, marginLeft: '6px' }}>({planSnapshot.fullServiceStayovers} full)</span>
+                </p>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <p style={{ fontSize: '14px', color: '#454652', fontWeight: 500, margin: 0 }}>{lang === 'es' ? 'Personal Necesario' : 'Staff Needed'}</p>
+                <p style={{ fontFamily: 'var(--font-mono)', fontSize: '36px', fontWeight: 500, color: '#364262', lineHeight: 1, margin: 0 }}>{planSnapshot.recommendedHKs}</p>
+              </div>
+            </div>
+            {/* Workload bar */}
+            <div style={{ width: '100%', maxWidth: '400px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>{lang === 'es' ? 'Carga Total' : 'Total Workload'}</span>
+                <span style={{ fontSize: '12px', fontFamily: 'var(--font-mono)', color: '#454652' }}>
+                  {Math.floor(planSnapshot.totalCleaningMinutes / 60)}h {planSnapshot.totalCleaningMinutes % 60}m
+                </span>
+              </div>
+              <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(197,197,212,0.2)', overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%', borderRadius: '3px',
+                  background: 'linear-gradient(90deg, #3b82f6, #6366f1)',
+                  width: `${Math.min(100, (planSnapshot.totalCleaningMinutes / (planSnapshot.recommendedHKs * 480)) * 100)}%`,
+                }} />
+              </div>
+            </div>
+            {/* Extra counts row */}
+            <div style={{ display: 'flex', gap: '24px', fontSize: '13px', color: '#64748b' }}>
+              <span><Sparkles size={13} style={{ display: 'inline', verticalAlign: '-2px', marginRight: '3px' }} />{planSnapshot.vacantClean} {lang === 'es' ? 'Listas' : 'Ready'}</span>
+              {planSnapshot.ooo > 0 && <span><Ban size={13} style={{ display: 'inline', verticalAlign: '-2px', marginRight: '3px' }} />{planSnapshot.ooo} OOO</span>}
+            </div>
           </div>
         ) : totalRooms === 0 ? (
           <div style={{ textAlign: 'center' }}>
