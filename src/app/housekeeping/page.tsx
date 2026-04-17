@@ -32,7 +32,7 @@ import {
   Calendar, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, CheckCircle2, Clock,
   AlertTriangle, Users, Send, Zap, BedDouble, Plus, Pencil, Trash2, Star, Check,
   Trophy, TrendingUp, TrendingDown, Minus, Upload, Settings,
-  Search, XCircle, Home, ArrowRightLeft, Sparkles, Ban,
+  Search, XCircle, Home, ArrowRightLeft, Sparkles, Ban, RefreshCw,
 } from 'lucide-react';
 
 // ─── Tab config ──────────────────────────────────────────────────────────────
@@ -782,12 +782,38 @@ function ScheduleSection() {
           assignedAreas: [] as string[],
         };
       });
-      await fetch('/api/send-shift-confirmations', {
+      const res = await fetch('/api/send-shift-confirmations', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ uid, pid, shiftDate, baseUrl, staff: staffPayload }),
       });
       // The subscribeToShiftConfirmations effect will pick up the new docs
       // and flip `alreadySent` automatically.
+
+      // Parse the API response so we can tell Maria what actually happened:
+      // - `fresh`: HKs who got a new YES/NO confirmation prompt
+      // - `updated`: HKs who had already replied YES and got an update SMS
+      // - `failed`: SMS sends that errored (invalid phone, Twilio issue, etc.)
+      try {
+        const data = (await res.json()) as { sent?: number; failed?: number; updated?: number; fresh?: number };
+        const fresh = data.fresh ?? 0;
+        const updated = data.updated ?? 0;
+        const failed = data.failed ?? 0;
+
+        const parts: string[] = [];
+        if (fresh > 0) parts.push(lang === 'es' ? `${fresh} confirmación${fresh === 1 ? '' : 'es'}` : `${fresh} confirmation${fresh === 1 ? '' : 's'}`);
+        if (updated > 0) parts.push(lang === 'es' ? `${updated} actualización${updated === 1 ? '' : 'es'}` : `${updated} update${updated === 1 ? '' : 's'}`);
+        if (failed > 0) parts.push(lang === 'es' ? `${failed} fallaron` : `${failed} failed`);
+
+        const msg = parts.length
+          ? (lang === 'es' ? `Enviado: ${parts.join(' · ')}` : `Sent: ${parts.join(' · ')}`)
+          : (lang === 'es' ? 'Enviado' : 'Sent');
+
+        if (toastTimer.current) clearTimeout(toastTimer.current);
+        setMoveToast(msg);
+        toastTimer.current = setTimeout(() => setMoveToast(null), 5000);
+      } catch (err) {
+        console.error('[Schedule] send response parse failed:', err);
+      }
     } finally { setSending(false); }
   };
 
@@ -1390,7 +1416,11 @@ function ScheduleSection() {
               {lang === 'es' ? 'Prioridad' : 'Priority'}
             </button>
 
-            {/* Send Confirmations — absolutely centered on the same line */}
+            {/* Send Confirmations — absolutely centered on the same line.
+                Before first send: primary "Send Confirmations" button.
+                After: status pill + smaller "Send Updates" button so Maria
+                can push changes (e.g. 6am overnight changes) without the
+                button disappearing. */}
             {!alreadySent && selectedCrew.length > 0 && (
               <button onClick={(e) => { e.stopPropagation(); handleSend(); }} disabled={sending} style={{
                 position: 'absolute', left: '50%', transform: 'translateX(-50%)',
@@ -1410,27 +1440,48 @@ function ScheduleSection() {
             {alreadySent && (
               <div style={{
                 position: 'absolute', left: '50%', transform: 'translateX(-50%)',
-                display: 'flex', alignItems: 'center', gap: '12px',
-                padding: '10px 20px',
-                background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(24px)',
-                border: '1px solid rgba(197,197,212,0.3)', borderRadius: '9999px',
-                fontSize: '13px', fontWeight: 600, color: '#454652',
+                display: 'flex', alignItems: 'center', gap: '10px',
                 whiteSpace: 'nowrap',
               }}>
-                <CheckCircle2 size={16} color="#10b981" />
-                <span>
-                  {lang === 'es' ? 'Enviado' : 'Sent'}
-                  {' · '}
-                  <span style={{ color: '#10b981' }}>{confirmedCount} {lang === 'es' ? 'confirmados' : 'confirmed'}</span>
-                  {' · '}
-                  <span style={{ color: '#6b7280' }}>{pendingCount} {lang === 'es' ? 'esperando' : 'waiting'}</span>
-                  {declinedCount > 0 && (
-                    <>
-                      {' · '}
-                      <span style={{ color: '#ef4444' }}>{declinedCount} {lang === 'es' ? 'no' : 'declined'}</span>
-                    </>
-                  )}
-                </span>
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '12px',
+                  padding: '10px 20px',
+                  background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(24px)',
+                  border: '1px solid rgba(197,197,212,0.3)', borderRadius: '9999px',
+                  fontSize: '13px', fontWeight: 600, color: '#454652',
+                }}>
+                  <CheckCircle2 size={16} color="#10b981" />
+                  <span>
+                    {lang === 'es' ? 'Enviado' : 'Sent'}
+                    {' · '}
+                    <span style={{ color: '#10b981' }}>{confirmedCount} {lang === 'es' ? 'confirmados' : 'confirmed'}</span>
+                    {' · '}
+                    <span style={{ color: '#6b7280' }}>{pendingCount} {lang === 'es' ? 'esperando' : 'waiting'}</span>
+                    {declinedCount > 0 && (
+                      <>
+                        {' · '}
+                        <span style={{ color: '#ef4444' }}>{declinedCount} {lang === 'es' ? 'no' : 'declined'}</span>
+                      </>
+                    )}
+                  </span>
+                </div>
+                {selectedCrew.length > 0 && (
+                  <button onClick={(e) => { e.stopPropagation(); handleSend(); }} disabled={sending} style={{
+                    padding: '10px 16px', background: '#006565', color: '#82e2e1',
+                    borderRadius: '9999px', fontWeight: 600, fontSize: '13px',
+                    border: 'none', cursor: sending ? 'not-allowed' : 'pointer',
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    boxShadow: '0 8px 20px -10px rgba(0,101,101,0.3)',
+                    opacity: sending ? 0.7 : 1,
+                    fontFamily: 'var(--font-sans)',
+                    whiteSpace: 'nowrap',
+                  }}>
+                    <RefreshCw size={14} />
+                    {sending
+                      ? (lang === 'es' ? 'Enviando…' : 'Sending…')
+                      : (lang === 'es' ? 'Enviar Actualizaciones' : 'Send Updates')}
+                  </button>
+                )}
               </div>
             )}
           </div>
