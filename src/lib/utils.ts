@@ -11,14 +11,18 @@ export function formatDate(date: Date | string, fmt = 'yyyy-MM-dd'): string {
   return format(d, fmt);
 }
 
+// Hard-code Central time so "today" on the HK page matches what the Texas
+// scraper writes, regardless of whose phone or laptop is opening the page.
+// en-CA gives us the ISO YYYY-MM-DD format directly.
+const APP_TIMEZONE = 'America/Chicago';
+
 export function todayStr(): string {
-  return format(new Date(), 'yyyy-MM-dd');
+  return new Intl.DateTimeFormat('en-CA', { timeZone: APP_TIMEZONE }).format(new Date());
 }
 
 export function yesterdayStr(): string {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  return format(d, 'yyyy-MM-dd');
+  const d = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  return new Intl.DateTimeFormat('en-CA', { timeZone: APP_TIMEZONE }).format(d);
 }
 
 export function generateId(): string {
