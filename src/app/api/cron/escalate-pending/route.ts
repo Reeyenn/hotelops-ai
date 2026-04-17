@@ -1,11 +1,15 @@
 /**
- * Escalation cron — runs every 15 minutes via Vercel Cron.
+ * Escalation cron — runs every 15 minutes via GitHub Actions (see
+ * .github/workflows/escalate-pending.yml). We moved off Vercel Cron because
+ * the Hobby plan blocks sub-daily schedules.
  *
  * For each pending shiftConfirmation:
  *  - 45+ min after sentAt with no firstRemindedAt → resend YES/NO prompt to HK,
  *    set firstRemindedAt
- *  - 75+ min after sentAt with no secondEscalatedAt → SMS managers (front_desk)
- *    "XYZ hasn't confirmed yet, please reach out", set secondEscalatedAt
+ *  - 75+ min after sentAt with no secondEscalatedAt → SMS the scheduling
+ *    manager (staff member flagged isSchedulingManager === true),
+ *    "XYZ hasn't confirmed yet, please reach out", set secondEscalatedAt.
+ *    No department fallback — if nobody is flagged, nobody gets paged.
  *
  * Iterates users → properties → shiftConfirmations to avoid needing a
  * collectionGroup index (works out-of-the-box on a fresh Firestore).
