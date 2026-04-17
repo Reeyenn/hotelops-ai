@@ -203,6 +203,11 @@ export default function StaffPage() {
   const [editMember, setEditMember] = useState<StaffMember | null>(null);
   const [form, setForm] = useState<StaffFormData>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  // In-app confirmation popup for Scheduling Manager swaps. When set, the
+  // swap-confirm modal is rendered over everything else. null = no swap pending.
+  const [swapConfirm, setSwapConfirm] = useState<
+    { currentManagerId: string; currentManagerName: string; newName: string } | null
+  >(null);
 
   /* ── Schedule state ── */
   const tomorrow = addDays(todayStr(), 1);
@@ -316,39 +321,11 @@ export default function StaffPage() {
     setShowModal(true);
   };
 
-  const handleSave = async () => {
+  // Core save routine. Assumes any required scheduling-manager swap has already
+  // been performed by the caller (handleSave or the swap-confirm modal Confirm
+  // button). Kept as its own function so both entry points share one code path.
+  const performSave = async () => {
     if (!uid || !pid || !form.name.trim()) return;
-
-    // ── Scheduling Manager swap guard ──────────────────────────────────────
-    // Only one staff member can be the scheduling manager at a time. If the
-    // user is turning the toggle ON for this person and someone else already
-    // holds the role, confirm the swap with them first.
-    if (form.isSchedulingManager) {
-      const currentManager = staff.find(
-        s => s.isSchedulingManager === true && s.id !== editMember?.id,
-      );
-      if (currentManager) {
-        const ok = window.confirm(
-          lang === 'es'
-            ? `${currentManager.name} es actualmente el responsable de horarios y recibe los mensajes de confirmación. Si continúas, ${form.name.trim()} tomará ese rol y ${currentManager.name} dejará de recibirlos. ¿Continuar?`
-            : `${currentManager.name} is currently the Scheduling Manager and receives the confirmation alerts. If you continue, ${form.name.trim()} will take that role and ${currentManager.name} will stop receiving them. Continue?`,
-        );
-        if (!ok) return;
-        // Swap: turn the current manager's flag off before saving this one on.
-        try {
-          await updateStaffMember(uid, pid, currentManager.id, { isSchedulingManager: false });
-        } catch (err) {
-          console.error('[staff] failed to clear previous scheduling manager:', err);
-          window.alert(
-            lang === 'es'
-              ? 'No se pudo actualizar el responsable anterior. Intenta de nuevo.'
-              : 'Could not update the previous manager. Please try again.',
-          );
-          return;
-        }
-      }
-    }
-
     setSaving(true);
     try {
       const vacationDates = form.vacationDates.split('\n').map(s => s.trim()).filter(s => /^\d{4}-\d{2}-\d{2}$/.test(s));
@@ -369,6 +346,52 @@ export default function StaffPage() {
       else await addStaffMember(uid, pid, { ...data, scheduledToday: false, weeklyHours: 0 });
       setShowModal(false);
     } finally { setSaving(false); }
+  };
+
+  const handleSave = async () => {
+    if (!uid || !pid || !form.name.trim()) return;
+
+    // ── Scheduling Manager swap guard ──────────────────────────────────────
+    // Only one staff member can be the scheduling manager at a time. If the
+    // user is turning the toggle ON for this person and someone else already
+    // holds the role, we show an in-app swap-confirm modal. The actual save
+    // (and the swap write on the previous manager) happens when the user
+    // confirms in that modal — see the modal JSX at the bottom of this file.
+    if (form.isSchedulingManager) {
+      const currentManager = staff.find(
+        s => s.isSchedulingManager === true && s.id !== editMember?.id,
+      );
+      if (currentManager) {
+        setSwapConfirm({
+          currentManagerId: currentManager.id,
+          currentManagerName: currentManager.name,
+          newName: form.name.trim(),
+        });
+        return;
+      }
+    }
+
+    await performSave();
+  };
+
+  // Called by the swap-confirm modal's "Confirm" button. Clears the previous
+  // scheduling manager's flag, then runs the normal save.
+  const confirmSchedulingManagerSwap = async () => {
+    if (!uid || !pid || !swapConfirm) return;
+    setSaving(true);
+    try {
+      await updateStaffMember(uid, pid, swapConfirm.currentManagerId, { isSchedulingManager: false });
+    } catch (err) {
+      console.error('[staff] failed to clear previous scheduling manager:', err);
+      setSaving(false);
+      setSwapConfirm(null);
+      return;
+    }
+    setSwapConfirm(null);
+    // performSave sets saving=true again itself; release first so it can manage
+    // the flag cleanly. (setSaving is synchronous in React 18 batched updates.)
+    setSaving(false);
+    await performSave();
   };
 
   const handleDelete = (member: StaffMember) => {
@@ -1355,6 +1378,87 @@ export default function StaffPage() {
                     {saving ? t('savingDots', lang) : editMember ? t('update', lang) : t('addStaff', lang)}
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ════════════════════════════════════════════════════════════════
+            SCHEDULING MANAGER SWAP CONFIRMATION
+            In-app modal (not window.confirm). Fires when the user tries to
+            turn on Scheduling Manager for someone while another person already
+            has it. Cancel → close modal, toggle stays on so user can try again
+            or untoggle manually. Confirm → flip the old manager's flag off,
+            then run the normal save.
+            ════════════════════════════════════════════════════════════════ */}
+        {swapConfirm && (
+          <div style={{
+            position: 'fixed', inset: 0, zIndex: 1100,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(27,28,25,0.5)', backdropFilter: 'blur(8px)',
+          }} onClick={() => { if (!saving) setSwapConfirm(null); }}>
+            <div onClick={e => e.stopPropagation()} style={{
+              background: '#fbf9f4', borderRadius: '24px',
+              width: '90%', maxWidth: '440px',
+              padding: '28px', boxShadow: '0 24px 48px rgba(0,0,0,0.2)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                <div style={{
+                  width: '40px', height: '40px', borderRadius: '50%',
+                  background: 'rgba(245,158,11,0.15)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: '22px', color: '#b45309' }}>
+                    swap_horiz
+                  </span>
+                </div>
+                <h2 style={{ margin: 0, fontFamily: 'Inter, sans-serif', fontWeight: 700, fontSize: '18px', color: '#1b1c19' }}>
+                  {lang === 'es' ? '¿Cambiar responsable de horarios?' : 'Switch Scheduling Manager?'}
+                </h2>
+              </div>
+
+              <p style={{
+                margin: '0 0 20px', fontFamily: 'Inter, sans-serif', fontSize: '14px',
+                color: '#454652', lineHeight: 1.5,
+              }}>
+                {lang === 'es'
+                  ? <>
+                      <strong>{swapConfirm.currentManagerName}</strong> es actualmente el responsable de horarios y recibe los mensajes de confirmación.
+                      Si continúas, <strong>{swapConfirm.newName}</strong> tomará ese rol y <strong>{swapConfirm.currentManagerName}</strong> dejará de recibirlos.
+                    </>
+                  : <>
+                      <strong>{swapConfirm.currentManagerName}</strong> is currently the Scheduling Manager and receives the confirmation alerts.
+                      If you continue, <strong>{swapConfirm.newName}</strong> will take that role and <strong>{swapConfirm.currentManagerName}</strong> will stop receiving them.
+                    </>}
+              </p>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button
+                  onClick={() => setSwapConfirm(null)}
+                  disabled={saving}
+                  style={{
+                    flex: 1, padding: '14px', border: '1px solid #d5d2ca', background: 'transparent',
+                    color: '#454652', borderRadius: '9999px', fontWeight: 600, fontSize: '14px',
+                    cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'Inter, sans-serif',
+                  }}
+                >
+                  {t('cancel', lang)}
+                </button>
+                <button
+                  onClick={confirmSchedulingManagerSwap}
+                  disabled={saving}
+                  style={{
+                    flex: 1, padding: '14px',
+                    background: saving ? 'rgba(54,66,98,0.4)' : '#364262',
+                    color: saving ? 'rgba(255,255,255,0.5)' : '#FFFFFF',
+                    border: 'none', borderRadius: '9999px', fontWeight: 600, fontSize: '14px',
+                    cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'Inter, sans-serif',
+                  }}
+                >
+                  {saving
+                    ? t('savingDots', lang)
+                    : lang === 'es' ? 'Sí, cambiar' : 'Yes, switch'}
+                </button>
               </div>
             </div>
           </div>
