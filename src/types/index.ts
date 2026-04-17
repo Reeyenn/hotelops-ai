@@ -7,7 +7,16 @@ export interface Property {
   avgOccupancy: number;
   hourlyWage: number;
   checkoutMinutes: number;      // default 30
-  stayoverMinutes: number;      // default 20
+  /**
+   * @deprecated Use `stayoverDay1Minutes` + `stayoverDay2Minutes` instead.
+   * Kept as fallback for existing property docs and any aggregate math that
+   * has no per-room day-of-stay signal. New code should prefer the two
+   * day-specific fields so light-touch vs full-service cleans are timed
+   * correctly through the 2-day cycle.
+   */
+  stayoverMinutes: number;      // default 20  (legacy — average / fallback)
+  stayoverDay1Minutes?: number; // default 15  — light touch, no bed change
+  stayoverDay2Minutes?: number; // default 20  — full clean w/ bed change
   prepMinutesPerActivity: number; // default 5
   shiftMinutes: number;         // default 480 (8 hrs)
   totalStaffOnRoster: number;
@@ -117,6 +126,9 @@ export interface Room {
   inspectedAt?: Date | null;    // timestamp of inspection sign-off
   isDnd?: boolean;              // Do Not Disturb flag
   dndNote?: string;             // optional DND note
+  arrival?: string;             // guest arrival date "M/D/YY" (from CSV pull)
+  stayoverDay?: number;         // 0 = arrival day, 1 = light, 2 = full, 3 = light, … (null if checkout/vacant)
+  stayoverMinutes?: number;     // classified cleaning time (0/15/20) — written by CSV scraper
   helpRequested?: boolean;      // housekeeper tapped "Need Help" — shows SOS badge on Maria's view
   checklist?: Record<string, boolean>; // cleaning checklist item completion
   photoUrl?: string;            // issue photo URL

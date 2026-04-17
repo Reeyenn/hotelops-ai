@@ -339,7 +339,13 @@ function ScheduleSection() {
   const [showPublicAreas, setShowPublicAreas] = useState(false);
   const [showAddStaff, setShowAddStaff] = useState(false);
   const [expandedCrew, setExpandedCrew] = useState<string | null>(null);
-  const [settingsForm, setSettingsForm] = useState({ checkoutMinutes: 30, stayoverMinutes: 20, prepMinutesPerActivity: 5 });
+  const [settingsForm, setSettingsForm] = useState({
+    checkoutMinutes: 30,
+    stayoverMinutes: 20,
+    stayoverDay1Minutes: 15,
+    stayoverDay2Minutes: 20,
+    prepMinutesPerActivity: 5,
+  });
   const [savingSettings, setSavingSettings] = useState(false);
 
   // Plan snapshot from CSV scraper (7pm / 6am pulls) — THE source of truth for Schedule tab.
@@ -479,9 +485,12 @@ function ScheduleSection() {
 
   useEffect(() => {
     if (activeProperty) {
+      const legacySo = activeProperty.stayoverMinutes ?? 20;
       setSettingsForm({
         checkoutMinutes: activeProperty.checkoutMinutes ?? 30,
-        stayoverMinutes: activeProperty.stayoverMinutes ?? 20,
+        stayoverMinutes: legacySo,
+        stayoverDay1Minutes: activeProperty.stayoverDay1Minutes ?? 15,
+        stayoverDay2Minutes: activeProperty.stayoverDay2Minutes ?? legacySo,
         prepMinutesPerActivity: activeProperty.prepMinutesPerActivity ?? 5,
       });
     }
@@ -490,20 +499,42 @@ function ScheduleSection() {
   const handleSaveSettings = async () => {
     if (!uid || !pid) return;
     setSavingSettings(true);
-    try { await updateProperty(uid, pid, settingsForm); await refreshProperty(); }
-    finally { setSavingSettings(false); setShowPredictionSettings(false); }
+    try {
+      // Keep legacy `stayoverMinutes` in sync with Day 2 (the fuller clean) so
+      // any old consumers still reading the deprecated field get the safer estimate.
+      const payload = { ...settingsForm, stayoverMinutes: settingsForm.stayoverDay2Minutes };
+      await updateProperty(uid, pid, payload);
+      await refreshProperty();
+    } finally {
+      setSavingSettings(false);
+      setShowPredictionSettings(false);
+    }
   };
 
   // ── Prediction model ──
   const coMins = activeProperty?.checkoutMinutes ?? 30;
-  const soMins = activeProperty?.stayoverMinutes ?? 20;
+  const legacySoMins = activeProperty?.stayoverMinutes ?? 20;
+  const day1Mins = activeProperty?.stayoverDay1Minutes ?? 15;
+  const day2Mins = activeProperty?.stayoverDay2Minutes ?? legacySoMins;
+  // soMins kept for legacy call sites (DND/over-time fallbacks) — represents a sensible "blended" stayover estimate.
+  const soMins = legacySoMins;
   const prepPerRoom = activeProperty?.prepMinutesPerActivity ?? 5;
   const shiftLen = Math.min(activeProperty?.shiftMinutes ?? 420, 420); // 7h max per housekeeper
 
   const checkouts = shiftRooms.filter(r => r.type === 'checkout').length;
   const stayovers = shiftRooms.filter(r => r.type === 'stayover').length;
   const totalRooms = checkouts + stayovers;
-  const roomMinutes = (checkouts * coMins) + (stayovers * soMins);
+  // Per-room cleaning minutes using stayoverDay cycle (Day 1 odd = light, Day 2 even = full).
+  // Fall back to legacy stayoverMinutes for arrival-day stayovers (stayoverDay=0 or missing).
+  const minsForRoom = (r: { type: string; stayoverDay?: number }): number => {
+    if (r.type === 'checkout') return coMins;
+    const d = r.stayoverDay;
+    if (typeof d !== 'number' || d <= 0) return legacySoMins;
+    return d % 2 === 1 ? day1Mins : day2Mins;
+  };
+  const stayoverRooms = shiftRooms.filter(r => r.type === 'stayover');
+  const stayoverMinutesTotal = stayoverRooms.reduce((sum, r) => sum + minsForRoom(r), 0);
+  const roomMinutes = (checkouts * coMins) + stayoverMinutesTotal;
   const prepMinutes = totalRooms * prepPerRoom;
 
   const [shiftY, shiftM, shiftD] = shiftDate.split('-').map(Number);
@@ -543,7 +574,12 @@ function ScheduleSection() {
       // First time: full auto-assign
       const fakeScheduled = selectedCrew.map(s => ({ ...s, scheduledToday: true }));
       const auto = autoAssignRooms(assignableRooms, fakeScheduled, {
-        checkoutMinutes: coMins, stayoverMinutes: soMins, prepMinutesPerRoom: prepPerRoom, shiftMinutes: shiftLen,
+        checkoutMinutes: coMins,
+        stayoverMinutes: legacySoMins,
+        stayoverDay1Minutes: day1Mins,
+        stayoverDay2Minutes: day2Mins,
+        prepMinutesPerRoom: prepPerRoom,
+        shiftMinutes: shiftLen,
       });
       setAssignments(auto);
       hasInitialAssign.current = true;
@@ -692,7 +728,7 @@ function ScheduleSection() {
     for (const r of assignableRooms) {
       const who = assignments[r.id];
       if (!who || !loadByStaff.has(who)) continue;
-      const mins = (r.type === 'checkout' ? coMins : soMins) + prepPerRoom;
+      const mins = minsForRoom(r) + prepPerRoom;
       loadByStaff.set(who, (loadByStaff.get(who) ?? 0) + mins);
     }
     // Sort unassigned rooms checkouts-first then by room number, then greedily assign.
@@ -709,7 +745,7 @@ function ScheduleSection() {
       }
       if (!best) break;
       next[r.id] = best;
-      const mins = (r.type === 'checkout' ? coMins : soMins) + prepPerRoom;
+      const mins = minsForRoom(r) + prepPerRoom;
       loadByStaff.set(best, bestLoad + mins);
     }
     setAssignments(next);
@@ -758,7 +794,7 @@ function ScheduleSection() {
   // Room workload per staff member
   const getStaffWorkload = (staffId: string) => {
     const staffRooms = assignableRooms.filter(r => assignments[r.id] === staffId);
-    const mins = staffRooms.reduce((sum, r) => sum + (r.type === 'checkout' ? coMins : soMins) + prepPerRoom, 0);
+    const mins = staffRooms.reduce((sum, r) => sum + minsForRoom(r) + prepPerRoom, 0);
     return { rooms: staffRooms, mins };
   };
 
@@ -938,7 +974,9 @@ function ScheduleSection() {
                 <p style={{ fontSize: '14px', color: '#454652', fontWeight: 500, margin: 0 }}>{lang === 'es' ? 'Continuaciones' : 'Stayovers'}</p>
                 <p style={{ fontFamily: 'var(--font-mono)', fontSize: '36px', fontWeight: 500, color: '#364262', lineHeight: 1, margin: 0 }}>
                   {planSnapshot.stayovers}
-                  <span style={{ fontSize: '14px', color: '#64748b', fontWeight: 400, marginLeft: '6px' }}>({planSnapshot.fullServiceStayovers} full)</span>
+                  <span style={{ fontSize: '14px', color: '#64748b', fontWeight: 400, marginLeft: '6px' }}>
+                    ({planSnapshot.stayoverDay1 ?? 0} {lang === 'es' ? 'ligeros' : 'light'} · {planSnapshot.stayoverDay2 ?? 0} {lang === 'es' ? 'completos' : 'full'})
+                  </span>
                 </p>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -1567,13 +1605,33 @@ function ScheduleSection() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {[
-                { label: lang === 'es' ? 'Habitación de salida' : 'Checkout room', key: 'checkoutMinutes' as const },
-                { label: lang === 'es' ? 'Habitación de continuación' : 'Stayover room', key: 'stayoverMinutes' as const },
-                { label: lang === 'es' ? 'Entre habitaciones' : 'Between rooms', key: 'prepMinutesPerActivity' as const },
-              ].map(({ label, key }) => (
-                <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '14px', fontWeight: 500, color: '#1b1c19' }}>{label}</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {
+                  label: lang === 'es' ? 'Habitación de salida' : 'Checkout room',
+                  sub: lang === 'es' ? 'Limpieza completa al salir' : 'Full clean at check-out',
+                  key: 'checkoutMinutes' as const,
+                },
+                {
+                  label: lang === 'es' ? 'Continuación — Día 1' : 'Stayover — Day 1',
+                  sub: lang === 'es' ? 'Limpieza ligera (sin cambio de sábanas)' : 'Light clean (no bed change)',
+                  key: 'stayoverDay1Minutes' as const,
+                },
+                {
+                  label: lang === 'es' ? 'Continuación — Día 2' : 'Stayover — Day 2',
+                  sub: lang === 'es' ? 'Limpieza completa (cambio de sábanas)' : 'Full clean (bed change)',
+                  key: 'stayoverDay2Minutes' as const,
+                },
+                {
+                  label: lang === 'es' ? 'Entre habitaciones' : 'Between rooms',
+                  sub: lang === 'es' ? 'Tiempo de preparación por hab.' : 'Prep/transition time',
+                  key: 'prepMinutesPerActivity' as const,
+                },
+              ].map(({ label, sub, key }) => (
+                <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                    <span style={{ fontSize: '14px', fontWeight: 500, color: '#1b1c19' }}>{label}</span>
+                    <span style={{ fontSize: '11px', color: '#9a9baa', marginTop: '2px' }}>{sub}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
                     <input className="input" type="number" min={key === 'prepMinutesPerActivity' ? 0 : 1} value={settingsForm[key]} onChange={e => setSettingsForm(p => ({ ...p, [key]: Number(e.target.value) || 0 }))} style={{ width: '64px', textAlign: 'center', padding: '8px 4px' }} />
                     <span style={{ fontSize: '13px', color: '#757684' }}>min</span>
                   </div>
@@ -1787,7 +1845,19 @@ function RoomsSection() {
   const isOverTime = (room: Room): boolean => {
     const elapsed = getElapsedMins(room);
     if (elapsed === null) return false;
-    const limit = room.type === 'checkout' ? (activeProperty?.checkoutMinutes ?? 30) : (activeProperty?.stayoverMinutes ?? 20);
+    let limit: number;
+    if (room.type === 'checkout') {
+      limit = activeProperty?.checkoutMinutes ?? 30;
+    } else {
+      const d = room.stayoverDay;
+      const d1 = activeProperty?.stayoverDay1Minutes ?? 15;
+      const d2 = activeProperty?.stayoverDay2Minutes ?? activeProperty?.stayoverMinutes ?? 20;
+      if (typeof d === 'number' && d > 0) {
+        limit = d % 2 === 1 ? d1 : d2;
+      } else {
+        limit = activeProperty?.stayoverMinutes ?? d2;
+      }
+    }
     return elapsed > limit;
   };
 

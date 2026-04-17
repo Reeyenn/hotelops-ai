@@ -39,6 +39,8 @@ export default function PropertySettingsPage() {
     hourlyWage: 12,
     checkoutMinutes: 30,
     stayoverMinutes: 20,
+    stayoverDay1Minutes: 15,
+    stayoverDay2Minutes: 20,
     prepMinutesPerActivity: 5,
     shiftMinutes: 480,
     weeklyBudget: 2500,
@@ -50,6 +52,7 @@ export default function PropertySettingsPage() {
 
   useEffect(() => {
     if (activeProperty) {
+      const legacySo = activeProperty.stayoverMinutes ?? 20;
       setForm({
         name: activeProperty.name ?? '',
         totalRooms: activeProperty.totalRooms ?? 0,
@@ -57,7 +60,9 @@ export default function PropertySettingsPage() {
         totalStaffOnRoster: activeProperty.totalStaffOnRoster ?? 8,
         hourlyWage: activeProperty.hourlyWage ?? 12,
         checkoutMinutes: activeProperty.checkoutMinutes ?? 30,
-        stayoverMinutes: activeProperty.stayoverMinutes ?? 20,
+        stayoverMinutes: legacySo,
+        stayoverDay1Minutes: activeProperty.stayoverDay1Minutes ?? 15,
+        stayoverDay2Minutes: activeProperty.stayoverDay2Minutes ?? legacySo,
         prepMinutesPerActivity: activeProperty.prepMinutesPerActivity ?? 5,
         shiftMinutes: activeProperty.shiftMinutes ?? 480,
         weeklyBudget: activeProperty.weeklyBudget ?? 2500,
@@ -69,7 +74,10 @@ export default function PropertySettingsPage() {
     if (!user || !activePropertyId) return;
     setSaving(true);
     try {
-      await updateProperty(user.uid, activePropertyId, form);
+      // Keep legacy `stayoverMinutes` aligned with Day 2 (the fuller clean) so any
+      // legacy consumers read the safer estimate.
+      const payload = { ...form, stayoverMinutes: form.stayoverDay2Minutes };
+      await updateProperty(user.uid, activePropertyId, payload);
       await refreshProperty();
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
@@ -166,10 +174,16 @@ export default function PropertySettingsPage() {
           <p className="label" style={{ marginBottom: '14px' }}>{lang === 'es' ? 'Configuración Laboral' : 'Labor Settings'}</p>
 
           <Field label={lang === 'es' ? 'Salario por Hora' : 'Housekeeper Hourly Wage'} field="hourlyWage" type="number" suffix="$/hr" form={form} setForm={setForm} />
+          <Field label={lang === 'es' ? 'Min. Checkout' : 'Checkout Minutes'} field="checkoutMinutes" type="number" suffix="min" form={form} setForm={setForm} />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <Field label={lang === 'es' ? 'Min. Checkout' : 'Checkout Minutes'} field="checkoutMinutes" type="number" suffix="min" form={form} setForm={setForm} />
-            <Field label={lang === 'es' ? 'Min. Stayover' : 'Stayover Minutes'} field="stayoverMinutes" type="number" suffix="min" form={form} setForm={setForm} />
+            <Field label={lang === 'es' ? 'Continuación Día 1 (ligero)' : 'Stayover Day 1 (light)'} field="stayoverDay1Minutes" type="number" suffix="min" form={form} setForm={setForm} />
+            <Field label={lang === 'es' ? 'Continuación Día 2 (completo)' : 'Stayover Day 2 (full)'} field="stayoverDay2Minutes" type="number" suffix="min" form={form} setForm={setForm} />
           </div>
+          <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '-8px 0 14px' }}>
+            {lang === 'es'
+              ? 'Se alterna cada 2 días: Día 1 (ligero, sin cambio de sábanas), Día 2 (completo, cambio de sábanas).'
+              : 'Alternates every 2 days: Day 1 (light, no bed change), Day 2 (full, bed change).'}
+          </p>
           <Field label={lang === 'es' ? 'Tiempo de Preparación' : 'Prep Time Per Activity'} field="prepMinutesPerActivity" type="number" suffix="min" form={form} setForm={setForm} />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <Field label={lang === 'es' ? 'Duración del Turno' : 'Shift Length'} field="shiftMinutes" type="number" suffix="min" form={form} setForm={setForm} />

@@ -603,19 +603,30 @@ export interface PlanSnapshot {
   totalRooms: number;
   checkouts: number;
   stayovers: number;
-  fullServiceStayovers: number;
-  noneServiceStayovers: number;
+  // 2-day stayover cycle (new — replaces fullServiceStayovers/noneServiceStayovers)
+  stayoverDay1: number;         // odd day of stay (1/3/5…) → light clean, 15 min
+  stayoverDay2: number;         // even day of stay (2/4/6…) → full clean, 20 min
+  stayoverArrivalDay: number;   // day 0 — arriving today, skipped (TBD)
+  stayoverUnknown: number;      // missing arrival date on CSV
   arrivals: number;
   vacantClean: number;
   vacantDirty: number;
   ooo: number;
+  // Workload breakdown (minutes)
+  checkoutMinutes: number;
+  stayoverDay1Minutes: number;
+  stayoverDay2Minutes: number;
+  vacantDirtyMinutes: number;
   totalCleaningMinutes: number;
   recommendedHKs: number;
+  // Room number arrays
   checkoutRoomNumbers: string[];
-  stayoverFullRoomNumbers: string[];
-  stayoverNoneRoomNumbers: string[];
+  stayoverDay1RoomNumbers: string[];
+  stayoverDay2RoomNumbers: string[];
+  stayoverArrivalRoomNumbers: string[];
   arrivalRoomNumbers: string[];
   vacantCleanRoomNumbers: string[];
+  vacantDirtyRoomNumbers: string[];
   oooRoomNumbers: string[];
   rooms: Array<{
     number: string;
@@ -630,6 +641,8 @@ export interface PlanSnapshot {
     arrival: string | null;
     departure: string | null;
     lastClean: string | null;
+    stayoverDay?: number | null;    // 0 (arrival), 1, 2, 3, …; undefined for non-stayovers
+    stayoverMinutes?: number;       // 0, 15, or 20 for stayovers; undefined otherwise
   }>;
 }
 

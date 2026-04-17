@@ -18,9 +18,66 @@ const fs = require('fs');
 const CA_REPORTS_URL = 'https://www.choiceadvantage.com/choicehotels/ReportViewStart.init';
 const DOWNLOAD_DIR = path.join(__dirname, 'downloads');
 
-// Cleaning time constants (same as scheduler.js)
-const CLEANING_TIMES = { checkout: 30, stayover: 20 };
+// Cleaning time constants.
+//
+// Stayover cleaning uses a 2-day cycle based on days-since-arrival, computed
+// from the CSV's Arrival column. The PMS's "Service = Full/None" flag is
+// IGNORED — it reflects Choice's brand cycle, not Comfort's actual practice.
+//
+//   Checkout                              → 30 min (stayType = C/O always wins)
+//   Stayover — odd day of stay (1,3,5…)   → 15 min (light touch, no bed change)
+//   Stayover — even day of stay (2,4,6…)  → 20 min (full clean, bed change)
+//   Stayover — arrival day (daysSince=0)  →  0 min (TBD — guest checking in today)
+//   Vacant Dirty                          → 30 min (turnover)
+const CLEANING_TIMES = {
+  checkout:     30,
+  stayoverDay1: 15,  // odd-numbered day of stay
+  stayoverDay2: 20,  // even-numbered day of stay
+  vacantDirty:  30,
+};
 const SHIFT_MINUTES = 480; // 8-hour shift
+
+// ─── Date helpers for stayover cycle math ────────────────────────────────────
+
+/** Parse CSV date "M/D/YY" or "M/D/YYYY" → Date (noon UTC to avoid DST edges). */
+function parseCSVDate(str) {
+  if (!str) return null;
+  const m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (!m) return null;
+  let [, mm, dd, yy] = m;
+  if (yy.length === 2) yy = '20' + yy;
+  return new Date(`${yy}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}T12:00:00Z`);
+}
+
+/** Whole days from `from` Date → `to` Date (can be negative). */
+function daysBetween(from, to) {
+  if (!from || !to) return null;
+  return Math.round((to - from) / 86400000);
+}
+
+/**
+ * Classify a stayover room based on its day-of-stay.
+ * Returns { day, minutes } where day is 0/1/2/etc. and minutes is the time
+ * that should be booked for its cleaning on `dateISO`.
+ *
+ * Day 0 = arrival day (guest just checking in, no service needed today).
+ * Day 1 / 3 / 5 … = light touch (15 min).
+ * Day 2 / 4 / 6 … = full clean with bed change (20 min).
+ */
+function classifyStayover(arrivalStr, dateISO) {
+  const arrival = parseCSVDate(arrivalStr);
+  const target  = new Date(dateISO + 'T12:00:00Z');
+  const day     = daysBetween(arrival, target);
+
+  if (day === null) {
+    // Missing arrival date — safest fallback is the lighter rate so we don't
+    // over-estimate workload. Log via the returned `unknown` flag.
+    return { day: null, minutes: CLEANING_TIMES.stayoverDay1, unknown: true };
+  }
+  if (day <= 0)               return { day, minutes: 0 };                           // arrival day, TBD
+  if (day % 2 === 1)          return { day, minutes: CLEANING_TIMES.stayoverDay1 }; // 15 min light
+  return                              { day, minutes: CLEANING_TIMES.stayoverDay2 }; // 20 min full
+}
 
 // ─── CSV Parser ──────────────────────────────────────────────────────────────
 
@@ -113,40 +170,46 @@ function buildSnapshot(rooms, pullType, dateISO, timezone) {
   const checkoutRooms = rooms.filter(r => r.stayType === 'C/O');
   // Stayovers: occupied rooms staying
   const stayoverRooms = rooms.filter(r => r.status === 'OCC' && r.stayType === 'Stay');
-  const fullServiceRooms = stayoverRooms.filter(r => r.service === 'Full');
-  const noneServiceRooms = stayoverRooms.filter(r => r.service === 'None');
-  const vacantClean = rooms.filter(r => r.status === 'VAC' && r.condition === 'Clean');
-  const vacantDirty = rooms.filter(r => r.status === 'VAC' && r.condition === 'Dirty');
-  const oooRooms = rooms.filter(r => r.status === 'OOO');
+  const vacantClean   = rooms.filter(r => r.status === 'VAC' && r.condition === 'Clean');
+  const vacantDirty   = rooms.filter(r => r.status === 'VAC' && r.condition === 'Dirty');
+  const oooRooms      = rooms.filter(r => r.status === 'OOO');
 
   // Arrivals: OCC rooms with blank stayType (just checked in, no Stay/C/O yet)
   const arrivalRooms = rooms.filter(r => r.status === 'OCC' && !r.stayType);
 
+  // ── Classify each stayover by day-of-stay ────────────────────────────────
+  // 2-day cycle based on Arrival date, ignoring the PMS's Service flag.
+  //   Day 1, 3, 5, …  → light touch    (15 min)
+  //   Day 2, 4, 6, …  → full w/ bed    (20 min)
+  //   Day 0           → arrival day, skipped (TBD)
+  //   Unknown arrival → default to 15 min, flagged for review
+  const stayoverClassified = stayoverRooms.map(r => ({
+    room: r,
+    ...classifyStayover(r.arrival, dateISO),
+  }));
+
+  const stayoverDay1Rooms  = stayoverClassified.filter(c => c.day !== null && c.day >  0 && c.day % 2 === 1);
+  const stayoverDay2Rooms  = stayoverClassified.filter(c => c.day !== null && c.day >  0 && c.day % 2 === 0);
+  const stayoverArrivalDay = stayoverClassified.filter(c => c.day !== null && c.day <= 0);
+  const stayoverUnknownDay = stayoverClassified.filter(c => c.unknown);
+
   // ── Calculate cleaning workload ──────────────────────────────────────────
-  // Only count DIRTY rooms — clean ones are already done.
-  //
-  // Checkout/turnover cleans (30 min each):
-  //   - C/O rooms that are still Dirty
-  //   - Vacant Dirty rooms (no C/O flag but need turnover)
-  // Stayover full-service cleans (20 min each):
-  //   - Stay rooms with Service=Full that are Dirty
-  // Stayover light-touch (10 min each):
-  //   - Stay rooms with Service=None that are Dirty
-  //   - These still need trash, towels, quick tidy
+  // Only count DIRTY rooms — clean ones are already done today.
   //
   // NOTE: On the 6am morning pull, most rooms show Dirty (nobody's cleaned yet).
   // That gives the accurate workload. Mid-day pulls show partially cleaned counts.
 
-  const dirtyCheckouts = checkoutRooms.filter(r => r.condition === 'Dirty');
-  const dirtyFullService = fullServiceRooms.filter(r => r.condition === 'Dirty');
-  const dirtyLightService = noneServiceRooms.filter(r => r.condition === 'Dirty');
+  const dirtyCheckouts    = checkoutRooms.filter(r => r.condition === 'Dirty');
+  const dirtyStayoverDay1 = stayoverDay1Rooms.filter(c => c.room.condition === 'Dirty');
+  const dirtyStayoverDay2 = stayoverDay2Rooms.filter(c => c.room.condition === 'Dirty');
 
-  const checkoutMinutes = dirtyCheckouts.length * CLEANING_TIMES.checkout;        // 30 min
-  const fullServiceMinutes = dirtyFullService.length * CLEANING_TIMES.stayover;   // 20 min
-  const lightServiceMinutes = dirtyLightService.length * 10;                      // 10 min light touch
-  const vacantDirtyMinutes = vacantDirty.length * CLEANING_TIMES.checkout;        // 30 min turnover
-  const totalCleaningMinutes = checkoutMinutes + fullServiceMinutes + lightServiceMinutes + vacantDirtyMinutes;
-  const recommendedHKs = Math.max(1, Math.ceil(totalCleaningMinutes / SHIFT_MINUTES));
+  const checkoutMinutes     = dirtyCheckouts.length    * CLEANING_TIMES.checkout;      // 30 min
+  const stayoverDay1Minutes = dirtyStayoverDay1.length * CLEANING_TIMES.stayoverDay1;  // 15 min
+  const stayoverDay2Minutes = dirtyStayoverDay2.length * CLEANING_TIMES.stayoverDay2;  // 20 min
+  const vacantDirtyMinutes  = vacantDirty.length       * CLEANING_TIMES.vacantDirty;   // 30 min turnover
+
+  const totalCleaningMinutes = checkoutMinutes + stayoverDay1Minutes + stayoverDay2Minutes + vacantDirtyMinutes;
+  const recommendedHKs       = Math.max(1, Math.ceil(totalCleaningMinutes / SHIFT_MINUTES));
 
   return {
     date: dateISO,
@@ -155,42 +218,59 @@ function buildSnapshot(rooms, pullType, dateISO, timezone) {
     totalRooms: rooms.length,
 
     // Counts
-    checkouts: checkoutRooms.length,
-    stayovers: stayoverRooms.length,
-    fullServiceStayovers: fullServiceRooms.length,
-    noneServiceStayovers: noneServiceRooms.length,
-    arrivals: arrivalRooms.length,
-    vacantClean: vacantClean.length,
-    vacantDirty: vacantDirty.length,
-    ooo: oooRooms.length,
+    checkouts:          checkoutRooms.length,
+    stayovers:          stayoverRooms.length,
+    stayoverDay1:       stayoverDay1Rooms.length,    // odd day  → light (15 min)
+    stayoverDay2:       stayoverDay2Rooms.length,    // even day → full  (20 min)
+    stayoverArrivalDay: stayoverArrivalDay.length,   // day 0 — skipped, TBD
+    stayoverUnknown:    stayoverUnknownDay.length,   // no arrival date on CSV
+    arrivals:           arrivalRooms.length,
+    vacantClean:        vacantClean.length,
+    vacantDirty:        vacantDirty.length,
+    ooo:                oooRooms.length,
 
-    // Workload
+    // Workload breakdown
+    checkoutMinutes,
+    stayoverDay1Minutes,
+    stayoverDay2Minutes,
+    vacantDirtyMinutes,
     totalCleaningMinutes,
     recommendedHKs,
 
     // Room lists (just room numbers for quick reference)
-    checkoutRoomNumbers: checkoutRooms.map(r => r.number),
-    stayoverFullRoomNumbers: fullServiceRooms.map(r => r.number),
-    stayoverNoneRoomNumbers: noneServiceRooms.map(r => r.number),
-    arrivalRoomNumbers: arrivalRooms.map(r => r.number),
-    vacantCleanRoomNumbers: vacantClean.map(r => r.number),
-    oooRoomNumbers: oooRooms.map(r => r.number),
+    checkoutRoomNumbers:        checkoutRooms.map(r => r.number),
+    stayoverDay1RoomNumbers:    stayoverDay1Rooms.map(c => c.room.number),
+    stayoverDay2RoomNumbers:    stayoverDay2Rooms.map(c => c.room.number),
+    stayoverArrivalRoomNumbers: stayoverArrivalDay.map(c => c.room.number),
+    arrivalRoomNumbers:         arrivalRooms.map(r => r.number),
+    vacantCleanRoomNumbers:     vacantClean.map(r => r.number),
+    vacantDirtyRoomNumbers:     vacantDirty.map(r => r.number),
+    oooRoomNumbers:             oooRooms.map(r => r.number),
 
     // Full room data array (for detailed view)
-    rooms: rooms.map(r => ({
-      number: r.number,
-      roomType: r.roomType,
-      status: r.status,
-      condition: r.condition,
-      stayType: r.stayType,
-      service: r.service,
-      adults: r.adults,
-      children: r.children,
-      housekeeper: r.housekeeper,
-      arrival: r.arrival,
-      departure: r.departure,
-      lastClean: r.lastClean,
-    })),
+    // Stayovers carry their classified day + minutes so the UI can show them.
+    rooms: rooms.map(r => {
+      const base = {
+        number:      r.number,
+        roomType:    r.roomType,
+        status:      r.status,
+        condition:   r.condition,
+        stayType:    r.stayType,
+        service:     r.service,
+        adults:      r.adults,
+        children:    r.children,
+        housekeeper: r.housekeeper,
+        arrival:     r.arrival,
+        departure:   r.departure,
+        lastClean:   r.lastClean,
+      };
+      if (r.status === 'OCC' && r.stayType === 'Stay') {
+        const cls = classifyStayover(r.arrival, dateISO);
+        base.stayoverDay     = cls.day;          // 0, 1, 2, 3, …
+        base.stayoverMinutes = cls.minutes;      // 0, 15, or 20
+      }
+      return base;
+    }),
   };
 }
 
@@ -379,7 +459,46 @@ async function writePlanSnapshot(db, config, snapshot, log) {
   // (morning overwrites evening data for same date, which is correct)
   await ref.set(snapshot, { merge: true });
 
-  log(`[CSV] planSnapshot/${snapshot.date} written — ${snapshot.totalRooms} rooms, ${snapshot.checkouts} C/Os, ${snapshot.stayovers} stays (${snapshot.fullServiceStayovers} full), rec ${snapshot.recommendedHKs} HKs`);
+  log(`[CSV] planSnapshot/${snapshot.date} written — ${snapshot.totalRooms} rooms, ${snapshot.checkouts} C/Os, ${snapshot.stayovers} stays (D1:${snapshot.stayoverDay1} / D2:${snapshot.stayoverDay2} / arrival:${snapshot.stayoverArrivalDay}), rec ${snapshot.recommendedHKs} HKs`);
+}
+
+/**
+ * Merge stayover-cycle fields (arrival, stayoverDay, stayoverMinutes) into each
+ * individual room doc at rooms/{date}_{number}. This lets the live housekeeping
+ * UI read per-room cycle day without re-parsing the snapshot.
+ *
+ * Uses `merge: true` so we never clobber fields written by the live room scraper
+ * (status, condition, housekeeper, timestamps, etc.).
+ */
+async function writeRoomStayoverDays(db, config, snapshot, log) {
+  const roomsCol = db
+    .collection('users').doc(config.USER_ID)
+    .collection('properties').doc(config.PROPERTY_ID)
+    .collection('rooms');
+
+  // Firestore batch limit is 500 writes — we have ~74 rooms, so one batch is safe.
+  const batch = db.batch();
+  let written = 0;
+
+  for (const r of snapshot.rooms) {
+    if (!r.number) continue;
+    const docId = `${snapshot.date}_${r.number}`;
+    const payload = {
+      number: r.number,
+      arrival: r.arrival ?? null,
+    };
+    if (typeof r.stayoverDay !== 'undefined') {
+      payload.stayoverDay = r.stayoverDay;
+    }
+    if (typeof r.stayoverMinutes !== 'undefined') {
+      payload.stayoverMinutes = r.stayoverMinutes;
+    }
+    batch.set(roomsCol.doc(docId), payload, { merge: true });
+    written++;
+  }
+
+  await batch.commit();
+  log(`[CSV] Merged stayover cycle fields into ${written} rooms/{date}_{number} docs`);
 }
 
 // ─── Main Entry Point ────────────────────────────────────────────────────────
@@ -445,6 +564,15 @@ async function runCSVScrape(page, db, config, pullType, log) {
     // Step 5: Write to Firestore
     await writePlanSnapshot(db, config, snapshot, log);
 
+    // Step 6: Merge stayover-cycle fields into individual room docs so the
+    // live UI (housekeeping schedule tab) can read per-room cycle day.
+    try {
+      await writeRoomStayoverDays(db, config, snapshot, log);
+    } catch (err) {
+      // Non-fatal: snapshot is still written, UI falls back to legacy minutes.
+      log(`[CSV] WARNING: room stayoverDay merge failed: ${err.message}`);
+    }
+
     log(`[CSV] === ${pullType} CSV scrape complete ===`);
     return snapshot;
   } catch (err) {
@@ -457,4 +585,11 @@ async function runCSVScrape(page, db, config, pullType, log) {
   }
 }
 
-module.exports = { runCSVScrape, parseCSV, buildSnapshot, downloadCSVFromCA };
+module.exports = {
+  runCSVScrape,
+  parseCSV,
+  buildSnapshot,
+  downloadCSVFromCA,
+  classifyStayover,  // exported for unit testing / UI reuse
+  CLEANING_TIMES,
+};

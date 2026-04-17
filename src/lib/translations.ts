@@ -51,6 +51,7 @@ type TranslationKey =
   | 'propertyNameLabel' | 'propertyNameHelp'
   | 'totalRoomsField' | 'avgOccupancyField' | 'staffOnRosterField'
   | 'hourlyWageField' | 'checkoutMinutesField' | 'stayoverMinutesField'
+  | 'stayoverDay1MinutesField' | 'stayoverDay2MinutesField'
   | 'shiftLengthField' | 'weeklyBudgetField'
   | 'nextStepTitle' | 'nextStepDesc' | 'openApp' | 'savingDots'
   // Dashboard
@@ -362,6 +363,8 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     hourlyWageField: 'Housekeeper Hourly Wage',
     checkoutMinutesField: 'Minutes to Clean a Checkout Room',
     stayoverMinutesField: 'Minutes to Clean a Stayover Room',
+    stayoverDay1MinutesField: 'Minutes for Stayover Day 1 (light clean)',
+    stayoverDay2MinutesField: 'Minutes for Stayover Day 2 (full clean)',
     shiftLengthField: 'Shift Length',
     weeklyBudgetField: 'Weekly Labor Budget (optional)',
     nextStepTitle: 'Next step:',
@@ -958,6 +961,8 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     hourlyWageField: 'Salario por Hora',
     checkoutMinutesField: 'Minutos por Hab. de Salida',
     stayoverMinutesField: 'Minutos por Hab. de Continuación',
+    stayoverDay1MinutesField: 'Minutos Continuación Día 1 (limpieza ligera)',
+    stayoverDay2MinutesField: 'Minutos Continuación Día 2 (limpieza completa)',
     shiftLengthField: 'Duración del Turno',
     weeklyBudgetField: 'Presupuesto Semanal (opcional)',
     nextStepTitle: 'Próximo paso:',
