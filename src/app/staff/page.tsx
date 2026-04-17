@@ -1303,8 +1303,8 @@ export default function StaffPage() {
                     label: lang === 'es' ? 'Responsable de horarios' : 'Scheduling Manager',
                     field: 'isSchedulingManager' as const,
                     hint: lang === 'es'
-                      ? 'Recibe los mensajes cuando un empleado no responde. Solo una persona a la vez.'
-                      : 'Receives the alert texts when a housekeeper does not reply. Only one person at a time.',
+                      ? 'Única persona que recibe los mensajes cuando un empleado no responde después de 75 minutos. Solo una persona a la vez.'
+                      : 'The only person who gets the alert text when a housekeeper does not reply after 75 minutes. Only one person at a time.',
                   },
                 ].map(({ label, field, hint }) => (
                   <div key={field} style={{ padding: '12px 16px', background: '#eae8e3', borderRadius: '16px' }}>
