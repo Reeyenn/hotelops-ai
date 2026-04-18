@@ -27,10 +27,19 @@ interface RequestBody {
   date: string;
 }
 
-// CSV `service` → Room.type
-function mapRoomType(service: string | null | undefined): 'checkout' | 'stayover' | 'vacant' {
-  if (service === 'Check Out') return 'checkout';
-  if (service === 'Stay Over') return 'stayover';
+// CSV room → Room.type
+// Mirrors send-shift-confirmations' logic so both endpoints agree.
+//   stayType === 'C/O'             → 'checkout'   (↗ icon)
+//   status === 'OCC'               → 'stayover'   (🔒 icon; covers "Stay" AND
+//                                                  arrivals where stayType is blank
+//                                                  — both have a guest in-room)
+//   VAC / OOO / anything else      → 'vacant'     (no icon)
+function mapRoomType(
+  stayType: string | null | undefined,
+  status: string | null | undefined,
+): 'checkout' | 'stayover' | 'vacant' {
+  if (stayType === 'C/O') return 'checkout';
+  if (status === 'OCC') return 'stayover';
   return 'vacant';
 }
 
@@ -71,8 +80,10 @@ export async function POST(req: NextRequest) {
       rooms?: Array<{
         number: string;
         roomType?: string;
-        condition?: string | null;
-        service?: string | null;
+        status?: string | null;          // OCC / VAC / OOO
+        condition?: string | null;       // Clean / Dirty
+        stayType?: string | null;        // "Stay" | "C/O" | null
+        service?: string | null;         // Full / None (Choice brand cycle, ignored)
         stayoverDay?: number | null;
         stayoverMinutes?: number;
         arrival?: string | null;
@@ -110,7 +121,7 @@ export async function POST(req: NextRequest) {
       const num = csv.number;
       if (!num) continue;
 
-      const type = mapRoomType(csv.service);
+      const type = mapRoomType(csv.stayType, csv.status);
       const status = mapRoomStatus(csv.condition);
 
       const docId = `${date}_${num}`;
