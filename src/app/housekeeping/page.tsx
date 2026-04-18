@@ -1731,8 +1731,10 @@ function ScheduleSection() {
                 The left cluster uses a tight 10px gap so there's breathing
                 room around this centered block. Before the first send:
                 primary "Send Confirmations" button. After: status pill +
-                smaller "Send Updates" button so Maria can push changes
-                (e.g. 6am overnight changes) without the button disappearing. */}
+                the SAME "Send Confirmations" button so Maria can re-send
+                assignments at any time without us calling it something
+                different. "Send Updates" as a concept is gone — it's one
+                action, and you can do it as many times as you want. */}
             {!alreadySent && selectedCrew.length > 0 && (
               <button onClick={(e) => { e.stopPropagation(); handleSend(); }} disabled={sending} style={{
                 position: 'absolute', left: '50%', transform: 'translateX(-50%)',
@@ -1788,10 +1790,10 @@ function ScheduleSection() {
                     fontFamily: 'var(--font-sans)',
                     whiteSpace: 'nowrap',
                   }}>
-                    <RefreshCw size={14} />
+                    <Zap size={14} />
                     {sending
                       ? (lang === 'es' ? 'Enviando…' : 'Sending…')
-                      : (lang === 'es' ? 'Enviar Actualizaciones' : 'Send Updates')}
+                      : (lang === 'es' ? 'Enviar Confirmaciones' : 'Send Confirmations')}
                   </button>
                 )}
               </div>
