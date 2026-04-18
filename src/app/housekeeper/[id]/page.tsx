@@ -708,8 +708,7 @@ function RoomCard({
           {/* Show startedAt time when in progress */}
           {isInProgress && room.startedAt && (
             <span style={{ fontSize: '11px', color: 'var(--navy-light, #2563EB)', fontWeight: 600 }}>
-              {t('start', lang)}
-              {format(firestoreToDate(room.startedAt), 'h:mm a')}
+              {t('start', lang)}: {format(firestoreToDate(room.startedAt), 'h:mm a')}
             </span>
           )}
         </div>

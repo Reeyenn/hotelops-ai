@@ -1522,11 +1522,14 @@ function ScheduleSection() {
                           {member.name}
                         </button>
                         {/* HK link + copy — fallback channel if SMS ever breaks.
-                            `hkUrl` points to /housekeeper/{staffId}, same link the SMS sends. */}
+                            `hkUrl` points to /housekeeper/{staffId}?uid=…&pid=…,
+                            identical to what the SMS sends. uid/pid are required
+                            for the Need Help / Report Issue buttons on the HK page. */}
                         {(() => {
+                          const qs = `?uid=${encodeURIComponent(uid)}&pid=${encodeURIComponent(pid)}`;
                           const hkUrl = typeof window !== 'undefined'
-                            ? `${window.location.origin}/housekeeper/${member.id}`
-                            : `/housekeeper/${member.id}`;
+                            ? `${window.location.origin}/housekeeper/${member.id}${qs}`
+                            : `/housekeeper/${member.id}${qs}`;
                           const isCopied = copiedFor === member.id;
                           return (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>

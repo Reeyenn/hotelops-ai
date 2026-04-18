@@ -10,7 +10,9 @@ import {
   addStaffMember, updateStaffMember, deleteStaffMember,
   subscribeToShiftConfirmations, subscribeToManagerNotifications,
   markNotificationRead, markAllNotificationsRead,
+  subscribeToPlanSnapshot,
 } from '@/lib/firestore';
+import type { PlanSnapshot } from '@/lib/firestore';
 import type { StaffMember, StaffDepartment, ShiftConfirmation, ManagerNotification, ConfirmationStatus } from '@/types';
 import {
   Users, Plus, Pencil, Trash2, Star, AlertTriangle, Clock,
@@ -219,6 +221,12 @@ export default function StaffPage() {
   const [sent, setSent] = useState(false);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [gmAccepted, setGmAccepted] = useState(false);
+  // Plan snapshot for the selected shiftDate — used to ground the GM
+  // recommendation in real CSV data (checkouts + stayovers) instead of a
+  // hardcoded 65% occupancy estimate. When the snapshot is unavailable we
+  // fall back to the old heuristic so first-time users still see something
+  // sane.
+  const [planSnapshot, setPlanSnapshot] = useState<PlanSnapshot | null>(null);
 
   /* ── Data subscriptions ── */
   useEffect(() => {
@@ -236,6 +244,12 @@ export default function StaffPage() {
     if (!uid || !pid) return;
     return subscribeToManagerNotifications(uid, pid, setNotifications);
   }, [uid, pid]);
+
+  useEffect(() => {
+    if (!uid || !pid) return;
+    setPlanSnapshot(null);
+    return subscribeToPlanSnapshot(uid, pid, shiftDate, setPlanSnapshot);
+  }, [uid, pid, shiftDate]);
 
   /* ── Derived: Directory ── */
   const counts = useMemo(() => {
@@ -292,12 +306,22 @@ export default function StaffPage() {
   }, [confirmations]);
 
   const totalRooms = activeProperty?.totalRooms || 0;
-  // Use a rough occupancy estimate — in real life this would come from PMS
-  const occupancyPct = totalRooms > 0 ? Math.round(((staff.filter(s => s.scheduledToday).length * 15) / totalRooms) * 100) : 65;
+
+  // Count rooms that actually need cleaning from the CSV snapshot. C/O and
+  // OCC+Stay both generate HK work; arrivals, vacants, and OOO don't. If the
+  // snapshot hasn't loaded yet (first-time user, no scrape yet) we fall back
+  // to the old 65% heuristic so the UI still shows a reasonable number.
+  const roomsNeedingClean = planSnapshot
+    ? (planSnapshot.checkouts ?? 0) + (planSnapshot.stayovers ?? 0)
+    : null;
+
+  const occupancyPct = totalRooms > 0 && roomsNeedingClean !== null
+    ? Math.round((roomsNeedingClean / totalRooms) * 100)
+    : 65;
 
   const gmRec = useMemo(
-    () => generateGMRecommendation(staff, shiftDate, totalRooms, 65, alreadyInPool),
-    [staff, shiftDate, totalRooms, alreadyInPool],
+    () => generateGMRecommendation(staff, shiftDate, totalRooms, occupancyPct, alreadyInPool),
+    [staff, shiftDate, totalRooms, occupancyPct, alreadyInPool],
   );
 
   /* ── Directory handlers ── */

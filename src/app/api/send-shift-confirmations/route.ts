@@ -227,7 +227,10 @@ export async function POST(req: NextRequest) {
 
           const rooms = assignedRooms ?? [];
           const areas = assignedAreas ?? [];
-          const hkUrl = `${baseUrl}/housekeeper/${staffId}`;
+          // Include uid + pid in the HK link so the mobile page can fire
+          // /api/help-request and /api/report-issue. Without them, the
+          // Need Help button silently fails (those endpoints require both).
+          const hkUrl = `${baseUrl}/housekeeper/${staffId}?uid=${encodeURIComponent(uid)}&pid=${encodeURIComponent(pid)}`;
 
           // One shiftConfirmation per (shiftDate, staffId). Deterministic ID so
           // re-clicking Send doesn't create duplicates — it refreshes the doc.
