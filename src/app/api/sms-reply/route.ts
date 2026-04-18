@@ -46,13 +46,92 @@ function formatShiftDate(dateStr: string, lang: 'en' | 'es'): string {
 }
 
 function normalise(text: string): string {
-  return text.trim().toUpperCase().replace(/[.!?¿¡]/g, '').trim();
+  return text.trim().toUpperCase().replace(/[.!?¿¡,;:()"'`]/g, '').trim();
 }
 
+// Tight exact-match sets for short replies (protects against false positives
+// on replies like "NOPE" or "YES but I'm late" which we handle via the fuzzy
+// matchers below).
 const YES_SET = new Set(['YES', 'Y', 'SI', 'SÍ', 'SÌ', 'S']);
 const NO_SET  = new Set(['NO', 'N']);
 const ES_SET  = new Set(['ESPANOL', 'ESPAÑOL', 'SPANISH', 'ESP']);
 const EN_SET  = new Set(['ENGLISH', 'INGLES', 'INGLÉS', 'EN']);
+
+/**
+ * Fuzzy classifier for short conversational replies from non-native English
+ * speakers on mobile keyboards. Examples we need to accept:
+ *
+ *   YES:  "yeah", "yep", "yup", "sure", "ok", "okay", "will do",
+ *         "coming", "ill be there", "im coming", "si si", "claro",
+ *         "yes im coming", "y es", "yess", "yes!!"
+ *
+ *   NO:   "nope", "nah", "cant", "cant make it", "sorry no",
+ *         "no puedo", "not coming", "sick"
+ *
+ * Returns 'yes' | 'no' | null. Returns null (not yes or no) on truly
+ * ambiguous inputs so the caller can send the "didn't catch that" hint.
+ *
+ * IMPORTANT: order of checks matters — we check NO *first* because replies
+ * like "not coming" could otherwise accidentally hit a YES keyword if we
+ * checked YES first.
+ */
+function classifyReply(normalised: string): 'yes' | 'no' | null {
+  if (!normalised) return null;
+
+  // 1. Exact matches (strict, fastest path)
+  if (YES_SET.has(normalised)) return 'yes';
+  if (NO_SET.has(normalised)) return 'no';
+
+  // 2. Collapse repeated chars ("YESSSS" → "YES") and re-check exact sets
+  const collapsed = normalised.replace(/(.)\1{2,}/g, '$1$1');
+  if (YES_SET.has(collapsed)) return 'yes';
+  if (NO_SET.has(collapsed)) return 'no';
+
+  // 3. Word-level tokenisation so we only match whole words, not substrings.
+  //    "SICK" should be NO, but should NOT accidentally match "YES" inside
+  //    another word.
+  const tokens = normalised.split(/\s+/).filter(Boolean);
+  const tokenSet = new Set(tokens);
+
+  // Strong NO signals — check these BEFORE any YES signal, since phrases like
+  // "not coming" or "sorry no" contain tokens that would otherwise match YES.
+  const NO_WORDS = [
+    'NO', 'N', 'NOPE', 'NAH', 'NEGATIVE', 'NEVER',
+    'CANT', 'CANNOT', 'WONT',
+    'SICK', 'BUSY', 'SORRY',
+    'NOT',         // "not coming", "not going"
+    'POR',         // rare but shows up in "no puedo" variations
+    'PUEDO',       // "no puedo"
+  ];
+  for (const w of NO_WORDS) {
+    if (tokenSet.has(w)) return 'no';
+  }
+
+  // Strong YES signals
+  const YES_WORDS = [
+    'YES', 'Y', 'YEAH', 'YEA', 'YEP', 'YUP', 'YUH',
+    'OK', 'OKAY', 'KAY', 'K',
+    'SURE', 'DEFINITELY', 'ABSOLUTELY',
+    'COMING', 'COMIN',
+    'SI', 'SÍ', 'CLARO', 'VALE', 'LISTO',
+    'CONFIRM', 'CONFIRMED',
+    'WILL',         // "will do", "will be there"
+    'AFFIRMATIVE',
+  ];
+  for (const w of YES_WORDS) {
+    if (tokenSet.has(w)) return 'yes';
+  }
+
+  // 4. Last-ditch substring check for glued-together replies like "YESS" or
+  //    typo'd "YS" — only apply when the whole normalised string is very
+  //    short, so we don't accidentally match "YES" inside a longer sentence.
+  if (normalised.length <= 6) {
+    if (/^Y(E|S|ES|ESS|SS)?$/.test(normalised)) return 'yes';
+    if (/^N(O|OP|OPE|AH)?$/.test(normalised)) return 'no';
+  }
+
+  return null;
+}
 
 type ShiftConfirmation = {
   uid: string;
@@ -258,8 +337,15 @@ export async function POST(req: NextRequest) {
       return twimlOk();
     }
 
+    // ── YES/NO fuzzy classification ─────────────────────────────────────────
+    // Translate conversational replies like "yes im coming", "yeah sure",
+    // "nope", "cant make it" into a clean yes/no/null signal. Falls through
+    // to the "didn't catch that" hint for truly ambiguous input.
+    const intent = classifyReply(reply);
+    await logHit({ stage: 'classified', reply, intent });
+
     // ── YES — confirm, send personal link, ping manager(s) ──────────────────
-    if (YES_SET.has(reply)) {
+    if (intent === 'yes') {
       await checkDoc.ref.update({
         status: 'confirmed',
         respondedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -296,7 +382,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ── NO — acknowledge, ping manager(s), NO auto-cascade ──────────────────
-    if (NO_SET.has(reply)) {
+    if (intent === 'no') {
       await checkDoc.ref.update({
         status: 'declined',
         respondedAt: admin.firestore.FieldValue.serverTimestamp(),

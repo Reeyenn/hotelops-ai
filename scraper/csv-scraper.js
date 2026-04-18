@@ -542,9 +542,17 @@ async function runCSVScrape(page, db, config, pullType, log) {
       throw new Error('Parsed 0 rooms from CSV — file may be malformed');
     }
 
-    // Sanity check: Comfort Suites Beaumont has 74 rooms
-    if (rooms.length < 60) {
-      log(`[CSV] WARNING: Only ${rooms.length} rooms parsed — expected ~74. Filters may be wrong.`);
+    // Sanity guard: Comfort Suites Beaumont has 74 rooms. If we got back
+    // significantly fewer, something is wrong — CA might have filtered the
+    // report, the DOM might have changed, or the download is partial. Refuse
+    // to overwrite the existing plan with bad data: stale-but-right beats
+    // fresh-but-wrong.
+    const MIN_EXPECTED_ROOMS = parseInt(process.env.MIN_EXPECTED_ROOMS || '60', 10);
+    if (rooms.length < MIN_EXPECTED_ROOMS) {
+      throw new Error(
+        `Only ${rooms.length} rooms parsed — expected ~74 (min ${MIN_EXPECTED_ROOMS}). ` +
+        `Refusing to overwrite planSnapshot with suspiciously small dataset.`
+      );
     }
 
     // Step 3: Build snapshot

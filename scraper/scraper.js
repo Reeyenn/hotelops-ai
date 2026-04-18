@@ -86,6 +86,39 @@ function log(msg) {
   console.log(`[${new Date().toISOString()}] ${msg}`);
 }
 
+// ─── Status reporting ──────────────────────────────────────────────────────
+// Scraper writes to Firestore so the app can warn users when the scraper is
+// down or a scrape has failed. Paths:
+//   scraperStatus/heartbeat  — bumped every tick (proves the loop is alive)
+//   scraperStatus/morning    — last morning scrape result (success or error)
+//   scraperStatus/evening    — last evening scrape result (success or error)
+// All writes are best-effort (try/catch) — status reporting must never crash
+// the main loop.
+
+async function writeHeartbeat() {
+  try {
+    await db.collection('scraperStatus').doc('heartbeat').set({
+      at: new Date(),
+      localHour: localHour(),
+      today: todayISO(),
+    }, { merge: true });
+  } catch (err) {
+    log(`Heartbeat write failed: ${err.message}`);
+  }
+}
+
+async function writeScrapeStatus(pullType, status, extra = {}) {
+  try {
+    await db.collection('scraperStatus').doc(pullType).set({
+      at: new Date(),
+      status, // 'success' | 'error'
+      ...extra,
+    }, { merge: true });
+  } catch (err) {
+    log(`Status write (${pullType}) failed: ${err.message}`);
+  }
+}
+
 // ─── Login ─────────────────────────────────────────────────────────────────
 
 async function login(page) {
@@ -148,6 +181,10 @@ async function runCSVScrapeFresh(page, pullType, relogin) {
     await relogin();
   } catch (loginErr) {
     log(`${pullType} pre-scrape login FAILED: ${loginErr.message}`);
+    await writeScrapeStatus(pullType, 'error', {
+      error: `login failed: ${loginErr.message}`,
+      date: todayISO(),
+    });
     return false;
   }
 
@@ -158,7 +195,15 @@ async function runCSVScrapeFresh(page, pullType, relogin) {
   };
 
   try {
-    await runCSVScrape(page, db, scrapeConfig, pullType, log);
+    const snapshot = await runCSVScrape(page, db, scrapeConfig, pullType, log);
+    await writeScrapeStatus(pullType, 'success', {
+      date: snapshot?.date || todayISO(),
+      totalRooms: snapshot?.totalRooms ?? null,
+      checkouts: snapshot?.checkouts ?? null,
+      stayovers: snapshot?.stayovers ?? null,
+      recommendedHKs: snapshot?.recommendedHKs ?? null,
+      error: null,
+    });
     return true;
   } catch (err) {
     const msg = err.message || '';
@@ -168,14 +213,27 @@ async function runCSVScrapeFresh(page, pullType, relogin) {
       log(`${pullType} scrape lost session mid-run — re-logging and retrying once...`);
       try {
         await relogin();
-        await runCSVScrape(page, db, scrapeConfig, pullType, log);
+        const snapshot = await runCSVScrape(page, db, scrapeConfig, pullType, log);
+        await writeScrapeStatus(pullType, 'success', {
+          date: snapshot?.date || todayISO(),
+          totalRooms: snapshot?.totalRooms ?? null,
+          error: null,
+        });
         return true;
       } catch (retryErr) {
         log(`${pullType} scrape retry FAILED: ${retryErr.message}`);
+        await writeScrapeStatus(pullType, 'error', {
+          error: `retry failed: ${retryErr.message}`,
+          date: todayISO(),
+        });
         return false;
       }
     }
     log(`${pullType} CSV pull error: ${msg}`);
+    await writeScrapeStatus(pullType, 'error', {
+      error: msg,
+      date: todayISO(),
+    });
     return false;
   }
 }
@@ -249,6 +307,9 @@ async function run() {
 
   async function tick() {
     try {
+      // Heartbeat first so the app knows the scraper is alive even if the
+      // scheduled pull didn't run this tick.
+      await writeHeartbeat();
       await maybeRunCSVPull(page, relogin);
       // Refresh session cookie so we stay logged in
       await context.storageState({ path: CONFIG.SESSION_FILE });

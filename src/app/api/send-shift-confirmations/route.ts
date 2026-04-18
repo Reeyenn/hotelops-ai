@@ -86,6 +86,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid shiftDate (expected YYYY-MM-DD)' }, { status: 400 });
     }
 
+    // ── Failsafe: refuse to Send with zero real assignments across the crew.
+    // A buggy client that sends an empty staff list would otherwise fire
+    // "no assignments" SMS to everyone and wipe rooms. Require `allowEmpty:
+    // true` to explicitly opt in.
+    const hasAnyWork = staff.some(s =>
+      (s.assignedRooms ?? []).length > 0 || (s.assignedAreas ?? []).length > 0,
+    );
+    const allowEmpty = (body as { allowEmpty?: boolean }).allowEmpty === true;
+    if (!hasAnyWork && !allowEmpty) {
+      return NextResponse.json({
+        error: 'Refusing to Send with no room or area assignments. Assign at least one HK before sending, or pass allowEmpty=true to override.',
+      }, { status: 400 });
+    }
+
     const db = admin.firestore();
 
     const propSnap = await db.collection('users').doc(uid).collection('properties').doc(pid).get();
@@ -334,6 +348,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ sent, failed, skipped, updated, fresh, perStaff });
   } catch (err) {
     console.error('send-shift-confirmations error:', err);
+    // Persist the error so we can diagnose without shell logs.
+    try {
+      await admin.firestore().collection('errorLogs').add({
+        route: '/api/send-shift-confirmations',
+        error: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack ?? null : null,
+        ts: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    } catch {}
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

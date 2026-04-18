@@ -59,6 +59,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid shiftDate' }, { status: 400 });
     }
 
+    // ── Failsafe: refuse to wipe all assignments without explicit opt-in ────
+    // A buggy client that sends an empty staff list would otherwise blank
+    // every assignment for the day. Require `allowClearAll: true` to mean it.
+    const hasAnyAssignment = staff.some(s => (s.assignedRooms ?? []).length > 0);
+    const allowClearAll = (body as { allowClearAll?: boolean }).allowClearAll === true;
+    if (!hasAnyAssignment && !allowClearAll) {
+      return NextResponse.json({
+        error: 'Refusing to clear all room assignments without allowClearAll=true',
+      }, { status: 400 });
+    }
+
     const db = admin.firestore();
 
     // Pull plan snapshot so we can seed any new (future-date) rooms with the
@@ -147,6 +158,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, writes });
   } catch (err) {
     console.error('sync-room-assignments error:', err);
+    try {
+      await admin.firestore().collection('errorLogs').add({
+        route: '/api/sync-room-assignments',
+        error: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack ?? null : null,
+        ts: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    } catch {}
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
