@@ -203,117 +203,132 @@ export async function POST(req: NextRequest) {
         }, { merge: true });
     }
 
-    const results = await Promise.allSettled(
-      staff.map(async ({ staffId, name, phone, language, assignedRooms, assignedAreas }) => {
-        const phone164 = toE164(phone);
-        if (!phone164) throw new Error(`Invalid phone: ${phone}`);
+    // Per-staff outcome. We always include every crew member in the response
+    // (even phoneless ones) so the UI can render a status badge next to each
+    // name. Room assignments are ALREADY saved above regardless of phone, so
+    // phoneless staff keep their rooms.
+    type StaffOutcome = {
+      staffId: string;
+      status: 'sent' | 'skipped' | 'failed';
+      reason?: 'no_phone' | 'invalid_phone' | 'sms_error' | string;
+      isUpdate?: boolean;
+    };
 
-        const rooms = assignedRooms ?? [];
-        const areas = assignedAreas ?? [];
-        const hkUrl = `${baseUrl}/housekeeper/${staffId}`;
+    const perStaff: StaffOutcome[] = await Promise.all(
+      staff.map(async ({ staffId, name, phone, language, assignedRooms, assignedAreas }): Promise<StaffOutcome> => {
+        try {
+          if (!phone || !phone.trim()) {
+            return { staffId, status: 'skipped', reason: 'no_phone' };
+          }
+          const phone164 = toE164(phone);
+          if (!phone164) {
+            return { staffId, status: 'skipped', reason: 'invalid_phone' };
+          }
 
-        // One shiftConfirmation per (shiftDate, staffId). Deterministic ID so
-        // re-clicking Send doesn't create duplicates — it refreshes the doc.
-        const docId = `${shiftDate}_${staffId}`;
-        const confirmRef = db
-          .collection('users').doc(uid)
-          .collection('properties').doc(pid)
-          .collection('shiftConfirmations').doc(docId);
+          const rooms = assignedRooms ?? [];
+          const areas = assignedAreas ?? [];
+          const hkUrl = `${baseUrl}/housekeeper/${staffId}`;
 
-        // Check for an existing confirmation doc. If the HK already replied
-        // YES ("confirmed"), we treat this Send as an update — preserve their
-        // confirmed status and send a short "your list changed" SMS with the
-        // new room numbers and their personal link. Pending/declined/new docs
-        // get the normal YES/NO prompt.
-        const existingSnap = await confirmRef.get();
-        const existingData = existingSnap.exists ? existingSnap.data() : null;
-        const isUpdate = existingData?.status === 'confirmed';
+          // One shiftConfirmation per (shiftDate, staffId). Deterministic ID so
+          // re-clicking Send doesn't create duplicates — it refreshes the doc.
+          const docId = `${shiftDate}_${staffId}`;
+          const confirmRef = db
+            .collection('users').doc(uid)
+            .collection('properties').doc(pid)
+            .collection('shiftConfirmations').doc(docId);
 
-        if (isUpdate) {
-          // Keep status = 'confirmed'. Merge in the new room/area assignments
-          // and refresh the link so the HK's personal page shows today's plan.
-          await confirmRef.update({
-            staffName: name,
-            staffPhone: phone164,
-            language,
-            assignedRooms: rooms,
-            assignedAreas: areas,
-            hkUrl,
-            hotelName,
-            lastUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            smsSent: false,
-          });
-        } else {
-          await confirmRef.set({
-            uid, pid,
-            staffId,
-            staffName: name,
-            staffPhone: phone164,
+          // Check for an existing confirmation doc. If the HK already replied
+          // YES ("confirmed"), we treat this Send as an update — preserve their
+          // confirmed status and send a short "your list changed" SMS with the
+          // new room numbers and their personal link. Pending/declined/new docs
+          // get the normal YES/NO prompt.
+          const existingSnap = await confirmRef.get();
+          const existingData = existingSnap.exists ? existingSnap.data() : null;
+          const isUpdate = existingData?.status === 'confirmed';
+
+          if (isUpdate) {
+            // Keep status = 'confirmed'. Merge in the new room/area assignments
+            // and refresh the link so the HK's personal page shows today's plan.
+            await confirmRef.update({
+              staffName: name,
+              staffPhone: phone164,
+              language,
+              assignedRooms: rooms,
+              assignedAreas: areas,
+              hkUrl,
+              hotelName,
+              lastUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              smsSent: false,
+            });
+          } else {
+            await confirmRef.set({
+              uid, pid,
+              staffId,
+              staffName: name,
+              staffPhone: phone164,
+              shiftDate,
+              status: 'pending',       // pending | confirmed | declined
+              language,
+              assignedRooms: rooms,
+              assignedAreas: areas,
+              hkUrl,
+              hotelName,
+              sentAt: admin.firestore.FieldValue.serverTimestamp(),
+              respondedAt: null,
+              smsSent: false,
+            });
+          }
+
+          // Top-level phone → doc path index so /api/sms-reply can find the
+          // pending confirmation via a direct GET (no collectionGroup query,
+          // no composite index required). Last-write-wins — the newest send
+          // for this phone is always what inbound replies match.
+          await db.collection('phoneLookup').doc(phone164).set({
+            path: confirmRef.path,
+            uid, pid, staffId,
             shiftDate,
-            status: 'pending',       // pending | confirmed | declined
-            language,
-            assignedRooms: rooms,
-            assignedAreas: areas,
-            hkUrl,
-            hotelName,
-            sentAt: admin.firestore.FieldValue.serverTimestamp(),
-            respondedAt: null,
-            smsSent: false,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           });
+
+          const firstName = name.split(' ')[0];
+          const dateLabel = formatShiftDate(shiftDate, language);
+
+          // Short summary of what changed, e.g. "Rooms: 101, 102, 103" or
+          // "Areas: Lobby, Breakfast Area" when there are no rooms. Keep it
+          // compact so the SMS doesn't balloon into multiple segments.
+          const roomsLabel = rooms.length
+            ? (language === 'es' ? `Cuartos: ${rooms.join(', ')}` : `Rooms: ${rooms.join(', ')}`)
+            : (areas.length
+                ? (language === 'es' ? `Áreas: ${areas.join(', ')}` : `Areas: ${areas.join(', ')}`)
+                : (language === 'es' ? 'Sin asignaciones' : 'No assignments'));
+
+          const message = isUpdate
+            ? (language === 'es'
+                ? `Hola ${firstName}! Tu lista para ${dateLabel} cambió.\n${roomsLabel}\nAbrir: ${hkUrl}\n– ${hotelName}`
+                : `Hi ${firstName}! Your list for ${dateLabel} changed.\n${roomsLabel}\nOpen: ${hkUrl}\n– ${hotelName}`)
+            : (language === 'es'
+                ? `Hola ${firstName}! ¿Puedes venir mañana (${dateLabel})?\nResponde SÍ o NO.\n\nFor English, reply ENGLISH\n– ${hotelName}`
+                : `Hi ${firstName}! Can you come in tomorrow (${dateLabel})?\nReply YES or NO.\n\nPara español, responde ESPAÑOL\n– ${hotelName}`);
+
+          await sendSms(phone164, message);
+          await confirmRef.update({ smsSent: true });
+
+          return { staffId, status: 'sent', isUpdate };
+        } catch (err) {
+          console.error(`send-shift-confirmations failed for ${name}:`, err);
+          const reason = err instanceof Error ? err.message : 'sms_error';
+          return { staffId, status: 'failed', reason };
         }
-
-        // Top-level phone → doc path index so /api/sms-reply can find the
-        // pending confirmation via a direct GET (no collectionGroup query,
-        // no composite index required). Last-write-wins — the newest send
-        // for this phone is always what inbound replies match.
-        await db.collection('phoneLookup').doc(phone164).set({
-          path: confirmRef.path,
-          uid, pid, staffId,
-          shiftDate,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
-
-        const firstName = name.split(' ')[0];
-        const dateLabel = formatShiftDate(shiftDate, language);
-
-        // Short summary of what changed, e.g. "Rooms: 101, 102, 103" or
-        // "Areas: Lobby, Breakfast Area" when there are no rooms. Keep it
-        // compact so the SMS doesn't balloon into multiple segments.
-        const roomsLabel = rooms.length
-          ? (language === 'es' ? `Cuartos: ${rooms.join(', ')}` : `Rooms: ${rooms.join(', ')}`)
-          : (areas.length
-              ? (language === 'es' ? `Áreas: ${areas.join(', ')}` : `Areas: ${areas.join(', ')}`)
-              : (language === 'es' ? 'Sin asignaciones' : 'No assignments'));
-
-        const message = isUpdate
-          ? (language === 'es'
-              ? `Hola ${firstName}! Tu lista para ${dateLabel} cambió.\n${roomsLabel}\nAbrir: ${hkUrl}\n– ${hotelName}`
-              : `Hi ${firstName}! Your list for ${dateLabel} changed.\n${roomsLabel}\nOpen: ${hkUrl}\n– ${hotelName}`)
-          : (language === 'es'
-              ? `Hola ${firstName}! ¿Puedes venir mañana (${dateLabel})?\nResponde SÍ o NO.\n\nFor English, reply ENGLISH\n– ${hotelName}`
-              : `Hi ${firstName}! Can you come in tomorrow (${dateLabel})?\nReply YES or NO.\n\nPara español, responde ESPAÑOL\n– ${hotelName}`);
-
-        await sendSms(phone164, message);
-        await confirmRef.update({ smsSent: true });
-
-        return { staffId, docId, isUpdate };
       })
     );
 
-    const sent = results.filter(r => r.status === 'fulfilled').length;
-    const failed = results.filter(r => r.status === 'rejected').length;
-    const updated = results.filter(
-      r => r.status === 'fulfilled' && (r.value as { isUpdate?: boolean })?.isUpdate === true,
-    ).length;
-    const fresh = sent - updated;
+    const sent    = perStaff.filter(r => r.status === 'sent').length;
+    const skipped = perStaff.filter(r => r.status === 'skipped').length;
+    const failed  = perStaff.filter(r => r.status === 'failed').length;
+    const updated = perStaff.filter(r => r.status === 'sent' && r.isUpdate === true).length;
+    const fresh   = sent - updated;
 
-    results.forEach((r, i) => {
-      if (r.status === 'rejected') {
-        console.error(`send-shift-confirmations failed for ${staff[i].name}:`, r.reason);
-      }
-    });
-
-    return NextResponse.json({ sent, failed, updated, fresh });
+    return NextResponse.json({ sent, failed, skipped, updated, fresh, perStaff });
   } catch (err) {
     console.error('send-shift-confirmations error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

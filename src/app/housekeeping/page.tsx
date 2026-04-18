@@ -335,6 +335,11 @@ function ScheduleSection() {
   const [shiftDate, setShiftDate] = useState(tomorrow);
   const [sending, setSending] = useState(false);
   const [confirmations, setConfirmations] = useState<ShiftConfirmation[]>([]);
+  // Per-person outcome from the last Send click: 'sent' | 'skipped' | 'failed'
+  // + a reason when it wasn't sent (e.g. 'no_phone'). Powers the badge next
+  // to each crew member's name on the Schedule tab.
+  type SendResult = { status: 'sent' | 'skipped' | 'failed'; reason?: string };
+  const [sendResults, setSendResults] = useState<Map<string, SendResult>>(new Map());
   const [showPredictionSettings, setShowPredictionSettings] = useState(false);
   const [showPublicAreas, setShowPublicAreas] = useState(false);
   const [showAddStaff, setShowAddStaff] = useState(false);
@@ -445,6 +450,12 @@ function ScheduleSection() {
     if (!uid || !pid) return;
     return subscribeToShiftConfirmations(uid, pid, shiftDate, setConfirmations);
   }, [uid, pid, shiftDate]);
+
+  // When the shift date changes, forget the previous Send outcomes — the
+  // badges are per-shift and shouldn't leak across dates.
+  useEffect(() => {
+    setSendResults(new Map());
+  }, [shiftDate]);
 
   // Map of staffId → confirmation status for this shift date
   const statusByStaff = useMemo(() => {
@@ -769,14 +780,19 @@ function ScheduleSection() {
       }).catch(err => console.error('[Schedule] save-before-send failed:', err));
 
       const baseUrl = window.location.origin;
-      const staffPayload = selectedCrew.filter(s => s.phone).map(s => {
+      // Include EVERYONE on the crew — even people without a phone number.
+      // The backend skips the SMS for phoneless staff but keeps their room
+      // assignments intact (so the rooms don't fly back to Unassigned). Each
+      // person gets a status back (sent / skipped / failed) that we render
+      // as a badge next to their name.
+      const staffPayload = selectedCrew.map(s => {
         const memberRooms = assignableRooms
           .filter(r => assignments[r.id] === s.id)
           .map(r => r.number);
         return {
           staffId: s.id,
           name: s.name,
-          phone: s.phone!,
+          phone: s.phone ?? '',
           language: s.language,
           assignedRooms: memberRooms,
           assignedAreas: [] as string[],
@@ -792,16 +808,30 @@ function ScheduleSection() {
       // Parse the API response so we can tell Maria what actually happened:
       // - `fresh`: HKs who got a new YES/NO confirmation prompt
       // - `updated`: HKs who had already replied YES and got an update SMS
-      // - `failed`: SMS sends that errored (invalid phone, Twilio issue, etc.)
+      // - `skipped`: HKs we couldn't text (no phone / invalid phone)
+      // - `failed`: SMS sends that errored (Twilio issue, etc.)
+      // - `perStaff`: per-person outcome, drives the badge next to each name
       try {
-        const data = (await res.json()) as { sent?: number; failed?: number; updated?: number; fresh?: number };
+        const data = (await res.json()) as {
+          sent?: number; failed?: number; skipped?: number; updated?: number; fresh?: number;
+          perStaff?: Array<{ staffId: string; status: 'sent' | 'skipped' | 'failed'; reason?: string }>;
+        };
         const fresh = data.fresh ?? 0;
         const updated = data.updated ?? 0;
+        const skipped = data.skipped ?? 0;
         const failed = data.failed ?? 0;
+
+        // Store per-person outcome so each crew card can show its own badge.
+        if (data.perStaff) {
+          const m = new Map<string, SendResult>();
+          data.perStaff.forEach(r => m.set(r.staffId, { status: r.status, reason: r.reason }));
+          setSendResults(m);
+        }
 
         const parts: string[] = [];
         if (fresh > 0) parts.push(lang === 'es' ? `${fresh} confirmación${fresh === 1 ? '' : 'es'}` : `${fresh} confirmation${fresh === 1 ? '' : 's'}`);
         if (updated > 0) parts.push(lang === 'es' ? `${updated} actualización${updated === 1 ? '' : 'es'}` : `${updated} update${updated === 1 ? '' : 's'}`);
+        if (skipped > 0) parts.push(lang === 'es' ? `${skipped} omitido${skipped === 1 ? '' : 's'}` : `${skipped} skipped`);
         if (failed > 0) parts.push(lang === 'es' ? `${failed} fallaron` : `${failed} failed`);
 
         const msg = parts.length
@@ -1223,14 +1253,40 @@ function ScheduleSection() {
               const statusBg = memberRooms.length === 0 ? '#d3e4f8' : isNearCapacity ? '#ffdad6' : '#eae8e3';
               const statusColor = memberRooms.length === 0 ? '#0c1d2b' : isNearCapacity ? '#93000a' : '#454652';
 
-              // Confirmation status from SMS replies — only shown after Send
+              // The badge next to each crew member's name has two layers:
+              //   1. If the HK has already replied to the SMS → "Confirmed" / "Declined"
+              //   2. Otherwise → what happened on the last Send click:
+              //        - sent     → "Sent Confirmation!" (green)
+              //        - skipped  → "Didn't Send — No Phone Number" (red)
+              //        - failed   → "Didn't Send — <reason>"         (red)
+              //   3. Fallback for page reloads: if we have no fresh Send result
+              //      but a pending confirmation doc exists, we know the SMS
+              //      went out at some point → "Sent Confirmation!"
               const confStatus = statusByStaff.get(member.id);
-              const confBadge = confStatus === 'confirmed'
-                ? { label: lang === 'es' ? 'Confirmado' : 'Confirmed',   bg: 'rgba(16,185,129,0.15)', color: '#059669' }
+              const sendResult = sendResults.get(member.id);
+
+              const reasonLabel = (reason?: string): string => {
+                switch (reason) {
+                  case 'no_phone':      return lang === 'es' ? 'Sin teléfono'        : 'No Phone Number';
+                  case 'invalid_phone': return lang === 'es' ? 'Teléfono inválido'   : 'Invalid Phone';
+                  case 'sms_error':     return lang === 'es' ? 'Error de SMS'        : 'SMS Error';
+                  default:              return reason || (lang === 'es' ? 'Error' : 'Error');
+                }
+              };
+
+              const confBadge =
+                confStatus === 'confirmed'
+                  ? { label: lang === 'es' ? 'Confirmado' : 'Confirmed',
+                      bg: 'rgba(16,185,129,0.15)', color: '#059669' }
                 : confStatus === 'declined'
-                ? { label: lang === 'es' ? 'No viene'   : 'Declined',    bg: 'rgba(239,68,68,0.12)',  color: '#b91c1c' }
-                : confStatus === 'pending'
-                ? { label: lang === 'es' ? 'Esperando'  : 'Waiting',     bg: 'rgba(107,114,128,0.12)', color: '#6b7280' }
+                  ? { label: lang === 'es' ? 'No viene' : 'Declined',
+                      bg: 'rgba(239,68,68,0.12)', color: '#b91c1c' }
+                : (sendResult?.status === 'skipped' || sendResult?.status === 'failed')
+                  ? { label: (lang === 'es' ? 'No se envió — ' : "Didn't Send — ") + reasonLabel(sendResult.reason),
+                      bg: 'rgba(239,68,68,0.12)', color: '#b91c1c' }
+                : (sendResult?.status === 'sent' || confStatus === 'pending')
+                  ? { label: lang === 'es' ? '¡Confirmación enviada!' : 'Sent Confirmation!',
+                      bg: 'rgba(16,185,129,0.15)', color: '#059669' }
                 : null;
 
               return (
