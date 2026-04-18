@@ -33,6 +33,7 @@ import {
   AlertTriangle, Users, Send, Zap, BedDouble, Plus, Pencil, Trash2, Star, Check,
   Trophy, TrendingUp, TrendingDown, Minus, Upload, Settings,
   Search, XCircle, Home, ArrowRightLeft, Sparkles, Ban, RefreshCw,
+  Link2, Copy,
 } from 'lucide-react';
 
 // ─── Tab config ──────────────────────────────────────────────────────────────
@@ -386,6 +387,10 @@ function ScheduleSection() {
   // Swap dropdown
   const [swapOpenFor, setSwapOpenFor] = useState<string | null>(null);
   const [swapAnchor, setSwapAnchor] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+
+  // "Copied!" flash feedback for the per-housekeeper link copy button
+  const [copiedFor, setCopiedFor] = useState<string | null>(null);
+  const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Move toast notification
   const [moveToast, setMoveToast] = useState<string | null>(null);
@@ -1469,21 +1474,85 @@ function ScheduleSection() {
                       }} />
                     </div>
                     <div>
-                      <button
-                        className="sched-crew-name"
-                        onClick={(e) => {
-                          const rect = e.currentTarget.getBoundingClientRect();
-                          setSwapAnchor({ top: rect.bottom + 4, left: rect.left });
-                          setSwapOpenFor(prev => prev === member.id ? null : member.id);
-                        }}
-                        style={{
-                          background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-                          fontFamily: 'var(--font-sans)', fontSize: '20px', fontWeight: 700,
-                          color: '#1b1c19', textAlign: 'left',
-                        }}
-                      >
-                        {member.name}
-                      </button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                        <button
+                          className="sched-crew-name"
+                          onClick={(e) => {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setSwapAnchor({ top: rect.bottom + 4, left: rect.left });
+                            setSwapOpenFor(prev => prev === member.id ? null : member.id);
+                          }}
+                          style={{
+                            background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                            fontFamily: 'var(--font-sans)', fontSize: '20px', fontWeight: 700,
+                            color: '#1b1c19', textAlign: 'left',
+                          }}
+                        >
+                          {member.name}
+                        </button>
+                        {/* HK link + copy — fallback channel if SMS ever breaks.
+                            `hkUrl` points to /housekeeper/{staffId}, same link the SMS sends. */}
+                        {(() => {
+                          const hkUrl = typeof window !== 'undefined'
+                            ? `${window.location.origin}/housekeeper/${member.id}`
+                            : `/housekeeper/${member.id}`;
+                          const isCopied = copiedFor === member.id;
+                          return (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <a
+                                href={hkUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title={lang === 'es' ? 'Abrir página del limpiador' : "Open housekeeper's page"}
+                                style={{
+                                  display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                  padding: '4px 10px', borderRadius: '9999px',
+                                  background: 'rgba(54,66,98,0.08)', color: '#364262',
+                                  fontFamily: 'var(--font-sans)', fontSize: '11px', fontWeight: 600,
+                                  textDecoration: 'none', cursor: 'pointer',
+                                  border: '1px solid rgba(54,66,98,0.15)',
+                                }}
+                              >
+                                <Link2 size={12} />
+                                {lang === 'es' ? 'Enlace' : 'Link'}
+                              </a>
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    await navigator.clipboard.writeText(hkUrl);
+                                  } catch {
+                                    // Fallback for older browsers / non-HTTPS
+                                    const ta = document.createElement('textarea');
+                                    ta.value = hkUrl;
+                                    document.body.appendChild(ta);
+                                    ta.select();
+                                    try { document.execCommand('copy'); } catch {}
+                                    document.body.removeChild(ta);
+                                  }
+                                  if (copiedTimer.current) clearTimeout(copiedTimer.current);
+                                  setCopiedFor(member.id);
+                                  copiedTimer.current = setTimeout(() => setCopiedFor(null), 1500);
+                                }}
+                                title={lang === 'es' ? 'Copiar enlace' : 'Copy link'}
+                                style={{
+                                  display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                  padding: '4px 10px', borderRadius: '9999px',
+                                  background: isCopied ? 'rgba(16,185,129,0.15)' : 'rgba(54,66,98,0.08)',
+                                  color: isCopied ? '#059669' : '#364262',
+                                  fontFamily: 'var(--font-sans)', fontSize: '11px', fontWeight: 600,
+                                  cursor: 'pointer',
+                                  border: `1px solid ${isCopied ? 'rgba(16,185,129,0.3)' : 'rgba(54,66,98,0.15)'}`,
+                                }}
+                              >
+                                {isCopied ? <Check size={12} /> : <Copy size={12} />}
+                                {isCopied
+                                  ? (lang === 'es' ? '¡Copiado!' : 'Copied!')
+                                  : (lang === 'es' ? 'Copiar' : 'Copy')}
+                              </button>
+                            </div>
+                          );
+                        })()}
+                      </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
                         <span style={{
                           padding: '2px 8px', borderRadius: '9999px',
